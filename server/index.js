@@ -12,5 +12,4 @@ app.get("*", (req, res) => {
  res.sendFile(path.join(__dirname, "../client/dist/index.html"));
 });
 
-const PORT = process.env.PORT;
-app.listen(PORT, "0.0.0.0");
+app.listen(process.env.PORT || 3000);
