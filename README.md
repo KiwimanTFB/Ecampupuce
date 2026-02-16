@@ -1,61 +1,117 @@
-# Ecampupuce
-Projet Universitaire d'application full-stack de gestion
-*Dedicace à Samuel Pour le nom*
+<div align="center">
 
+  <img src="https://img.icons8.com/dusk/128/000000/university.png" alt="logo" width="100" height="100" />
 
-Contexte
-Dans le cadre du BUT Métiers du Multimédia et de l’Internet, les Situations d’Apprentissage et
-d’Évaluation (SAE) structurent la progression des étudiants. Le suivi des SAE (échéances, consignes,
-livrables, annonces) est souvent dispersé entre plusieurs outils. Cette SAE consiste à concevoir et
-réaliser une plateforme web interne au département MMI permettant aux étudiants et aux
-enseignants de disposer d’un outil centralisé, incluant un tableau de bord, un espace documents et
-un module annonces. Il permet également de visualiser les travaux faits par les précédentes promotions.
+  # 🎓 Ecampupuce
+  
+  **La plateforme centralisée de gestion des SAE pour le département MMI.**
+  
+  *Un projet d'application Full-Stack réalisé avec passion.*
+  <br>
+  
+  > *"Dédicace à Samuel pour le nom"* 🤝
 
+  <p>
+    <a href="#-fonctionnalités">Fonctionnalités</a> •
+    <a href="#-stack-technique">Technologies</a> •
+    <a href="#-installation">Installation</a> •
+    <a href="#-équipe">L'Équipe</a>
+  </p>
 
-Objectifs pédagogiques
-À l’issue de la SAE, vous devrez être capables de :
-  — analyser un besoin réel et proposer une solution numérique adaptée ;
-  — concevoir une interface UX/UI cohérente, accessible et ergonomique ;
-  — utiliser deux frameworks utilisés dans le monde professionnel et les faire travailler de concert
-  — proposer un tableau de bord synthétique (indicateurs, états, filtres) ;
-  — travailler en équipe (organisation, répartition, versioning, documentation).
+  ![Status](https://img.shields.io/badge/Status-En_Développement-orange?style=for-the-badge)
+  ![License](https://img.shields.io/badge/Licence-MIT-blue?style=for-the-badge)
+  ![Version](https://img.shields.io/badge/Version-1.0.0-green?style=for-the-badge)
 
+</div>
 
-Travail demandé (fonctionnalités minimales)
-Concevoir et livrer une plateforme web fonctionnelle intégrant au minimum :
-  — Gestion des SAE : liste des SAE (par semestre/année), fiche détaillée (titre, description, échéances,
-consignes).
-  — Tableau de bord :
-  — Vue étudiant : SAE en cours / à venir / rendues, échéances proches, accès rapide.
-  — Vue enseignant : vue globale (par SAE), avancement agrégé, filtres (semestre, groupe, état).
-  — Vue public : présentation plus "graphique" des différentes SAE. Pour chaque SAE, affichage
-élégant des travaux, avec filtrage possible par année.
-  — Dépôt de documents : dépôt et consultation de fichiers (consignes, ressources, rendus), classement
-par SAE.
+---
 
-  — Annonces : publication d’annonces liées aux SAE (rappels, modifications, informations), affichage
-chronologique.
+## 📖 À propos du projet
 
-Remarque : des données fictives (mais réalistes) sont autorisées. Aucune donnée sensible réelle ne
-doit être utilisée.
-Contraintes
-  — Groupes de 2 ou 3 étudiants.
-  — l est demandé d’utiliser un framework côté front et un framework côté back, qui communiqueront
-via une API RESTful.. Déploiement local ou serveur pédagogique.
-  — Projet structuré : arborescence claire, code lisible/commenté, bonnes pratiques (sécurité de base,
-validation des entrées, etc.).
+Dans le cadre du **BUT Métiers du Multimédia et de l’Internet (MMI)**, les Situations d’Apprentissage et d’Évaluation (SAE) structurent la progression des étudiants. Cependant, le suivi est souvent dispersé.
 
+**Ecampupuce** est une solution web interne conçue pour répondre à ce besoin réel. Elle centralise :
+1.  **La Gestion :** Suivi des consignes, livrables et échéances.
+2.  **L'Archivage :** Une vitrine des travaux des promotions précédentes.
+3.  **La Communication :** Un module d'annonces dédié.
 
-Livrables
-1. Plateforme fonctionnelle (code source + consignes d’installation/exécution).
-2. Rapport : 30 pages max hors annexe. Description du besoin, personas/UX, maquettes, architecture,
-choix techniques, parcours utilisateurs, limites et bilan.
-3. Présentation orale : 15 minutes + démonstration, suivie de questions.
+L'objectif est d'offrir une expérience utilisateur (UX/UI) cohérente, accessible et ergonomique pour les étudiants et les enseignants.
 
-4. 
-Critères d’évaluation (indicatifs)
-  — adéquation au besoin et complétude des fonctionnalités ;
-  — qualité UX/UI (clarté, cohérence, accessibilité, responsive) ;
-  — qualité technique (stabilité, organisation du code, documentation, versioning) ;
-  — pertinence du tableau de bord (indicateurs, lisibilité, filtres) ;
-  — qualité du dossier et de la soutenance (argumentation, démonstration, recul critique).
+---
+
+## ✨ Fonctionnalités
+
+### 👨‍🎓 Espace Étudiant
+* **Tableau de bord synthétique :** Vue immédiate sur les SAE en cours, à venir et rendues.
+* **Gestion du temps :** Indicateurs visuels pour les échéances proches.
+* **Dépôt de documents :** Interface pour consulter les consignes et déposer les livrables.
+
+### 👨‍🏫 Espace Enseignant
+* **Vue Globale :** Suivi de l'avancement par SAE et par groupe.
+* **Gestion Administrative :** Création de SAE, modification des consignes.
+* **Filtres Avancés :** Tri par semestre, groupe ou état d'avancement.
+* **Communication :** Publication d'annonces (rappels, infos urgentes).
+
+### 🌍 Espace Public (Vitrine)
+* **Showcase Graphique :** Présentation élégante des travaux des promotions précédentes.
+* **Historique :** Filtrage des projets par année.
+
+---
+
+## 🛠 Stack Technique
+
+Ce projet respecte une architecture **API RESTful** avec une séparation stricte entre le client et le serveur.
+
+| Domaine | Technologie | Rôle |
+| :--- | :--- | :--- |
+| **Front-End** | `[React / Vue / Angular]` | Interface Utilisateur & Interactions |
+| **Back-End** | `[Symfony / Node / Laravel]` | API REST & Logique métier |
+| **Base de données** | `[MySQL / PostgreSQL]` | Persistance des données |
+| **Design / CSS** | `[Tailwind / Bootstrap / Sass]` | UI & Responsive Design |
+| **Versioning** | Git / GitHub | Gestion de versions et travail d'équipe |
+
+---
+
+## 📸 Aperçu (Screenshots)
+
+| Dashboard Étudiant | Vue Enseignant |
+|:---:|:---:|
+| <img src="https://via.placeholder.com/600x400?text=Dashboard+Student" width="100%"> | <img src="https://via.placeholder.com/600x400?text=Dashboard+Teacher" width="100%"> |
+
+---
+
+## 🚀 Installation et Démarrage
+
+Suivez ces étapes pour déployer le projet en local.
+
+### Pré-requis
+* Node.js & NPM
+* [Autre pré-requis Back-end, ex: PHP / Python]
+* [SGBD, ex: MySQL]
+
+### 1. Cloner le dépôt
+```bash
+git clone [https://github.com/votre-username/ecampupuce.git](https://github.com/votre-username/ecampupuce.git)
+cd ecampupuce
+2. Installation du Back-end (/api)Bashcd backend
+# Installation des dépendances
+[commande install, ex: composer install]
+
+# Configuration de l'environnement
+cp .env.example .env
+# (Configurer la connexion BDD dans le fichier .env)
+
+# Lancement du serveur
+[commande start, ex: symfony server:start]
+3. Installation du Front-end (/client)Bashcd ../frontend
+# Installation des dépendances
+npm install
+
+# Lancement du serveur de développement
+npm run dev
+📂 Structure du ProjetPlaintextEcampupuce/
+├── backend/         # API et Logique serveur
+├── frontend/        # Application Client Web
+├── docs/            # Rapports, Maquettes et Documentation
+└── README.md        # Documentation générale
+👥 L'ÉquipeProjet réalisé par le groupe [Nom du Groupe ou Numéro] :MembreRôleGitHub[Nom Étudiant 1][Rôle ex: Lead Dev Front]@pseudo[Nom Étudiant 2][Rôle ex: Lead Dev Back]@pseudo[Nom Étudiant 3][Rôle ex: UI/UX Designer]@pseudo📄 LicenceCe projet est réalisé dans un cadre pédagogique au sein du département MMI.Distribué sous la licence MIT.
