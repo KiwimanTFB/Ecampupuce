@@ -6,7 +6,7 @@
   
   **La plateforme centralisée de gestion des SAE pour le département MMI.**
   
-  *Un projet d'application Full-Stack réalisé avec passion.*
+  *Un projet d'application Full-Stack réalisé dans le cadre d'un devoir universitaire.*
   <br>
   
   > *"Dédicace à Samuel pour le nom"* 🤝
@@ -64,10 +64,10 @@ Ce projet respecte une architecture **API RESTful** avec une séparation stricte
 
 | Domaine | Technologie | Rôle |
 | :--- | :--- | :--- |
-| **Front-End** | `[React / Vue / Angular]` | Interface Utilisateur & Interactions |
-| **Back-End** | `[Symfony / Node / Laravel]` | API REST & Logique métier |
-| **Base de données** | `[MySQL / PostgreSQL]` | Persistance des données |
-| **Design / CSS** | `[Tailwind / Bootstrap / Sass]` | UI & Responsive Design |
+| **Front-End** | `[Vue]` | Interface Utilisateur & Interactions |
+| **Back-End** | `[Express]` | API REST & Logique métier |
+| **Base de données** | `[MySQL]` | Persistance des données |
+| **Design / CSS** | `[]` | UI & Responsive Design |
 | **Versioning** | Git / GitHub | Gestion de versions et travail d'équipe |
 
 ---
