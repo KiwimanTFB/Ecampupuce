@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Compte Rendu TD02 - Variables et Méthodes</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 950px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 15px;
+            text-align: center;
+        }
+        h2 {
+            color: #2c3e50;
+            margin-top: 40px;
+            padding: 10px;
+            background-color: #ecf0f1;
+            border-left: 5px solid #3498db;
+        }
+        h3 {
+            color: #e67e22;
+            margin-top: 25px;
+            border-bottom: 1px solid #eee;
+        }
+        p, li {
+            text-align: justify;
+        }
+        pre {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Consolas', monospace;
+            font-size: 0.9em;
+        }
+        .screen-container {
+            text-align: center;
+            margin: 30px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+        img {
+            max-width: 90%;
+            height: auto;
+            border: 1px solid #ccc;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .caption {
+            font-style: italic;
+            color: #7f8c8d;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .reponse {
+            background-color: #e8f5e9;
+            border-left: 5px solid #27ae60;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .explication {
+            background-color: #fff8e1;
+            padding: 10px;
+            border-left: 4px solid #ffc107;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>TD02 : Utilisation des variables et des méthodes</h1>
+
+    <h2>Partie 1 : Analyse et Compréhension (Question 1)</h2>
+    
+    <div class="reponse">
+        <p><strong>Réponses aux questions d'analyse du code :</strong></p>
+        <ul>
+            <li><strong>Math.random :</strong> Cette méthode appartient à la classe <code>java.lang.Math</code>. Elle génère un nombre pseudo-aléatoire de type <code>double</code> compris entre 0.0 et 1.0. Elle est utilisée ici pour définir aléatoirement la position et la couleur des confettis.</li>
+            <li><strong>Variable Globale vs Locale :</strong> L'instance de <code>Confettis</code> est définie en "global" (attribut de classe) pour qu'elle soit visible par toutes les méthodes de la classe, notamment la méthode <code>paint()</code>. Si elle était déclarée localement dans le <code>main</code>, la méthode <code>paint</code> ne pourrait pas y accéder pour dessiner l'objet.</li>
+            <li><strong>Le mot-clé "this" :</strong> Dans le constructeur, <code>this</code> fait référence à l'instance courante de l'objet. Il est utilisé pour distinguer l'attribut de la classe (<code>this.nombre</code>) du paramètre du constructeur (<code>nombre</code>) quand ils ont le même nom.</li>
+            <li><strong>Préfixes des méthodes :</strong> La méthode <code>decoration(g)</code> est appelée sans préfixe car elle est définie dans la classe <code>LanceConfettis</code> elle-même. À l'inverse, <code>conf1.dessine(g)</code> doit être préfixée par l'objet <code>conf1</code> car la méthode <code>dessine</code> appartient à la classe <code>Confettis</code>.</li>
+        </ul>
+    </div>
+
+    <h2>Partie 2 : Surcharge et Variables Static (Questions 2, 3 et 4)</h2>
+    
+    <div class="explication">
+        <p><strong>Question 2 (Surcharge) :</strong> Nous avons créé un second constructeur dans la classe <code>Confettis</code> acceptant deux paramètres (nombre et type). Cela permet de créer des objets de différentes manières. La surcharge offre donc plus de souplesse à l'initialisation.</p>
+    </div>
+
+    <h3>Code ajouté pour la surcharge (Confettis.java) :</h3>
+<pre>
+// Second constructeur (Surcharge)
+public Confettis(int nombre, int type)
+{
+    this.nombre = nombre;
+    this.type = type;
+}
+</pre>
+
+    <div class="explication">
+        <p><strong>Question 3 (Affichage console) :</strong> Nous avons ajouté des affichages dans la méthode <code>paint</code>. À cette étape, la variable <code>compteur</code> est toujours déclarée en <code>static</code>.</p>
+        <p>On constate que le compteur est partagé : il cumule les valeurs de toutes les instances.</p>
+    </div>
+
+    <div class="screen-container">
+        <img src="images/1.png" alt="Capture Console avec Static">
+        <div class="caption">Fig 1. Affichage console AVEC le mot-clé static. Le compteur affiche 300 pour les deux instances (200 + 100).</div>
+    </div>
+
+    <div class="explication">
+        <p><strong>Question 4 (Retrait du static) :</strong> Nous avons retiré le mot-clé <code>static</code> de la variable <code>compteur</code> dans la classe <code>Confettis</code>.</p>
+        <p><strong>Déduction :</strong> Les variables <code>static</code> (de classe) sont partagées par toutes les instances (mémoire commune). En retirant <code>static</code>, la variable devient une variable d'instance : chaque objet possède sa propre copie indépendante.</p>
+    </div>
+
+    <div class="screen-container">
+        <img src="images/2.png" alt="Capture Console sans Static">
+        <div class="caption">Fig 2. Affichage console SANS le mot-clé static. Les compteurs sont indépendants : 200 pour l'instance 1 et 100 pour l'instance 2.</div>
+    </div>
+
+    <h2>Partie 3 : Arguments et Aléatoire (Questions 5 et 6)</h2>
+
+    <div class="explication">
+        <p><strong>Modifications finales :</strong></p>
+        <ol>
+            <li><strong>Question 5 (Arguments) :</strong> Nous utilisons le tableau <code>String arg[]</code> du <code>main</code>. Les valeurs sont converties en entiers via <code>Integer.parseInt()</code> pour définir le nombre de confettis au lancement (ex: <code>java LanceConfettis 300 50</code>).</li>
+            <li><strong>Question 6 (Type aléatoire) :</strong> Dans le premier constructeur, nous utilisons <code>Math.random() * 4</code> casté en int pour attribuer aléatoirement un type (0, 1, 2 ou 3) à l'instance.</li>
+        </ol>
+    </div>
+
+    <div class="screen-container">
+        <img src="images/3.png" alt="Capture Fenêtre Finale">
+        <div class="caption">Fig 3. Résultat visuel final avec deux instances de confettis gérées par le programme via la commande "java LanceConfettis 300 50".</div>
+    </div>
+
+    <h3>Code Complet Final : LanceConfettis.java</h3>
+<pre>
+import java.awt.*;
+import javax.swing.*;
+
+class LanceConfettis extends JFrame
+{
+    // Variables globales
+    static Confettis conf1, conf2; 
+
+    public LanceConfettis()
+    {
+        super("C'est la joie !");
+        setSize(500, 300);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setVisible(true);
+    }
+
+    public void paint(Graphics g)
+    {
+        super.paint(g); 
+        decoration(g);
+        
+        conf1.dessine(g);
+        conf2.dessine(g);
+
+        // Affichage console (Question 3)
+        System.out.println("Instance 1 -> Type: " + conf1.type + " | Nombre: " + conf1.nombre);
+        System.out.println("Instance 2 -> Type: " + conf2.type + " | Nombre: " + conf2.nombre);
+    }
+
+    public void decoration(Graphics g)
+    {
+        g.setColor(Color.orange);
+        g.fillArc(-50, -50, 300, 300, 250, 45);
+        g.setColor(Color.magenta);
+        g.fillOval(100, 215, 60, 40);
+        g.fillOval(145, 220, 60, 40);
+        g.setColor(Color.orange);
+        g.fillOval(120, 227, 20, 16);
+        g.setColor(Color.white);
+        g.fillOval(165, 232, 20, 16);
+        g.setColor(Color.black);
+        g.drawOval(56, 185, 24, 6);
+    }
+
+    public static void main (String arg[])
+    {
+        // Question 5 : Gestion des arguments
+        int n1 = 100; // Valeur par défaut
+        int n2 = 100; 
+
+        if (arg.length >= 2) {
+            n1 = Integer.parseInt(arg[0]);
+            n2 = Integer.parseInt(arg[1]);
+        }
+
+        // Question 6 : Type aléatoire pour le constructeur 1
+        conf1 = new Confettis(n1);
+        
+        // Question 2 : Utilisation du constructeur surchargé
+        conf2 = new Confettis(n2, 1);
+        
+        new LanceConfettis();
+    }
+}
+</pre>
+
+    <h3>Code Complet Final : Confettis.java</h3>
+<pre>
+import java.awt.*;
+
+class Confettis
+{
+    int type = 0, nombre;
+    
+    // Question 4 : Retrait du static
+    int compteur = 0; 
+
+    // Constructeur 1 : Type aléatoire (Question 6)
+    public Confettis(int nombre)
+    {
+        this.nombre = nombre;
+        // Choix aléatoire du type entre 0 et 3
+        this.type = (int)(Math.random() * 4);
+    }
+
+    // Constructeur 2 : Surcharge (Question 2)
+    public Confettis(int nombre, int type)
+    {
+        this.nombre = nombre;
+        this.type = type;
+    }
+
+    public void dessine(Graphics gr)
+    {
+        for (int i=0; i < nombre; i++)
+        {
+            compteur++; 
+
+            gr.setColor(new Color((int) (Math.random()*256), 
+                                  (int) (Math.random()*256), 
+                                  (int) (Math.random()*256)));
+            
+            if (type==0)      gr.fillOval((int) (Math.random()*500), (int) (Math.random()*300), 5, 5);
+            else if (type==1) gr.fillRect((int) (Math.random()*500), (int) (Math.random()*300), 5, 5);
+            else if (type==2) gr.drawArc((int) (Math.random()*500), (int) (Math.random()*300), 10, 10, 0, 45);
+            else if (type==3) gr.drawArc((int) (Math.random()*500), (int) (Math.random()*300), 10, 50, (int) (Math.random()*360), 135);
+            
+            try { Thread.sleep(5); } catch(InterruptedException e) { } 
+        }
+    }
+}
+</pre>
+
+</body>
+</html>
