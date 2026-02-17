@@ -1,18 +1,34 @@
-const express = require("express");
-const path = require("path");
-
+const express = require('express');
+const cors = require('cors'); // Important pour que le port 8080 parle au 3000
 const app = express();
+const port = 3000;
 
-// API
-app.get("/api/health", (req, res) => res.json({ ok: true }));
+app.use(cors());
+app.use(express.json());
 
-// Vue build (client/dist)
-app.use(express.static(path.join(__dirname, "../client/dist")));
+// DONNÉES FICTIVES (Mock Data) pour respecter la structure demandée 
+const saes = [
+    {
+        id: 1,
+        titre: "Plateforme Intranet MMI",
+        semestre: "S4",
+        description: "Création d'un outil de suivi de SAE",
+        dateRendu: "2026-06-15"
+    },
+    {
+        id: 2,
+        titre: "Création d'une identité visuelle",
+        semestre: "S3",
+        description: "Logo, charte graphique et déclinaisons",
+        dateRendu: "2026-03-20"
+    }
+];
 
-// CORRECTION ICI : /.*/ est une RegExp pure, SANS guillemets
-app.get(/.*/, (req, res) => {
- res.sendFile(path.join(__dirname, "../client/dist/index.html"));
+// ROUTE API : Récupérer toutes les SAE
+app.get('/api/saes', (req, res) => {
+    res.json(saes);
 });
 
-// Écoute le port Hostinger
-app.listen(process.env.PORT);
+app.listen(port, () => {
+    console.log(`Serveur démarré sur http://localhost:${port}`);
+});
