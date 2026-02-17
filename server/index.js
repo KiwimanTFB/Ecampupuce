@@ -9,10 +9,10 @@ app.get("/api/health", (req, res) => res.json({ ok: true }));
 // Vue build (client/dist)
 app.use(express.static(path.join(__dirname, "../client/dist")));
 
-
-app.get("(.*)", (req, res) => {
+// CORRECTION ICI : /.*/ est une RegExp pure, SANS guillemets
+app.get(/.*/, (req, res) => {
  res.sendFile(path.join(__dirname, "../client/dist/index.html"));
 });
 
-
+// Écoute le port Hostinger
 app.listen(process.env.PORT);
