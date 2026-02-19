@@ -1,26 +1,31 @@
-require("dotenv").config(); // Charge le fichier .env
+require("dotenv").config();
 const express = require("express");
 const path = require("path");
-const mysql = require("mysql2/promise");
+
+// NOUVEAU : On importe sqlite3 et le wrapper de promesses sqlite
+const sqlite3 = require("sqlite3").verbose();
+const { open } = require("sqlite");
 
 const app = express();
-
-// TRÈS IMPORTANT : Permet à Express de lire le JSON envoyé par Vue (pour le POST)
 app.use(express.json());
 
-// --- 1. BASE DE DONNÉES SÉCURISÉE ---
-// C'est ICI la correction : on utilise process.env pour lire ton fichier .env !
-const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME
-});
+// --- 1. BASE DE DONNÉES SÉCURISÉE (SQLITE) ---
+let db;
+async function initDB() {
+  db = await open({
+    // Adapte ce chemin selon où se trouve ton index.js par rapport au dossier bdd !
+    // S'ils sont dans le même dossier : './bdd/structure.sqlite'
+    filename: path.join(__dirname, "../bdd/structure.sqlite"), 
+    driver: sqlite3.Database
+  });
+  console.log("✅ Connecté à SQLite avec succès !");
+  
+  // Active les clés étrangères (très important pour SQLite)
+  await db.exec("PRAGMA foreign_keys = ON;");
+}
 
-// Petit test de connexion au démarrage
-pool.getConnection()
-  .then(() => console.log("✅ Connecté à MySQL avec succès !"))
-  .catch((err) => console.error("❌ Erreur MySQL :", err.message || err));
+// On lance la connexion au démarrage
+initDB().catch(err => console.error("❌ Erreur SQLite :", err));
 
 
 // --- 2. API RESTful ---
@@ -29,7 +34,8 @@ app.get("/api/health", (req, res) => res.json({ ok: true }));
 // GET : Récupérer toutes les SAE
 app.get("/api/sae", async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT * FROM sae ORDER BY annee_univ DESC, semestre ASC");
+    // CORRECTION : on utilise db.all() et on a directement les rows
+    const rows = await db.all("SELECT * FROM sae ORDER BY annee_univ DESC, semestre ASC");
     res.json(rows);
   } catch (error) {
     console.error("Erreur GET /api/sae:", error);
@@ -41,13 +47,17 @@ app.get("/api/sae", async (req, res) => {
 app.post("/api/annonces", async (req, res) => {
   try {
     const { id_sae, id_auteur, titre, contenu } = req.body;
-    const date_publi = new Date();
+    // Format ISO pour la date, c'est ce que SQLite préfère
+    const date_publi = new Date().toISOString(); 
     
-    const [result] = await pool.query(
+    // CORRECTION : on utilise db.run() pour les INSERT/UPDATE/DELETE
+    const result = await db.run(
       "INSERT INTO annonces (id_sae, id_auteur, titre, contenu, date_publi) VALUES (?, ?, ?, ?, ?)",
       [id_sae, id_auteur, titre, contenu, date_publi]
     );
-    res.status(201).json({ message: "Annonce ajoutée", id: result.insertId });
+    
+    // CORRECTION : l'ID généré s'appelle result.lastID avec SQLite
+    res.status(201).json({ message: "Annonce ajoutée", id: result.lastID });
   } catch (error) {
     console.error("Erreur POST /api/annonces:", error);
     res.status(500).json({ error: "Erreur serveur" });
@@ -58,14 +68,13 @@ app.post("/api/annonces", async (req, res) => {
 // --- 3. VUE BUILD (Client/dist) - NE PAS TOUCHER ---
 app.use(express.static(path.join(__dirname, "../client/dist")));
 
-// CORRECTION ICI : /.*/ est une RegExp pure, SANS guillemets
 app.get(/.*/, (req, res) => {
  res.sendFile(path.join(__dirname, "../client/dist/index.html"));
 });
 
+
 // --- 4. LANCEMENT ---
-// Écoute le port Hostinger (ou 3000 en local sur ton PC)
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000; // J'ai ajouté un fallback sur 3000 au cas où PORT soit vide
 app.listen(PORT, () => {
   console.log(`🚀 Serveur Express démarré sur le port ${PORT}`);
 });
