@@ -170,7 +170,7 @@
                           </select>
                       </div>
                       <button class="btn btn-primary" @click="postAnnonce" :disabled="isPosting">
-                          {{ isPosting ? 'Publication...' : 'Publier l\\'annonce' }}
+                          {{ isPosting ? 'Publication...' : "Publier l'annonce" }}
                       </button>
                   </div>
               </div>
