@@ -47,6 +47,21 @@ async function initDB() {
             )
         `);
 
+        console.log('Création de la table rendus...');
+        await connection.query('DROP TABLE IF EXISTS rendus');
+        await connection.query(`
+            CREATE TABLE rendus (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                sae_id INT NOT NULL,
+                user_id INT NOT NULL,
+                nom_fichier VARCHAR(255) NOT NULL,
+                chemin_fichier VARCHAR(500) NOT NULL,
+                date_depot DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (sae_id) REFERENCES saes(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        `);
+
         console.log('Insertion des utilisateurs de test...');
         // Les mots de passe sont tous 'password123' encryptés via bcrypt
         await connection.query(`

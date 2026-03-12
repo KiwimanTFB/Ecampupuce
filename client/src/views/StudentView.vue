@@ -99,11 +99,31 @@
                       <div class="card">
                           <div class="card-header">Nouveau dépôt</div>
                           <div class="card-body">
-                              <div class="upload-zone">
-                                  <svg class="upload-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                                  <div style="font-size: 15px; font-weight: 600; margin-bottom: 8px;">Glissez vos fichiers ici</div>
+                              <div class="form-group" style="margin-bottom: 20px;">
+                                  <label class="form-label">Sélectionnez la SAE concernée</label>
+                                  <select v-model="selectedSaeId" class="form-control">
+                                      <option value="" disabled>-- Choisir une SAE --</option>
+                                      <option v-for="sae in saes" :key="sae.id" :value="sae.id">
+                                          {{ sae.title }}
+                                      </option>
+                                  </select>
                               </div>
-                              <button class="btn btn-primary" style="margin-top: 16px; width: 100%; justify-content: center;">Confirmer le dépôt</button>
+
+                              <div class="upload-zone" @click="triggerFileInput" style="cursor: pointer; position: relative;">
+                                  <svg class="upload-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                  <div style="font-size: 15px; font-weight: 600; margin-bottom: 8px;">
+                                      {{ selectedFileName || 'Cliquez ou glissez vos fichiers ici' }}
+                                  </div>
+                                  <input type="file" ref="fileInput" @change="handleFileSelect" hidden>
+                              </div>
+
+                              <div v-if="uploadMessage" :class="['alert', isUploadSuccess ? 'alert-success' : 'alert-danger']" style="margin-top: 16px; padding: 12px; border-radius: 4px; font-size: 14px;" :style="{ backgroundColor: isUploadSuccess ? 'var(--status-success-bg)' : 'var(--status-danger-bg)', color: isUploadSuccess ? 'var(--status-success-text)' : 'var(--status-danger-text)' }">
+                                  {{ uploadMessage }}
+                              </div>
+
+                              <button class="btn btn-primary" @click="submitUpload" :disabled="!selectedFile || !selectedSaeId || isUploading" style="margin-top: 16px; width: 100%; justify-content: center;">
+                                  {{ isUploading ? 'Envoi en cours...' : 'Confirmer le dépôt' }}
+                              </button>
                           </div>
                       </div>
                   </div>
@@ -144,6 +164,15 @@ const currentView = ref('dashboard')
 const apiMessage = ref('')
 const saes = ref([])
 
+// Champs Upload
+const fileInput = ref(null)
+const selectedFile = ref(null)
+const selectedFileName = ref('')
+const selectedSaeId = ref('')
+const isUploading = ref(false)
+const uploadMessage = ref('')
+const isUploadSuccess = ref(false)
+
 const pageInfo = {
   'dashboard': { title: "Vue d'ensemble", desc: "Suivi de vos situations d'apprentissage et d'évaluation en cours." },
   'projects': { title: "Projets SAE (Semestre 4)", desc: "Consultez et gérez vos projets du semestre actuel." },
@@ -162,6 +191,56 @@ const evaluatedSaes = computed(() => saes.value.filter(s => s.isEvaluated))
 
 function switchView(viewId) {
   currentView.value = viewId
+  uploadMessage.value = ''
+}
+
+function triggerFileInput() {
+    fileInput.value.click()
+}
+
+function handleFileSelect(event) {
+    const file = event.target.files[0]
+    if (file) {
+        selectedFile.value = file
+        selectedFileName.value = file.name
+        uploadMessage.value = ''
+    }
+}
+
+async function submitUpload() {
+    if (!selectedFile.value || !selectedSaeId.value) return
+
+    isUploading.value = true
+    uploadMessage.value = ''
+
+    const formData = new FormData()
+    formData.append('document', selectedFile.value)
+    formData.append('saeId', selectedSaeId.value)
+
+    try {
+        const response = await axios.post('/api/upload', formData, {
+            // Le Content-Type multipart/form-data est géré automatiquement par Axios + FormData
+            // L'intercepteur global ajoute déjà le Authorization: Bearer
+        })
+
+        isUploadSuccess.value = true
+        uploadMessage.value = "Document déposé avec succès !"
+        
+        // Réinitialiser le form
+        selectedFile.value = null
+        selectedFileName.value = ''
+        if (fileInput.value) fileInput.value.value = ''
+        
+        // Rafraîchir les SAEs pour voir le changement de statut
+        const resSaes = await axios.get('/api/saes')
+        saes.value = resSaes.data
+        
+    } catch (error) {
+        isUploadSuccess.value = false
+        uploadMessage.value = error.response?.data?.error || "Erreur lors de l'envoi du fichier"
+    } finally {
+        isUploading.value = false
+    }
 }
 
 onMounted(async () => {

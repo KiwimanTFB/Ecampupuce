@@ -3,6 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const path = require('path');
 const db = require('./db');
 
 const app = express();
@@ -10,6 +12,23 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Accès public aux fichiers uploadés
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Configuration Multer
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/');
+    },
+    filename: (req, file, cb) => {
+        // Ajout d'un timestamp pour éviter les écrasements de noms
+        cb(null, Date.now() + '-' + file.originalname);
+    }
+});
+const upload = multer({ storage });
+
 
 // Middleware d'authentification JWT
 const authenticateToken = (req, res, next) => {
@@ -31,7 +50,13 @@ app.get('/api/test', (req, res) => {
 
 // POST /api/login - Authentification et génération du JWT
 app.post('/api/login', async (req, res) => {
+    console.log("Body reçu :", req.body);
     const { email, password } = req.body;
+    
+    if (!email || !password) {
+        console.log("Erreur : email ou password manquant dans le body");
+        return res.status(400).json({ error: 'Email et mot de passe requis' });
+    }
     
     try {
         const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
@@ -98,6 +123,42 @@ app.get('/api/saes/:id', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Erreur serveur lors de la récupération de la SAE' });
+    }
+});
+
+// POST /api/upload - Déposer un fichier (Route protégée)
+app.post('/api/upload', authenticateToken, upload.single('document'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'Aucun fichier sélectionné' });
+        }
+
+        const { saeId } = req.body;
+        const userId = req.user.id;
+        const filename = req.file.originalname;
+        const filepath = `/uploads/${req.file.filename}`;
+
+        if (!saeId) {
+            return res.status(400).json({ error: 'L\'ID de la SAE est requis' });
+        }
+
+        // Insertion du rendu dans la table MySQL
+        await db.query(
+            'INSERT INTO rendus (sae_id, user_id, nom_fichier, chemin_fichier) VALUES (?, ?, ?, ?)',
+            [saeId, userId, filename, filepath]
+        );
+
+        // Optionnel : Mettre à jour le statut "deliveryStatus" de la SAE
+        await db.query(
+            'UPDATE saes SET deliveryStatus = ? WHERE id = ?',
+            [`Rendu déposé le ${new Date().toLocaleDateString('fr-FR')}`, saeId]
+        );
+
+        res.json({ message: 'Fichier uploadé avec succès', filename, filepath });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erreur lors de l\'upload du fichier' });
     }
 });
 
