@@ -49,22 +49,19 @@
                               Annonces récentes
                           </div>
                           <div class="card-body">
-                              <div class="feed-item active">
-                                  <div class="feed-header">
-                                      <div class="feed-title">Soutenance SAE 4.01</div>
-                                      <div class="feed-time">10:30</div>
-                                  </div>
-                                  <div class="feed-body">
-                                      Les notes et les retours de la SAE 4.01 sont désormais disponibles sur votre espace.
-                                  </div>
+                              <div v-if="annonces.length === 0" style="color: var(--text-secondary); font-size: 14px; padding: 12px;">
+                                  Aucune annonce publiée.
                               </div>
-                              <div class="feed-item">
+                              <div v-for="(annonce, index) in annonces" :key="annonce.id" class="feed-item" :class="{ 'active': index === 0 }">
                                   <div class="feed-header">
-                                      <div class="feed-title">Modification consignes</div>
-                                      <div class="feed-time">Hier</div>
+                                      <div class="feed-title">{{ annonce.titre }}</div>
+                                      <div class="feed-time">{{ formatDate(annonce.date_creation) }}</div>
                                   </div>
                                   <div class="feed-body">
-                                      Le format JSON est exigé pour tous les retours de l'API RESTful.
+                                      {{ annonce.message }}
+                                      <div style="margin-top: 8px; font-size: 12px; color: var(--text-secondary); font-style: italic;">
+                                          Par : {{ annonce.auteur_nom }} ({{ annonce.destinataires }})
+                                      </div>
                                   </div>
                               </div>
                           </div>
@@ -165,6 +162,7 @@ const route = useRoute()
 const currentView = computed(() => route.params.view || 'dashboard')
 const apiMessage = ref('')
 const saes = ref([])
+const annonces = ref([])
 
 // Champs Upload
 const fileInput = ref(null)
@@ -191,7 +189,14 @@ const ongoingSaes = computed(() => saes.value.filter(s => s.status === 'ongoing'
 const doneSaes = computed(() => saes.value.filter(s => s.status === 'done'))
 const evaluatedSaes = computed(() => saes.value.filter(s => s.isEvaluated))
 
-// currentView géré par le routeur
+// Outils de formatage
+function formatDate(dateString) {
+    if (!dateString) return ''
+    const date = new Date(dateString)
+    return new Intl.DateTimeFormat('fr-FR', {
+        day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit'
+    }).format(date)
+}
 
 function triggerFileInput() {
     fileInput.value.click()
@@ -217,10 +222,7 @@ async function submitUpload() {
     formData.append('saeId', selectedSaeId.value)
 
     try {
-        const response = await axios.post('/api/upload', formData, {
-            // Le Content-Type multipart/form-data est géré automatiquement par Axios + FormData
-            // L'intercepteur global ajoute déjà le Authorization: Bearer
-        })
+        const response = await axios.post('/api/upload', formData)
 
         isUploadSuccess.value = true
         uploadMessage.value = "Document déposé avec succès !"
@@ -244,11 +246,21 @@ async function submitUpload() {
 
 onMounted(async () => {
     try {
+        // Optionnel : ce test peut sauter ou rester
         const resTest = await axios.get('/api/test');
         apiMessage.value = resTest.data.message;
 
-        const resSaes = await axios.get('/api/saes');
-        saes.value = resSaes.data;
+        // Requêtes parallèles pour l'étudiant : SAEs + Annonces
+        const [resSaes, resAnnonces] = await Promise.all([
+            axios.get('/api/mes-notes'), // mes-notes (qui renvoie les saes évaluées, on peut prendre /api/saes global comme avant pour tout avoir)
+            axios.get('/api/annonces')
+        ])
+        
+        // Je récupère TOUTES les sae pour continuer à faire marcher le tableau de bord (ongoing, urgent) et filtrer sur isEvaluated=true pour la vue grades. Donc j'écrase mes-notes par saes.
+        const resSaesGlobal = await axios.get('/api/saes');
+        saes.value = resSaesGlobal.data;
+        
+        annonces.value = resAnnonces.data;
     } catch (error) {
         console.error("Erreur API:", error);
     }

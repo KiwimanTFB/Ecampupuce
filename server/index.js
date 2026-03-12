@@ -44,6 +44,16 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
+// Middleware vérifiant que l'utilisateur est un professeur
+const requireTeacher = (req, res, next) => {
+    // Ce middleware doit être appelé APRÈS authenticateToken (qui peuple req.user)
+    if (req.user && req.user.role === 'teacher') {
+        next();
+    } else {
+        res.status(403).json({ error: 'Accès refusé. Réservé aux professeurs.' });
+    }
+};
+
 app.get('/api/test', (req, res) => {
     res.json({ message: "L'API de SaeTrack fonctionne correctement !" });
 });
@@ -198,6 +208,96 @@ app.post('/api/upload', authenticateToken, upload.single('document'), async (req
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Erreur lors de l\'upload du fichier' });
+    }
+});
+
+// GET /api/annonces - Récupérer toutes les annonces (Protégé, tout le monde peut lire)
+app.get('/api/annonces', authenticateToken, async (req, res) => {
+    try {
+        const [annonces] = await db.query(`
+            SELECT a.*, u.nom as auteur_nom 
+            FROM annonces a 
+            JOIN users u ON a.auteur_id = u.id 
+            ORDER BY a.date_creation DESC
+        `);
+        res.json(annonces);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erreur serveur lors de la récupération des annonces' });
+    }
+});
+
+// POST /api/annonces - Créer une annonce (Protégé, PROF UNIQUEMENT)
+app.post('/api/annonces', authenticateToken, requireTeacher, async (req, res) => {
+    try {
+        const { titre, message, destinataires } = req.body;
+        const auteur_id = req.user.id;
+
+        if (!titre || !message) {
+            return res.status(400).json({ error: 'Le titre et le message sont requis' });
+        }
+
+        await db.query(
+            'INSERT INTO annonces (titre, message, destinataires, auteur_id) VALUES (?, ?, ?, ?)',
+            [titre, message, destinataires || 'Tous', auteur_id]
+        );
+
+        res.status(201).json({ message: 'Annonce publiée avec succès' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Erreur serveur lors de la publication de l'annonce" });
+    }
+});
+
+// PUT /api/rendus/:id/evaluation - Évaluer un rendu (Protégé, PROF UNIQUEMENT)
+app.put('/api/rendus/:id/evaluation', authenticateToken, requireTeacher, async (req, res) => {
+    try {
+        const renduId = req.params.id;
+        const { note, commentaire } = req.body;
+
+        if (note === undefined) {
+            return res.status(400).json({ error: 'La note est requise' });
+        }
+
+        // 1. Mettre à jour le rendu lui-même
+        await db.query(
+            'UPDATE rendus SET note = ?, commentaire_prof = ? WHERE id = ?',
+            [note, commentaire || '', renduId]
+        );
+
+        // 2. Mettre à jour la SAE correspondante pour bypasser le besoin d'une table intermédiaire complexe (simplification pédagogique)
+        // On récupère le SAE_id de ce rendu
+        const [rendusTable] = await db.query('SELECT sae_id FROM rendus WHERE id = ?', [renduId]);
+        if (rendusTable.length > 0) {
+            const saeId = rendusTable[0].sae_id;
+            await db.query(
+                'UPDATE saes SET isEvaluated = TRUE, grade = ?, comment = ? WHERE id = ?',
+                [note, commentaire || '', saeId]
+            );
+        }
+
+        res.json({ message: 'Rendu évalué avec succès' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Erreur serveur lors de l'évaluation" });
+    }
+});
+
+// GET /api/mes-notes - Récupérer les retours (Étudiant)
+// Renvoie simplement la liste des SAEs évaluées de l'étudiant pour rester compatible avec la vue StudentView actuelle
+app.get('/api/mes-notes', authenticateToken, async (req, res) => {
+    try {
+        // Dans une vraie BDD avec notes individuelles on ferait une jointure.
+        // Ici on se base sur les SAEs évaluées globalement (compatibilité vue actuelle).
+        const [saes] = await db.query('SELECT * FROM saes WHERE isEvaluated = TRUE');
+        const formattedSaes = saes.map(sae => ({
+            ...sae,
+            isEvaluated: !!sae.isEvaluated
+        }));
+        res.json(formattedSaes);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erreur serveur lors de la récupération des notes' });
     }
 });
 

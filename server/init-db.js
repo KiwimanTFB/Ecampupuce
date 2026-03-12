@@ -18,6 +18,7 @@ async function initDB() {
         await connection.query('USE saetrack_db');
 
         console.log('Nettoyage des tables existantes (Foreign Keys)...');
+        await connection.query('DROP TABLE IF EXISTS annonces');
         await connection.query('DROP TABLE IF EXISTS rendus');
         await connection.query('DROP TABLE IF EXISTS saes');
         await connection.query('DROP TABLE IF EXISTS users');
@@ -64,8 +65,23 @@ async function initDB() {
                 nom_fichier VARCHAR(255) NOT NULL,
                 chemin_fichier VARCHAR(500) NOT NULL,
                 date_depot DATETIME DEFAULT CURRENT_TIMESTAMP,
+                note DECIMAL(4,2),
+                commentaire_prof TEXT,
                 FOREIGN KEY (sae_id) REFERENCES saes(id) ON DELETE CASCADE,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        `);
+
+        console.log('Création de la table annonces...');
+        await connection.query(`
+            CREATE TABLE annonces (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                titre VARCHAR(255) NOT NULL,
+                message TEXT NOT NULL,
+                destinataires VARCHAR(100) DEFAULT 'Tous',
+                date_creation DATETIME DEFAULT CURRENT_TIMESTAMP,
+                auteur_id INT NOT NULL,
+                FOREIGN KEY (auteur_id) REFERENCES users(id) ON DELETE CASCADE
             )
         `);
 
@@ -86,6 +102,13 @@ async function initDB() {
             (4, 'SAE 3.01 - Vidéo Institutionnelle', 'Tournage et montage d\\'une vidéo de présentation pour une entreprise réelle.', '2025-12-15', 'archived', 'Groupe (4)', 'BUT2', 'Évalué', TRUE, 16, 'Super montage, rythme très pro.', 'MMI2', 'S3', 2025, 'Créations Audiovisuelles', TRUE),
             (5, 'SAE 1.05 - Modélisation 3D', 'Réalisation d\\'un objet low-poly texturé sous Blender ou C4D.', '2025-10-10', 'archived', 'Individuel', 'BUT1', 'Évalué', TRUE, 14, 'Texturing à améliorer mais modèle propre.', 'MMI1', 'S1', 2025, '3D & Jeux', TRUE),
             (6, 'SAE 5.01 - Projet Inter-Mentions', 'Projet global mixant Dev, Crea et Stratégie avec contraintes réelles.', '2027-01-10', 'ongoing', 'Groupe (6)', 'BUT3', 'En attente', FALSE, NULL, NULL, 'MMI3', 'S5', 2026, 'Dév web', FALSE)
+        `);
+
+        console.log("Insertion d'une annonce de test...");
+        await connection.query(`
+            INSERT INTO annonces (titre, message, destinataires, auteur_id) VALUES 
+            ('Bienvenue sur SaeTrack', 'L\\'application de gestion des SAE est désormais en ligne et opérationnelle. Vous pouvez déposer vos rendus.', 'Tous', 2),
+            ('Rappel Deadline SAE 4.03', 'N\\'oubliez pas que le rendu de la SAE 4.03 est prévu pour la fin de la semaine. Bon courage à tous.', 'M2', 2)
         `);
 
         console.log("✅ Initialisation terminée avec succès !");
