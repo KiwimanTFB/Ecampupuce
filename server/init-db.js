@@ -18,8 +18,9 @@ async function initDB() {
         await connection.query('USE saetrack_db');
 
         console.log('Création de la table users...');
+        await connection.query('DROP TABLE IF EXISTS users');
         await connection.query(`
-            CREATE TABLE IF NOT EXISTS users (
+            CREATE TABLE users (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 nom VARCHAR(255) NOT NULL,
                 email VARCHAR(255) UNIQUE NOT NULL,
@@ -29,8 +30,9 @@ async function initDB() {
         `);
 
         console.log('Création de la table saes...');
+        await connection.query('DROP TABLE IF EXISTS saes');
         await connection.query(`
-            CREATE TABLE IF NOT EXISTS saes (
+            CREATE TABLE saes (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 title VARCHAR(255) NOT NULL,
                 description TEXT,
@@ -46,12 +48,11 @@ async function initDB() {
         `);
 
         console.log('Insertion des utilisateurs de test...');
-        // Suppression précédente pour éviter les doublons lors de ré-exécutions (ou on utilise IGNORE)
         // Les mots de passe sont tous 'password123' encryptés via bcrypt
         await connection.query(`
-            INSERT IGNORE INTO users (id, nom, email, password_hash, role) VALUES 
-            (1, 'Alexandre D.', 'etudiant@univ.fr', '$2a$10$wO36/R4YqRyH3J/x3Z/j/Oc23YI.V2V4g1gY5O4gQj.P.uI68aE3m', 'student'),
-            (2, 'Mme Dubois', 'prof@univ.fr', '$2a$10$wO36/R4YqRyH3J/x3Z/j/Oc23YI.V2V4g1gY5O4gQj.P.uI68aE3m', 'teacher')
+            INSERT INTO users (id, nom, email, password_hash, role) VALUES 
+            (1, 'Alexandre D.', 'etudiant@univ.fr', '$2b$10$8pAnYQaWsswHwySvOFcJnunCG1AkFn1ci91JHbXY3k/aMwvVl.rYG', 'student'),
+            (2, 'Mme Dubois', 'prof@univ.fr', '$2b$10$8pAnYQaWsswHwySvOFcJnunCG1AkFn1ci91JHbXY3k/aMwvVl.rYG', 'teacher')
         `);
 
         console.log('Insertion des SAEs de test...');
