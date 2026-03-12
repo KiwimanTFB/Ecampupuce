@@ -1,18 +1,16 @@
-const express = require("express");
-const path = require("path");
+const express = require('express');
+const cors = require('cors');
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-// API
-app.get("/api/health", (req, res) => res.json({ ok: true }));
+app.use(cors());
+app.use(express.json());
 
-// Vue build (client/dist)
-app.use(express.static(path.join(__dirname, "../client/dist")));
-
-// CORRECTION ICI : /.*/ est une RegExp pure, SANS guillemets
-app.get(/.*/, (req, res) => {
- res.sendFile(path.join(__dirname, "../client/dist/index.html"));
+app.get('/api/test', (req, res) => {
+    res.json({ message: "L'API de SaeTrack fonctionne correctement !" });
 });
 
-// Écoute le port Hostinger
-app.listen(process.env.PORT);
+app.listen(PORT, () => {
+    console.log(`Serveur démarré sur http://localhost:${PORT}`);
+});
