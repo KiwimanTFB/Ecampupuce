@@ -31,26 +31,31 @@ const router = createRouter({
 })
 
 // Navigation Guard (Validation du JWT & Rôle)
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, from) => {
     const token = localStorage.getItem('jwt_token')
     const userRole = localStorage.getItem('user_role')
 
     if (to.meta.requiresAuth && !token) {
         // Rediriger vers la page de login s'il n'y a pas de token
-        next('/login')
-    } else if (to.meta.requiresAuth && to.meta.role !== userRole) {
+        return '/login'
+    } 
+    
+    if (to.meta.requiresAuth && to.meta.role !== userRole) {
         // Empêcher un étudiant d'aller sur /teacher et inversement
-        if (userRole === 'student') next('/student')
-        else if (userRole === 'teacher') next('/teacher')
-        else next('/login')
-    } else if (to.path === '/login' && token) {
+        if (userRole === 'student') return '/student'
+        if (userRole === 'teacher') return '/teacher'
+        return '/login'
+    } 
+    
+    if (to.path === '/login' && token) {
         // Si l'utilisateur est déjà connecté, l'empêcher de retourner sur le login
-        if (userRole === 'student') next('/student')
-        else if (userRole === 'teacher') next('/teacher')
-        else next(false)
-    } else {
-        next()
+        if (userRole === 'student') return '/student'
+        if (userRole === 'teacher') return '/teacher'
+        return false // Annule la navigation vers login
     }
+    
+    // Par défaut, la route est autorisée
+    return true
 })
 
 export default router
