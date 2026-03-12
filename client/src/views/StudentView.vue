@@ -8,6 +8,11 @@
           <div class="page-title">
               <h1>{{ pageTitle }}</h1>
               <p>{{ pageDesc }}</p>
+              
+              <!-- Ajout d'une zone pour tester l'API -->
+              <div v-if="apiMessage" style="color: var(--status-success-text); margin-top: 10px; font-weight: 500;">
+                  Message de l'API : {{ apiMessage }}
+              </div>
           </div>
 
           <!-- DASHBOARD -->
@@ -122,11 +127,13 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
 import Sidebar from '../components/student/Sidebar.vue'
 import Header from '../components/student/Header.vue'
 
 const currentView = ref('dashboard')
+const apiMessage = ref('')
 
 const pageInfo = {
   'dashboard': { title: "Vue d'ensemble", desc: "Suivi de vos situations d'apprentissage et d'évaluation en cours." },
@@ -142,4 +149,13 @@ const pageDesc = computed(() => pageInfo[currentView.value]?.desc || "")
 function switchView(viewId) {
   currentView.value = viewId
 }
+
+onMounted(async () => {
+    try {
+        const response = await axios.get('/api/test');
+        apiMessage.value = response.data.message;
+    } catch (error) {
+        console.error("Erreur lors de la récupération de l'API:", error);
+    }
+})
 </script>
