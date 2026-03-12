@@ -9,7 +9,6 @@
               <h1>{{ pageTitle }}</h1>
               <p>{{ pageDesc }}</p>
               
-              <!-- Ajout d'une zone pour tester l'API -->
               <div v-if="apiMessage" style="color: var(--status-success-text); margin-top: 10px; font-weight: 500;">
                   Message de l'API : {{ apiMessage }}
               </div>
@@ -20,24 +19,26 @@
               <div class="grid">
                   <div>
                       <div class="section-title">Échéances prioritaires (&lt; 7 jours)</div>
-                      <div class="sae-item urgent">
+                      <div v-if="urgentSaes.length === 0" style="color: var(--text-secondary); font-size: 14px; margin-bottom: 24px;">Aucune échéance prioritaire.</div>
+                      <div v-for="sae in urgentSaes" :key="sae.id" class="sae-item urgent">
                           <div class="sae-header">
-                              <div class="sae-title">SAE 4.03 - Architecture Découplée</div>
-                              <span class="badge badge-danger">URGENT - J-4</span>
+                              <div class="sae-title">{{ sae.title }}</div>
+                              <span class="badge badge-danger">URGENT</span>
                           </div>
-                          <div class="sae-meta">À rendre le 15 Mars 2026 • Projet de groupe</div>
+                          <div class="sae-meta">À rendre le {{ sae.deadline }} • {{ sae.groupType }}</div>
                           <div class="btn-group">
                               <button class="btn btn-primary" @click="switchView('deliverables')">Déposer maintenant</button>
                           </div>
                       </div>
 
                       <div class="section-title">Échéances normales</div>
-                      <div class="sae-item ongoing">
+                      <div v-if="ongoingSaes.length === 0" style="color: var(--text-secondary); font-size: 14px; margin-bottom: 24px;">Aucune échéance en cours.</div>
+                      <div v-for="sae in ongoingSaes" :key="sae.id" class="sae-item ongoing">
                           <div class="sae-header">
-                              <div class="sae-title">SAE 4.02 - Portfolio Professionnel</div>
+                              <div class="sae-title">{{ sae.title }}</div>
                               <span class="badge badge-info">EN COURS</span>
                           </div>
-                          <div class="sae-meta">À rendre le 28 Mars 2026 • Projet individuel</div>
+                          <div class="sae-meta">À rendre le {{ sae.deadline }} • {{ sae.groupType }}</div>
                       </div>
                   </div>
 
@@ -59,7 +60,7 @@
                               </div>
                               <div class="feed-item">
                                   <div class="feed-header">
-                                      <div class="feed-title">Modification SAE 4.03</div>
+                                      <div class="feed-title">Modification consignes</div>
                                       <div class="feed-time">Hier</div>
                                   </div>
                                   <div class="feed-body">
@@ -74,15 +75,19 @@
 
           <!-- PROJECTS -->
           <div v-if="currentView === 'projects'" class="view-section active">
-              <div class="sae-item ongoing">
+              <div v-if="saes.length === 0" style="color: var(--text-secondary); font-size: 14px;">Chargement des projets...</div>
+              
+              <div v-for="sae in saes" :key="sae.id" :class="['sae-item', sae.status]">
                   <div class="sae-header">
-                      <div class="sae-title">SAE 4.02 - Portfolio Professionnel</div>
-                      <span class="badge badge-info">EN COURS</span>
+                      <div class="sae-title">{{ sae.title }}</div>
+                      <span v-if="sae.status === 'urgent'" class="badge badge-danger">URGENT</span>
+                      <span v-else-if="sae.status === 'ongoing'" class="badge badge-info">EN COURS</span>
+                      <span v-else-if="sae.status === 'done'" class="badge badge-success">TERMINÉ</span>
                   </div>
-                  <div class="sae-desc">Mise à jour du portfolio en ligne pour intégrer les travaux de deuxième année en vue de la recherche de stage.</div>
+                  <div class="sae-desc">{{ sae.description }}</div>
                   <div class="sae-details">
-                      <div class="detail-item">Échéance : 28 Mars 2026</div>
-                      <div class="detail-item">Travail individuel</div>
+                      <div class="detail-item">Échéance : {{ sae.deadline }}</div>
+                      <div class="detail-item">{{ sae.groupType }}</div>
                   </div>
               </div>
           </div>
@@ -108,15 +113,18 @@
           <!-- GRADES -->
           <div v-if="currentView === 'grades'" class="view-section active">
               <div class="section-title">Semestre 4</div>
-              <div class="feedback-card">
+              
+              <div v-if="evaluatedSaes.length === 0" style="color: var(--text-secondary); font-size: 14px;">Aucune évaluation disponible pour le moment.</div>
+              
+              <div v-for="sae in evaluatedSaes" :key="sae.id" class="feedback-card">
                   <div class="grade-box">
-                      <div class="grade-score">15.5<span style="font-size: 18px; color: var(--text-secondary);">/20</span></div>
+                      <div class="grade-score">{{ sae.grade }}<span style="font-size: 18px; color: var(--text-secondary);">/20</span></div>
                       <div class="grade-label">Note Finale</div>
                   </div>
                   <div class="feedback-content">
-                      <div class="feedback-title">SAE 4.01 - Ergonomie et Web Design</div>
+                      <div class="feedback-title">{{ sae.title }}</div>
                       <div class="feedback-comment">
-                          "Excellent travail sur l'accessibilité des couleurs et la hiérarchie de l'information."
+                          "{{ sae.comment }}"
                       </div>
                   </div>
               </div>
@@ -134,6 +142,7 @@ import Header from '../components/student/Header.vue'
 
 const currentView = ref('dashboard')
 const apiMessage = ref('')
+const saes = ref([])
 
 const pageInfo = {
   'dashboard': { title: "Vue d'ensemble", desc: "Suivi de vos situations d'apprentissage et d'évaluation en cours." },
@@ -146,16 +155,24 @@ const pageInfo = {
 const pageTitle = computed(() => pageInfo[currentView.value]?.title || "Vue")
 const pageDesc = computed(() => pageInfo[currentView.value]?.desc || "")
 
+const urgentSaes = computed(() => saes.value.filter(s => s.status === 'urgent'))
+const ongoingSaes = computed(() => saes.value.filter(s => s.status === 'ongoing'))
+const doneSaes = computed(() => saes.value.filter(s => s.status === 'done'))
+const evaluatedSaes = computed(() => saes.value.filter(s => s.isEvaluated))
+
 function switchView(viewId) {
   currentView.value = viewId
 }
 
 onMounted(async () => {
     try {
-        const response = await axios.get('/api/test');
-        apiMessage.value = response.data.message;
+        const resTest = await axios.get('/api/test');
+        apiMessage.value = resTest.data.message;
+
+        const resSaes = await axios.get('/api/saes');
+        saes.value = resSaes.data;
     } catch (error) {
-        console.error("Erreur lors de la récupération de l'API:", error);
+        console.error("Erreur API:", error);
     }
 })
 </script>

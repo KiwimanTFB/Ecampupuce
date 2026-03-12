@@ -24,39 +24,39 @@
                               </div>
                           </div>
                           <div class="card-body" style="padding: 16px;">
-                              <div class="list-item" style="margin-bottom: 8px;">
+                              
+                              <div v-if="saes.length === 0" style="color: var(--text-secondary); font-size: 14px;">Chargement des SAE de l'API...</div>
+                              
+                              <div v-for="sae in saes" :key="sae.id" class="list-item" style="margin-bottom: 8px;">
                                   <div class="item-info">
-                                      <div class="item-title">SAE 4.04 - Réalité Virtuelle</div>
-                                      <div class="item-meta">BUT2 • Proposition envoyée le 11 Mars</div>
+                                      <div class="item-title">{{ sae.title }}</div>
+                                      <div class="item-meta">{{ sae.level }} • Échéance : {{ sae.deadline }} • {{ sae.groupType }}</div>
                                   </div>
-                                  <span class="badge badge-warning" style="background:#fef3c7; color:#d97706; border-color:#fde68a;">EN ATTENTE VALIDATION</span>
+                                  
+                                  <span v-if="sae.status === 'urgent'" class="badge badge-warning" style="background:#fef3c7; color:#d97706; border-color:#fde68a;">PROCHE ÉCHÉANCE</span>
+                                  <span v-else-if="sae.status === 'done'" class="badge badge-success" style="background:var(--status-success-bg); color:var(--status-success-text); border-color:var(--status-success-border);">TERMINÉ</span>
+                                  <button v-else class="btn btn-outline">Éditer</button>
                               </div>
 
-                              <div class="list-item" style="margin-bottom: 8px;">
-                                  <div class="item-info">
-                                      <div class="item-title">SAE 4.03 - Architecture Découplée</div>
-                                      <div class="item-meta">BUT2 • Échéance : 15 Mars 2026 • Groupes de 3</div>
-                                  </div>
-                                  <button class="btn btn-outline">Éditer</button>
-                              </div>
                           </div>
                       </div>
 
                       <div class="card">
                           <div class="card-header">
                               <div class="card-header-title">
-                                  <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
-                                  Avancement des rendus
+                                  <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg> Avancement des rendus
                               </div>
                           </div>
                           <div class="card-body">
-                              <div class="progress-block">
+                              <div v-for="sae in saes" :key="'prog-'+sae.id" class="progress-block">
                                   <div class="progress-header">
-                                      <span>SAE 4.03 - Architecture Découplée</span>
-                                      <span style="color: var(--text-secondary);">12 / 15 Groupes</span>
+                                      <span>{{ sae.title }}</span>
+                                      <span :style="{ color: sae.status === 'done' ? 'var(--status-success-text)' : 'var(--text-secondary)' }">
+                                        {{ sae.status === 'done' ? '15 / 15 Groupes' : 'En cours...' }}
+                                      </span>
                                   </div>
                                   <div class="progress-track">
-                                      <div class="progress-fill" style="width: 80%;"></div>
+                                      <div class="progress-fill" :style="{ width: sae.status === 'done' ? '100%' : '50%', backgroundColor: sae.status === 'done' ? 'var(--status-success-text)' : 'var(--accent-blue)' }"></div>
                                   </div>
                               </div>
                           </div>
@@ -67,14 +67,13 @@
                       <div class="card">
                           <div class="card-header">
                               <div class="card-header-title">
-                                  <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                                  À corriger
+                                  <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> À corriger
                               </div>
                           </div>
                           <div class="card-body" style="padding: 16px;">
-                              <div class="list-item" style="padding: 12px; border-color: var(--status-warning-border);">
+                              <div v-for="sae in saes.filter(s => s.status === 'done')" :key="'cor-'+sae.id" class="list-item" style="padding: 12px; border-color: var(--status-warning-border);">
                                   <div class="item-info">
-                                      <div class="item-title">SAE 4.01 : 15 rendus en attente</div>
+                                      <div class="item-title">{{ sae.title }} : 15 rendus en attente</div>
                                   </div>
                                   <button class="btn btn-primary" style="padding: 6px 12px;" @click="switchView('grading')">Évaluer</button>
                               </div>
@@ -106,9 +105,9 @@
 
           <!-- GRADING -->
           <div v-if="currentView === 'grading'" class="view-section active">
-              <div class="accordion">
+              <div v-for="sae in saes.filter(s => s.status === 'done')" :key="'grade-'+sae.id" class="accordion">
                   <div class="accordion-header active">
-                      SAE 4.01 - Ergonomie et Web Design
+                      {{ sae.title }}
                       <div style="display:flex; align-items:center; gap: 16px;">
                           <span class="badge badge-warning">15 À CORRIGER</span>
                       </div>
@@ -117,7 +116,7 @@
                       <div class="list-item" id="row-group-a">
                           <div class="item-info">
                               <div class="item-title">Groupe A (Alexandre D., Marie L., Thomas B.)</div>
-                              <div class="item-meta">Déposé le 28 Fév à 14h22 • Maquette_Figma_VFinale.pdf</div>
+                              <div class="item-meta">Déposé le {{ sae.deadline }} • Maquette_Figma_VFinale.pdf</div>
                           </div>
                           <div style="display: flex; align-items: center; gap: 24px;">
                               <label class="checkbox-wrapper">
@@ -156,11 +155,13 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
 import Sidebar from '../components/teacher/Sidebar.vue'
 import Header from '../components/teacher/Header.vue'
 
 const currentView = ref('dashboard')
+const saes = ref([])
 
 const pageInfo = {
   'dashboard': { title: "Vue globale de l'avancement", desc: "Supervision de vos projets du semestre et suivi des rendus." },
@@ -175,4 +176,13 @@ const pageDesc = computed(() => pageInfo[currentView.value]?.desc || "")
 function switchView(viewId) {
   currentView.value = viewId
 }
+
+onMounted(async () => {
+    try {
+        const resSaes = await axios.get('/api/saes');
+        saes.value = resSaes.data;
+    } catch (error) {
+        console.error("Erreur API:", error);
+    }
+})
 </script>
