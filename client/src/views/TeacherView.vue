@@ -398,7 +398,9 @@ const postAnnonce = async () => {
         isAnnonceError.value = false
         annonceForm.value = { titre: '', message: '', destinataires: 'Tous' }
     } catch (error) {
-        annonceStatus.value = error.response?.data?.error |    } finally {
+        annonceStatus.value = error.response?.data?.error || "Erreur de publication."
+        isAnnonceError.value = true
+    } finally {
         isPosting.value = false
         setTimeout(() => { annonceStatus.value = '' }, 5000)
     }
@@ -513,9 +515,6 @@ const submitGrade = async () => {
         isGradingError.value = true
     } finally {
         isGrading.value = false
-        setTimeout(() => { gradingStatus.value = '' }, 5000)
-    }
-}= false
         setTimeout(() => { gradingStatus.value = '' }, 5000)
     }
 }
