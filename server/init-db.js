@@ -62,11 +62,11 @@ async function initDB() {
             (3, 'SAE 4.01 - Ergonomie et Web Design', 'Conception d\\'une interface utilisateur cohérente, accessible et ergonomique selon le cahier des charges.', '2026-03-01', 'done', 'Projet de groupe (2 à 3)', 'BUT2', 'Rendu déposé le 28 Fév 2026 à 14h22', TRUE, 15.5, 'Excellent travail sur l\\'accessibilité des couleurs et la hiérarchie de l\\'information. La maquette est très intuitive.')
         `);
 
-        console.log('✅ Initialisation terminée avec succès !');
+        console.log("✅ Initialisation terminée avec succès !");
         await connection.end();
 
     } catch (error) {
-        console.error('❌ Erreur lors de l\\'initialisation de la BDD:', error);
+        console.error("❌ Erreur lors de l'initialisation de la BDD:", error);
     }
 }
 
