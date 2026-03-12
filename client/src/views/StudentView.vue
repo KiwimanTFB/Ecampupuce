@@ -1,5 +1,5 @@
 <template>
-  <Sidebar :currentView="currentView" @switchView="switchView" />
+  <Sidebar />
   
   <main>
       <Header />
@@ -156,11 +156,13 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import axios from 'axios'
 import Sidebar from '../components/student/Sidebar.vue'
 import Header from '../components/student/Header.vue'
 
-const currentView = ref('dashboard')
+const route = useRoute()
+const currentView = computed(() => route.params.view || 'dashboard')
 const apiMessage = ref('')
 const saes = ref([])
 
@@ -189,10 +191,7 @@ const ongoingSaes = computed(() => saes.value.filter(s => s.status === 'ongoing'
 const doneSaes = computed(() => saes.value.filter(s => s.status === 'done'))
 const evaluatedSaes = computed(() => saes.value.filter(s => s.isEvaluated))
 
-function switchView(viewId) {
-  currentView.value = viewId
-  uploadMessage.value = ''
-}
+// currentView géré par le routeur
 
 function triggerFileInput() {
     fileInput.value.click()

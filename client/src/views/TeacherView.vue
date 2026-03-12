@@ -1,5 +1,5 @@
 <template>
-  <Sidebar :currentView="currentView" @switchView="switchView" />
+  <Sidebar />
   
   <main>
       <Header />
@@ -156,11 +156,13 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import axios from 'axios'
 import Sidebar from '../components/teacher/Sidebar.vue'
 import Header from '../components/teacher/Header.vue'
 
-const currentView = ref('dashboard')
+const route = useRoute()
+const currentView = computed(() => route.params.view || 'dashboard')
 const saes = ref([])
 
 const pageInfo = {
@@ -173,9 +175,7 @@ const pageInfo = {
 const pageTitle = computed(() => pageInfo[currentView.value]?.title || "Vue")
 const pageDesc = computed(() => pageInfo[currentView.value]?.desc || "")
 
-function switchView(viewId) {
-  currentView.value = viewId
-}
+// currentView géré par le routeur
 
 onMounted(async () => {
     try {

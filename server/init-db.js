@@ -17,8 +17,12 @@ async function initDB() {
         console.log('Sélection de la base de données saetrack_db...');
         await connection.query('USE saetrack_db');
 
-        console.log('Création de la table users...');
+        console.log('Nettoyage des tables existantes (Foreign Keys)...');
+        await connection.query('DROP TABLE IF EXISTS rendus');
+        await connection.query('DROP TABLE IF EXISTS saes');
         await connection.query('DROP TABLE IF EXISTS users');
+
+        console.log('Création de la table users...');
         await connection.query(`
             CREATE TABLE users (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -30,7 +34,6 @@ async function initDB() {
         `);
 
         console.log('Création de la table saes...');
-        await connection.query('DROP TABLE IF EXISTS saes');
         await connection.query(`
             CREATE TABLE saes (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -43,12 +46,16 @@ async function initDB() {
                 deliveryStatus VARCHAR(255),
                 isEvaluated BOOLEAN DEFAULT FALSE,
                 grade DECIMAL(4,2),
-                comment TEXT
+                comment TEXT,
+                promo VARCHAR(50),
+                semestre VARCHAR(10),
+                annee INT,
+                domaine VARCHAR(100),
+                is_public BOOLEAN DEFAULT FALSE
             )
         `);
 
         console.log('Création de la table rendus...');
-        await connection.query('DROP TABLE IF EXISTS rendus');
         await connection.query(`
             CREATE TABLE rendus (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -72,10 +79,13 @@ async function initDB() {
 
         console.log('Insertion des SAEs de test...');
         await connection.query(`
-            INSERT IGNORE INTO saes (id, title, description, deadline, status, groupType, level, deliveryStatus, isEvaluated, grade, comment) VALUES 
-            (1, 'SAE 4.03 - Architecture Découplée', 'Développement d\\'une plateforme avec séparation stricte Front-end / Back-end et communication via requêtes HTTP JSON.', '2026-03-15', 'urgent', 'Projet de groupe (3)', 'BUT2', 'Aucun document déposé', FALSE, NULL, NULL),
-            (2, 'SAE 4.02 - Portfolio Professionnel', 'Mise à jour du portfolio en ligne pour intégrer les travaux de deuxième année en vue de la recherche de stage.', '2026-03-28', 'ongoing', 'Projet individuel', 'BUT2', 'En attente de dépôt', FALSE, NULL, NULL),
-            (3, 'SAE 4.01 - Ergonomie et Web Design', 'Conception d\\'une interface utilisateur cohérente, accessible et ergonomique selon le cahier des charges.', '2026-03-01', 'done', 'Projet de groupe (2 à 3)', 'BUT2', 'Rendu déposé le 28 Fév 2026 à 14h22', TRUE, 15.5, 'Excellent travail sur l\\'accessibilité des couleurs et la hiérarchie de l\\'information. La maquette est très intuitive.')
+            INSERT INTO saes (id, title, description, deadline, status, groupType, level, deliveryStatus, isEvaluated, grade, comment, promo, semestre, annee, domaine, is_public) VALUES 
+            (1, 'SAE 4.03 - Architecture Découplée', 'Développement d\\'une plateforme avec séparation stricte Front-end / Back-end.', '2026-03-15', 'urgent', 'Projet de groupe (3)', 'BUT2', 'Aucun document déposé', FALSE, NULL, NULL, 'MMI2', 'S4', 2026, 'Dév web', TRUE),
+            (2, 'SAE 4.02 - Portfolio Professionnel', 'Mise à jour du portfolio en ligne pour intégrer les travaux de deuxième année.', '2026-03-28', 'ongoing', 'Projet individuel', 'BUT2', 'En attente de dépôt', FALSE, NULL, NULL, 'MMI2', 'S4', 2026, 'Communication', TRUE),
+            (3, 'SAE 4.01 - Ergonomie et Web Design', 'Conception d\\'une interface utilisateur cohérente, accessible et ergonomique.', '2026-03-01', 'done', 'Projet de groupe (2 à 3)', 'BUT2', 'Rendu déposé le 28 Fév 2026', TRUE, 15.5, 'Excellent travail.', 'MMI2', 'S4', 2026, 'Design', TRUE),
+            (4, 'SAE 3.01 - Vidéo Institutionnelle', 'Tournage et montage d\\'une vidéo de présentation pour une entreprise réelle.', '2025-12-15', 'archived', 'Groupe (4)', 'BUT2', 'Évalué', TRUE, 16, 'Super montage, rythme très pro.', 'MMI2', 'S3', 2025, 'Créations Audiovisuelles', TRUE),
+            (5, 'SAE 1.05 - Modélisation 3D', 'Réalisation d\\'un objet low-poly texturé sous Blender ou C4D.', '2025-10-10', 'archived', 'Individuel', 'BUT1', 'Évalué', TRUE, 14, 'Texturing à améliorer mais modèle propre.', 'MMI1', 'S1', 2025, '3D & Jeux', TRUE),
+            (6, 'SAE 5.01 - Projet Inter-Mentions', 'Projet global mixant Dev, Crea et Stratégie avec contraintes réelles.', '2027-01-10', 'ongoing', 'Groupe (6)', 'BUT3', 'En attente', FALSE, NULL, NULL, 'MMI3', 'S5', 2026, 'Dév web', FALSE)
         `);
 
         console.log("✅ Initialisation terminée avec succès !");

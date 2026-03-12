@@ -107,6 +107,45 @@ app.get('/api/saes', authenticateToken, async (req, res) => {
     }
 });
 
+// GET /api/public/saes - Route publique pour la vitrine (Landing Page)
+app.get('/api/public/saes', async (req, res) => {
+    try {
+        const { promo, semestre, annee, domaine } = req.query;
+        let query = 'SELECT * FROM saes WHERE is_public = TRUE';
+        let queryParams = [];
+
+        if (promo) {
+            query += ' AND promo = ?';
+            queryParams.push(promo);
+        }
+        if (semestre) {
+            query += ' AND semestre = ?';
+            queryParams.push(semestre);
+        }
+        if (annee) {
+            query += ' AND annee = ?';
+            queryParams.push(Number(annee));
+        }
+        if (domaine) {
+            query += ' AND domaine = ?';
+            queryParams.push(domaine);
+        }
+
+        const [saes] = await db.query(query, queryParams);
+        
+        const formattedSaes = saes.map(sae => ({
+            ...sae,
+            isEvaluated: !!sae.isEvaluated,
+            is_public: !!sae.is_public
+        }));
+        
+        res.json(formattedSaes);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erreur serveur lors de la récupération des SAEs publiques' });
+    }
+});
+
 // GET /api/saes/:id - Récupérer une SAE spécifique (Route protégée)
 app.get('/api/saes/:id', authenticateToken, async (req, res) => {
     const saeId = req.params.id;

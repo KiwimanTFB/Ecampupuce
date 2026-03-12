@@ -8,7 +8,8 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/login'
+      name: 'landing',
+      component: () => import('../views/LandingPage.vue')
     },
     {
       path: '/login',
@@ -16,13 +17,13 @@ const router = createRouter({
       component: LoginView
     },
     {
-      path: '/student',
+      path: '/student/:view?',
       name: 'student',
       component: StudentView,
       meta: { requiresAuth: true, role: 'student' }
     },
     {
-      path: '/teacher',
+      path: '/teacher/:view?',
       name: 'teacher',
       component: TeacherView,
       meta: { requiresAuth: true, role: 'teacher' }
