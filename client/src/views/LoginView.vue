@@ -59,9 +59,10 @@ const handleLogin = async () => {
 
       const { token, user } = response.data
       
-      // Stockage du token
+      // Stockage du token et des infos
       localStorage.setItem('jwt_token', token)
       localStorage.setItem('user_role', user.role)
+      localStorage.setItem('user_info', JSON.stringify(user))
       
       // Redirection directionnelle par rôle
       if (user.role === 'student') {
