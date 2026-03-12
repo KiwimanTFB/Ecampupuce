@@ -5,7 +5,7 @@
           <input type="text" placeholder="Rechercher une SAE, un document...">
       </div>
       <div class="header-actions">
-          <div class="user-profile">
+          <div class="user-profile" @click="handleLogout" title="Se déconnecter">
               <span>Alexandre D. (&Eacute;tudiant)</span>
               <div class="avatar">AD</div>
           </div>
@@ -14,4 +14,13 @@
 </template>
 
 <script setup>
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const handleLogout = () => {
+    localStorage.removeItem('jwt_token')
+    localStorage.removeItem('user_role')
+    router.push('/login')
+}
 </script>
