@@ -104,6 +104,13 @@ async function initDB() {
             (6, 'SAE 5.01 - Projet Inter-Mentions', 'Projet global mixant Dev, Crea et Stratégie avec contraintes réelles.', '2027-01-10', 'ongoing', 'Groupe (6)', 'BUT3', 'En attente', FALSE, NULL, NULL, 'MMI3', 'S5', 2026, 'Dév web', FALSE)
         `);
 
+        console.log("Insertion de rendus de test...");
+        await connection.query(`
+            INSERT INTO rendus (sae_id, user_id, nom_fichier, chemin_fichier) VALUES 
+            (3, 1, 'Maquette_Figma_VFinale.pdf', '/uploads/Maquette_Figma_VFinale.pdf'),
+            (3, 1, 'Rendu_Ergonomie_GB.pdf', '/uploads/Rendu_Ergonomie_GB.pdf')
+        `);
+
         console.log("Insertion d'une annonce de test...");
         await connection.query(`
             INSERT INTO annonces (titre, message, destinataires, auteur_id) VALUES 

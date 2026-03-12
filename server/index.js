@@ -175,6 +175,27 @@ app.get('/api/saes/:id', authenticateToken, async (req, res) => {
     }
 });
 
+// POST /api/saes - Créer une nouvelle SAE (Route protégée, PROF UNIQUEMENT)
+app.post('/api/saes', authenticateToken, requireTeacher, async (req, res) => {
+    try {
+        const { title, description, deadline, semestre, annee = 2026, status = 'ongoing', groupType = 'Non spécifié' } = req.body;
+        
+        if (!title || !description || !deadline || !semestre) {
+            return res.status(400).json({ error: 'Le titre, la description, le semestre et la deadline sont requis' });
+        }
+
+        const [result] = await db.query(
+            'INSERT INTO saes (title, description, deadline, semestre, annee, status, groupType) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [title, description, deadline, semestre, annee, status, groupType]
+        );
+
+        res.status(201).json({ message: 'SAE créée avec succès', id: result.insertId });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erreur serveur lors de la création de la SAE' });
+    }
+});
+
 // POST /api/upload - Déposer un fichier (Route protégée)
 app.post('/api/upload', authenticateToken, upload.single('document'), async (req, res) => {
     try {
@@ -208,6 +229,30 @@ app.post('/api/upload', authenticateToken, upload.single('document'), async (req
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Erreur lors de l\'upload du fichier' });
+    }
+});
+
+// GET /api/rendus - Récupérer les rendus par SAE (Route protégée, PROF UNIQUEMENT)
+app.get('/api/rendus', authenticateToken, requireTeacher, async (req, res) => {
+    try {
+        const { sae_id } = req.query;
+        if (!sae_id) {
+            return res.status(400).json({ error: 'sae_id param is required' });
+        }
+        
+        // On récupère aussi le nom de l'étudiant via une jointure simple
+        const [rendus] = await db.query(`
+            SELECT r.*, u.nom as etudiant_nom
+            FROM rendus r
+            JOIN users u ON r.user_id = u.id
+            WHERE r.sae_id = ?
+            ORDER BY r.date_depot DESC
+        `, [sae_id]);
+        
+        res.json(rendus);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erreur serveur lors de la récupération des rendus' });
     }
 });
 
@@ -249,6 +294,25 @@ app.post('/api/annonces', authenticateToken, requireTeacher, async (req, res) =>
     }
 });
 
+// PUT /api/rendus/:id/status - Marquer un rendu comme évalué ou non (Protégé, PROF UNIQUEMENT)
+app.put('/api/rendus/:id/status', authenticateToken, requireTeacher, async (req, res) => {
+    try {
+        const renduId = req.params.id;
+        const { is_evaluated } = req.body;
+
+        if (is_evaluated === undefined) {
+             return res.status(400).json({ error: 'is_evaluated is required' });
+        }
+
+        await db.query('UPDATE rendus SET is_evaluated = ? WHERE id = ?', [is_evaluated, renduId]);
+        
+        res.json({ message: 'Statut du rendu mis à jour' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erreur serveur lors de la mise à jour du statut' });
+    }
+});
+
 // PUT /api/rendus/:id/evaluation - Évaluer un rendu (Protégé, PROF UNIQUEMENT)
 app.put('/api/rendus/:id/evaluation', authenticateToken, requireTeacher, async (req, res) => {
     try {
@@ -259,17 +323,17 @@ app.put('/api/rendus/:id/evaluation', authenticateToken, requireTeacher, async (
             return res.status(400).json({ error: 'La note est requise' });
         }
 
-        // 1. Mettre à jour le rendu lui-même
+        // 1. Mettre à jour le rendu lui-même (note, commentaire, is_evaluated à 1)
         await db.query(
-            'UPDATE rendus SET note = ?, commentaire_prof = ? WHERE id = ?',
+            'UPDATE rendus SET note = ?, commentaire_prof = ?, is_evaluated = TRUE WHERE id = ?',
             [note, commentaire || '', renduId]
         );
 
-        // 2. Mettre à jour la SAE correspondante pour bypasser le besoin d'une table intermédiaire complexe (simplification pédagogique)
-        // On récupère le SAE_id de ce rendu
+        // 2. Mettre à jour la SAE correspondante par souci de compatibilité avec les autres vues
         const [rendusTable] = await db.query('SELECT sae_id FROM rendus WHERE id = ?', [renduId]);
         if (rendusTable.length > 0) {
             const saeId = rendusTable[0].sae_id;
+            // Dans ce MVP simple, dés qu'un rendu a une note, toute la SAE est marquée évaluée
             await db.query(
                 'UPDATE saes SET isEvaluated = TRUE, grade = ?, comment = ? WHERE id = ?',
                 [note, commentaire || '', saeId]
