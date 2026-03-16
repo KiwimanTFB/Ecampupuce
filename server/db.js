@@ -1,14 +1,14 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-const DB_PATH = path.join(__dirname, 'saetrack.sqlite');
+const DB_PATH = path.join(__dirname, 'database.sqlite');
 
 // Ouvrir (ou créer) la base SQLite
 const db = new sqlite3.Database(DB_PATH, (err) => {
     if (err) {
         console.error('❌ Erreur ouverture SQLite:', err.message);
     } else {
-        console.log('✅ Connexion SQLite établie (fichier: saetrack.sqlite)');
+        console.log('✅ Connexion SQLite établie (fichier: database.sqlite)');
         // Activer les foreign keys (désactivées par défaut dans SQLite)
         db.run('PRAGMA foreign_keys = ON');
     }

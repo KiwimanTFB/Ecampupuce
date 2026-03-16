@@ -25,7 +25,8 @@
                               <div class="sae-title">{{ sae.title }}</div>
                               <span class="badge badge-danger">URGENT</span>
                           </div>
-                          <div class="sae-meta">À rendre le {{ sae.deadline }} • {{ sae.groupType }}</div>
+                          <div class="sae-meta">À rendre le {{ formatDate(sae.due_date) }} • {{ sae.groupType || 'Travail de groupe' }}</div>
+                          <div class="sae-desc" style="font-size: 13px; color: var(--text-primary); margin-bottom: 8px;">{{ sae.description }}</div>
                           <div class="btn-group">
                               <button class="btn btn-primary" @click="switchView('deliverables')">Déposer maintenant</button>
                           </div>
@@ -38,7 +39,8 @@
                               <div class="sae-title">{{ sae.title }}</div>
                               <span class="badge badge-info">EN COURS</span>
                           </div>
-                          <div class="sae-meta">À rendre le {{ sae.deadline }} • {{ sae.groupType }}</div>
+                          <div class="sae-meta">À rendre le {{ formatDate(sae.due_date) }} • {{ sae.groupType || 'Non spécifié' }}</div>
+                          <div class="sae-desc" style="font-size: 13px; color: var(--text-primary); margin-bottom: 8px;">{{ sae.description }}</div>
                       </div>
                   </div>
 
@@ -72,7 +74,7 @@
 
           <!-- PROJECTS -->
           <div v-if="currentView === 'projects'" class="view-section active">
-              <div v-if="saes.length === 0" style="color: var(--text-secondary); font-size: 14px;">Aucune donnée disponible.</div>
+              <div v-if="saes.length === 0" style="color: var(--text-secondary); font-size: 14px;">Aucune SAE pour le moment</div>
               
               <div v-for="sae in saes" :key="sae.id" :class="['sae-item', sae.status]">
                   <div class="sae-header">
@@ -83,7 +85,7 @@
                   </div>
                   <div class="sae-desc">{{ sae.description }}</div>
                   <div class="sae-details">
-                      <div class="detail-item">Échéance : {{ sae.deadline }}</div>
+                      <div class="detail-item">Échéance : {{ formatDate(sae.due_date) }}</div>
                       <div class="detail-item">{{ sae.groupType }}</div>
                   </div>
               </div>
@@ -131,17 +133,21 @@
           <div v-if="currentView === 'grades'" class="view-section active">
               <div class="section-title">Semestre 4</div>
               
-              <div v-if="evaluatedSaes.length === 0" style="color: var(--text-secondary); font-size: 14px;">Aucune évaluation disponible pour le moment.</div>
+              <div v-if="mesNotes.length === 0" style="color: var(--text-secondary); font-size: 14px;">Aucune évaluation disponible pour le moment.</div>
               
-              <div v-for="sae in evaluatedSaes" :key="sae.id" class="feedback-card">
-                  <div class="grade-box">
-                      <div class="grade-score">{{ sae.grade }}<span style="font-size: 18px; color: var(--text-secondary);">/20</span></div>
+              <div v-for="rendu in mesNotes" :key="rendu.rendu_id" class="feedback-card">
+                  <div class="grade-box" :style="{ borderColor: rendu.rendu_status === 'pending' ? 'var(--status-warning-border)' : 'var(--status-success-border)', backgroundColor: rendu.rendu_status === 'pending' ? 'var(--status-warning-bg)' : 'transparent' }">
+                      <div v-if="rendu.rendu_status === 'pending'" class="grade-score" style="font-size: 14px; color: var(--status-warning-text);">En attente</div>
+                      <div v-else class="grade-score">{{ rendu.note }}<span style="font-size: 18px; color: var(--text-secondary);">/20</span></div>
                       <div class="grade-label">Note Finale</div>
                   </div>
                   <div class="feedback-content">
-                      <div class="feedback-title">{{ sae.title }}</div>
-                      <div class="feedback-comment">
-                          "{{ sae.comment }}"
+                      <div class="feedback-title">{{ rendu.title }}</div>
+                      <div v-if="rendu.rendu_status === 'pending'" class="feedback-comment" style="font-style: italic; color: var(--text-secondary);">
+                          Votre rendu ("{{ rendu.nom_fichier }}") a bien été réceptionné le {{ formatDate(rendu.date_depot) }}.
+                      </div>
+                      <div v-else class="feedback-comment">
+                          "{{ rendu.commentaire_prof || 'Aucun commentaire.' }}"
                       </div>
                   </div>
               </div>
@@ -184,10 +190,19 @@ const pageInfo = {
 const pageTitle = computed(() => pageInfo[currentView.value]?.title || "Vue")
 const pageDesc = computed(() => pageInfo[currentView.value]?.desc || "")
 
-const urgentSaes = computed(() => saes.value.filter(s => s.status === 'urgent'))
-const ongoingSaes = computed(() => saes.value.filter(s => s.status === 'ongoing'))
+const urgentSaes = computed(() => saes.value.filter(s => s.status !== 'done' && s.status !== 'archived' && isUrgent(s.due_date)))
+const ongoingSaes = computed(() => saes.value.filter(s => s.status !== 'done' && s.status !== 'archived' && !isUrgent(s.due_date)))
 const doneSaes = computed(() => saes.value.filter(s => s.status === 'done'))
-const evaluatedSaes = computed(() => saes.value.filter(s => s.isEvaluated))
+const mesNotes = ref([])
+
+function isUrgent(due_date) {
+    if (!due_date) return false
+    const now = new Date()
+    const due = new Date(due_date)
+    const diffTime = due - now
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    return diffDays >= 0 && diffDays <= 7
+}
 
 // Outils de formatage
 function formatDate(dateString) {
@@ -246,21 +261,18 @@ async function submitUpload() {
 
 onMounted(async () => {
     try {
-        // Optionnel : ce test peut sauter ou rester
         const resTest = await axios.get('/api/test');
         apiMessage.value = resTest.data.message;
 
-        // Requêtes parallèles pour l'étudiant : SAEs + Annonces
-        const [resSaes, resAnnonces] = await Promise.all([
-            axios.get('/api/mes-notes'), // mes-notes (qui renvoie les saes évaluées, on peut prendre /api/saes global comme avant pour tout avoir)
-            axios.get('/api/annonces')
+        const [resSaesGlobal, resAnnonces, resNotes] = await Promise.all([
+            axios.get('/api/saes'),
+            axios.get('/api/annonces'),
+            axios.get('/api/mes-notes')
         ])
         
-        // Je récupère TOUTES les sae pour continuer à faire marcher le tableau de bord (ongoing, urgent) et filtrer sur isEvaluated=true pour la vue grades. Donc j'écrase mes-notes par saes.
-        const resSaesGlobal = await axios.get('/api/saes');
         saes.value = resSaesGlobal.data;
-        
         annonces.value = resAnnonces.data;
+        mesNotes.value = resNotes.data;
     } catch (error) {
         console.error("Erreur API:", error);
     }

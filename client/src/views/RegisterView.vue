@@ -10,7 +10,7 @@
           <form @submit.prevent="handleRegister" class="register-form">
               <div class="form-group">
                   <label class="form-label">Nom complet</label>
-                  <input type="text" v-model="nom" class="form-control" placeholder="Ex : Jean Dupont" required>
+                  <input type="text" v-model="name" class="form-control" placeholder="Ex : Jean Dupont" required>
               </div>
 
               <div class="form-group">
@@ -54,6 +54,9 @@
 
           <div class="register-footer">
               <p>Vous avez déjà un compte ? <router-link to="/login">Connectez-vous ici</router-link></p>
+              <div style="margin-top: 16px;">
+                  <router-link to="/" class="btn btn-outline" style="font-size: 13px; padding: 6px 16px;">Retour à l'accueil</router-link>
+              </div>
           </div>
       </div>
   </div>
@@ -65,7 +68,7 @@ import { useRouter } from 'vue-router'
 import axios from 'axios'
 
 const router = useRouter()
-const nom = ref('')
+const name = ref('')
 const email = ref('')
 const password = ref('')
 const role = ref('student')
@@ -80,7 +83,7 @@ const handleRegister = async () => {
   
   try {
       await axios.post('/api/register', {
-          nom: nom.value,
+          name: name.value,
           email: email.value,
           password: password.value,
           role: role.value

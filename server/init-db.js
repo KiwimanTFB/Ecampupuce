@@ -11,9 +11,9 @@ function initDB() {
         db.run(`
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nom TEXT NOT NULL,
+                name TEXT NOT NULL,
                 email TEXT UNIQUE NOT NULL,
-                password_hash TEXT NOT NULL,
+                password TEXT NOT NULL,
                 role TEXT NOT NULL CHECK(role IN ('student', 'teacher'))
             )
         `, (err) => {
@@ -27,26 +27,20 @@ function initDB() {
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT NOT NULL,
                 description TEXT,
-                deadline TEXT,
+                competences TEXT,
+                due_date TEXT,
                 status TEXT CHECK(status IN ('urgent', 'ongoing', 'done', 'archived')),
-                groupType TEXT,
                 level TEXT,
-                deliveryStatus TEXT,
-                isEvaluated INTEGER DEFAULT 0,
-                grade REAL,
-                comment TEXT,
-                promo TEXT,
-                semestre TEXT,
-                annee INTEGER,
-                domaine TEXT,
-                is_public INTEGER DEFAULT 0
+                groupType TEXT,
+                teacher_id INTEGER NOT NULL,
+                FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE CASCADE
             )
         `, (err) => {
             if (err) console.error('❌ Erreur table saes:', err.message);
             else console.log('✅ Table saes prête.');
         });
 
-        // Création de la table rendus
+        // La table rendus (optionnelle pour cette étape, on la garde minimaliste pour éviter les erreurs)
         db.run(`
             CREATE TABLE IF NOT EXISTS rendus (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -57,6 +51,7 @@ function initDB() {
                 date_depot TEXT DEFAULT (datetime('now')),
                 note REAL,
                 commentaire_prof TEXT,
+                status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'graded')),
                 is_evaluated INTEGER DEFAULT 0,
                 FOREIGN KEY (sae_id) REFERENCES saes(id) ON DELETE CASCADE,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

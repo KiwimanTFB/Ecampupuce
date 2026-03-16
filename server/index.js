@@ -28,6 +28,11 @@ const storage = multer.diskStorage({
     }
 });
 const upload = multer({ storage });
+// S'assurer que le dossier uploads existe
+const fs = require('fs');
+if (!fs.existsSync(path.join(__dirname, 'uploads'))) {
+    fs.mkdirSync(path.join(__dirname, 'uploads'), { recursive: true });
+}
 
 // Initialiser les tables au démarrage
 initDB();
@@ -61,10 +66,10 @@ app.get('/api/test', (req, res) => {
 
 // POST /api/register - Inscription d'un nouvel utilisateur
 app.post('/api/register', async (req, res) => {
-    const { nom, email, password, role } = req.body;
+    const { name, email, password, role } = req.body;
 
-    if (!nom || !email || !password || !role) {
-        return res.status(400).json({ error: 'Tous les champs sont requis (nom, email, password, role)' });
+    if (!name || !email || !password || !role) {
+        return res.status(400).json({ error: 'Tous les champs sont requis (name, email, password, role)' });
     }
 
     if (role !== 'student' && role !== 'teacher') {
@@ -84,8 +89,8 @@ app.post('/api/register', async (req, res) => {
 
         // Insérer l'utilisateur
         const result = await db.runAsync(
-            'INSERT INTO users (nom, email, password_hash, role) VALUES (?, ?, ?, ?)',
-            [nom, email, password_hash, role]
+            'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
+            [name, email, password_hash, role]
         );
 
         res.status(201).json({ message: 'Compte créé avec succès', userId: result.lastID });
@@ -110,14 +115,15 @@ app.post('/api/login', async (req, res) => {
             return res.status(400).json({ error: 'Utilisateur introuvable' });
         }
 
-        const validPassword = await bcrypt.compare(password, user.password_hash);
+        const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) {
             return res.status(400).json({ error: 'Mot de passe incorrect' });
         }
 
         const userPayload = {
             id: user.id,
-            nom: user.nom,
+            nom: user.name, // Mapping pour compatibilité vue frontend
+            name: user.name,
             email: user.email,
             role: user.role
         };
@@ -135,14 +141,14 @@ app.post('/api/login', async (req, res) => {
 // GET /api/saes - Récupérer toutes les SAEs (Route protégée)
 app.get('/api/saes', authenticateToken, async (req, res) => {
     try {
-        const saes = await db.allAsync('SELECT * FROM saes');
-        
-        const formattedSaes = saes.map(sae => ({
-            ...sae,
-            isEvaluated: !!sae.isEvaluated
-        }));
-        
-        res.json(formattedSaes);
+        const saes = await db.allAsync(`
+            SELECT 
+                s.*,
+                (SELECT COUNT(*) FROM users WHERE role = 'student') as total_students,
+                (SELECT COUNT(DISTINCT user_id) FROM rendus r WHERE r.sae_id = s.id) as progress_count
+            FROM saes s
+        `);
+        res.json(saes);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Erreur serveur lors de la récupération des SAEs' });
@@ -209,21 +215,64 @@ app.get('/api/saes/:id', authenticateToken, async (req, res) => {
 // POST /api/saes - Créer une nouvelle SAE (Route protégée, PROF UNIQUEMENT)
 app.post('/api/saes', authenticateToken, requireTeacher, async (req, res) => {
     try {
-        const { title, description, deadline, semestre, annee = 2026, status = 'ongoing', groupType = 'Non spécifié' } = req.body;
+        const { title, description, competences, due_date, status = 'ongoing', level = 'Non spécifié', groupType = 'Non spécifié' } = req.body;
+        const teacher_id = req.user.id;
         
-        if (!title || !description || !deadline || !semestre) {
-            return res.status(400).json({ error: 'Le titre, la description, le semestre et la deadline sont requis' });
+        if (!title || !description || !competences || !due_date) {
+            return res.status(400).json({ error: 'Titre, description, compétences et date limite sont requis.' });
         }
 
         const result = await db.runAsync(
-            'INSERT INTO saes (title, description, deadline, semestre, annee, status, groupType) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [title, description, deadline, semestre, annee, status, groupType]
+            'INSERT INTO saes (title, description, competences, due_date, status, level, groupType, teacher_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [title, description, competences, due_date, status, level, groupType, teacher_id]
         );
 
         res.status(201).json({ message: 'SAE créée avec succès', id: result.lastID });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Erreur serveur lors de la création de la SAE' });
+    }
+});
+
+// PUT /api/saes/:id - Mettre à jour une SAE (Route protégée, PROF créateur UNIQUEMENT)
+app.put('/api/saes/:id', authenticateToken, requireTeacher, async (req, res) => {
+    try {
+        const saeId = req.params.id;
+        const teacher_id = req.user.id;
+        const { title, description, competences, due_date, status, level, groupType } = req.body;
+
+        // Vérifier que la SAE appartient bien à ce prof
+        const sae = await db.getAsync('SELECT teacher_id FROM saes WHERE id = ?', [saeId]);
+        if (!sae) return res.status(404).json({ error: 'SAE non trouvée' });
+        if (sae.teacher_id !== teacher_id) return res.status(403).json({ error: 'Non autorisé à modifier cette SAE' });
+
+        await db.runAsync(
+            'UPDATE saes SET title = ?, description = ?, competences = ?, due_date = ?, status = ?, level = ?, groupType = ? WHERE id = ?',
+            [title, description, competences, due_date, status, level, groupType, saeId]
+        );
+
+        res.json({ message: 'SAE mise à jour avec succès' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erreur serveur lors de la mise à jour de la SAE' });
+    }
+});
+
+// DELETE /api/saes/:id - Supprimer une SAE (Route protégée, PROF créateur UNIQUEMENT)
+app.delete('/api/saes/:id', authenticateToken, requireTeacher, async (req, res) => {
+    try {
+        const saeId = req.params.id;
+        const teacher_id = req.user.id;
+
+        const sae = await db.getAsync('SELECT teacher_id FROM saes WHERE id = ?', [saeId]);
+        if (!sae) return res.status(404).json({ error: 'SAE non trouvée' });
+        if (sae.teacher_id !== teacher_id) return res.status(403).json({ error: 'Non autorisé à supprimer cette SAE' });
+
+        await db.runAsync('DELETE FROM saes WHERE id = ?', [saeId]);
+        res.json({ message: 'SAE supprimée avec succès' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erreur serveur lors de la suppression de la SAE' });
     }
 });
 
@@ -234,7 +283,7 @@ app.post('/api/upload', authenticateToken, upload.single('document'), async (req
             return res.status(400).json({ error: 'Aucun fichier sélectionné' });
         }
 
-        const { saeId } = req.body;
+        const saeId = req.body.saeId;
         const userId = req.user.id;
         const filename = req.file.originalname;
         const filepath = `/uploads/${req.file.filename}`;
@@ -243,20 +292,21 @@ app.post('/api/upload', authenticateToken, upload.single('document'), async (req
             return res.status(400).json({ error: "L'ID de la SAE est requis" });
         }
 
+        // Optionnel: vérifier si la SAE existe
+        const sae = await db.getAsync('SELECT id FROM saes WHERE id = ?', [saeId]);
+        if (!sae) {
+            return res.status(404).json({ error: "SAE introuvable" });
+        }
+
         await db.runAsync(
             'INSERT INTO rendus (sae_id, user_id, nom_fichier, chemin_fichier) VALUES (?, ?, ?, ?)',
             [saeId, userId, filename, filepath]
         );
 
-        await db.runAsync(
-            'UPDATE saes SET deliveryStatus = ? WHERE id = ?',
-            [`Rendu déposé le ${new Date().toLocaleDateString('fr-FR')}`, saeId]
-        );
-
         res.json({ message: 'Fichier uploadé avec succès', filename, filepath });
 
     } catch (error) {
-        console.error(error);
+        console.error('Erreur API Upload:', error);
         res.status(500).json({ error: "Erreur lors de l'upload du fichier" });
     }
 });
@@ -270,7 +320,7 @@ app.get('/api/rendus', authenticateToken, requireTeacher, async (req, res) => {
         }
         
         const rendus = await db.allAsync(`
-            SELECT r.*, u.nom as etudiant_nom
+            SELECT r.*, u.name as etudiant_nom
             FROM rendus r
             JOIN users u ON r.user_id = u.id
             WHERE r.sae_id = ?
@@ -288,7 +338,7 @@ app.get('/api/rendus', authenticateToken, requireTeacher, async (req, res) => {
 app.get('/api/annonces', authenticateToken, async (req, res) => {
     try {
         const annonces = await db.allAsync(`
-            SELECT a.*, u.nom as auteur_nom 
+            SELECT a.*, u.name as auteur_nom 
             FROM annonces a 
             JOIN users u ON a.auteur_id = u.id 
             ORDER BY a.date_creation DESC
@@ -353,18 +403,9 @@ app.put('/api/rendus/:id/evaluation', authenticateToken, requireTeacher, async (
 
         // 1. Mettre à jour le rendu
         await db.runAsync(
-            'UPDATE rendus SET note = ?, commentaire_prof = ?, is_evaluated = 1 WHERE id = ?',
-            [note, commentaire || '', renduId]
+            'UPDATE rendus SET note = ?, commentaire_prof = ?, is_evaluated = 1, status = ? WHERE id = ?',
+            [note, commentaire || '', 'graded', renduId]
         );
-
-        // 2. Mettre à jour la SAE correspondante
-        const rendu = await db.getAsync('SELECT sae_id FROM rendus WHERE id = ?', [renduId]);
-        if (rendu) {
-            await db.runAsync(
-                'UPDATE saes SET isEvaluated = 1, grade = ?, comment = ? WHERE id = ?',
-                [note, commentaire || '', rendu.sae_id]
-            );
-        }
 
         res.json({ message: 'Rendu évalué avec succès' });
     } catch (error) {
@@ -376,12 +417,20 @@ app.put('/api/rendus/:id/evaluation', authenticateToken, requireTeacher, async (
 // GET /api/mes-notes - Récupérer les retours (Étudiant)
 app.get('/api/mes-notes', authenticateToken, async (req, res) => {
     try {
-        const saes = await db.allAsync('SELECT * FROM saes WHERE isEvaluated = 1');
-        const formattedSaes = saes.map(sae => ({
-            ...sae,
-            isEvaluated: !!sae.isEvaluated
-        }));
-        res.json(formattedSaes);
+        const userId = req.user.id;
+        
+        // On récupère toutes les SAEs où cet étudiant a soumis un rendu
+        const rendus = await db.allAsync(`
+            SELECT 
+                r.id as rendu_id, r.nom_fichier, r.date_depot, r.note, r.commentaire_prof, r.status as rendu_status,
+                s.id as sae_id, s.title, s.description, s.due_date, s.competences
+            FROM rendus r
+            JOIN saes s ON r.sae_id = s.id
+            WHERE r.user_id = ?
+            ORDER BY r.date_depot DESC
+        `, [userId]);
+
+        res.json(rendus);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Erreur serveur lors de la récupération des notes' });

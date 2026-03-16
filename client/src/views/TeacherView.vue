@@ -30,12 +30,16 @@
                               <div v-for="sae in saes" :key="sae.id" class="list-item" style="margin-bottom: 8px;">
                                   <div class="item-info">
                                       <div class="item-title">{{ sae.title }}</div>
-                                      <div class="item-meta">{{ sae.level }} • Échéance : {{ sae.deadline }} • {{ sae.groupType }}</div>
+                                      <div class="item-meta">{{ sae.level || 'Non spécifié' }} • Échéance : {{ formatDate(sae.due_date) }} • {{ sae.groupType || 'Non spécifié' }}</div>
                                   </div>
                                   
                                   <span v-if="sae.status === 'urgent'" class="badge badge-warning" style="background:#fef3c7; color:#d97706; border-color:#fde68a;">PROCHE ÉCHÉANCE</span>
                                   <span v-else-if="sae.status === 'done'" class="badge badge-success" style="background:var(--status-success-bg); color:var(--status-success-text); border-color:var(--status-success-border);">TERMINÉ</span>
-                                  <button v-else class="btn btn-outline">Éditer</button>
+                                  
+                                  <div class="btn-group" style="display: flex; gap: 8px;">
+                                      <button class="btn btn-outline" @click="openEditModal(sae)">Éditer</button>
+                                      <button class="btn btn-outline" style="border-color: var(--status-danger-border); color: var(--status-danger-text);" @click="deleteSae(sae.id)">Supprimer</button>
+                                  </div>
                               </div>
 
                           </div>
@@ -52,11 +56,11 @@
                                   <div class="progress-header">
                                       <span>{{ sae.title }}</span>
                                       <span :style="{ color: sae.status === 'done' ? 'var(--status-success-text)' : 'var(--text-secondary)' }">
-                                        {{ sae.status === 'done' ? '15 / 15 Groupes' : 'En cours...' }}
+                                        {{ sae.progress_count }} / {{ sae.total_students }} rendus
                                       </span>
                                   </div>
                                   <div class="progress-track">
-                                      <div class="progress-fill" :style="{ width: sae.status === 'done' ? '100%' : '50%', backgroundColor: sae.status === 'done' ? 'var(--status-success-text)' : 'var(--accent-blue)' }"></div>
+                                      <div class="progress-fill" :style="{ width: (sae.progress_count / sae.total_students * 100) + '%', backgroundColor: sae.progress_count === sae.total_students ? 'var(--status-success-text)' : 'var(--accent-blue)' }"></div>
                                   </div>
                               </div>
                           </div>
@@ -71,11 +75,11 @@
                               </div>
                           </div>
                           <div class="card-body" style="padding: 16px;">
-                              <div v-for="sae in saes.filter(s => s.status === 'done')" :key="'cor-'+sae.id" class="list-item" style="padding: 12px; border-color: var(--status-warning-border);">
+                              <div v-for="sae in saes.filter(s => s.status !== 'archived')" :key="'cor-'+sae.id" class="list-item" style="padding: 12px; border-color: var(--status-warning-border);">
                                   <div class="item-info">
-                                      <div class="item-title">{{ sae.title }} : 15 rendus en attente</div>
+                                      <div class="item-title">{{ sae.title }} : {{ sae.progress_count }} rendu(s) détecté(s)</div>
                                   </div>
-                                  <button class="btn btn-primary" style="padding: 6px 12px;" @click="switchView('grading')">Évaluer</button>
+                                  <button class="btn btn-primary" style="padding: 6px 12px;" @click="switchView('grading', sae.id)">Ouvrir</button>
                               </div>
                           </div>
                       </div>
@@ -99,53 +103,41 @@
                       </div>
                       <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
                           <div>
-                              <label class="form-label">Semestre *</label>
-                              <select v-model="saeForm.semestre" class="form-control">
-                                  <option value="S1">Semestre 1</option>
-                                  <option value="S2">Semestre 2</option>
-                                  <option value="S3">Semestre 3</option>
-                                  <option value="S4">Semestre 4</option>
-                                  <option value="S5">Semestre 5</option>
-                                  <option value="S6">Semestre 6</option>
+                              <label class="form-label">Date limite de rendu *</label>
+                              <input type="date" v-model="saeForm.due_date" class="form-control">
+                          </div>
+                          <div>
+                              <label class="form-label">Niveau (ex: B.U.T. 2)</label>
+                              <input type="text" v-model="saeForm.level" class="form-control" placeholder="B.U.T. 2">
+                          </div>
+                      </div>
+                      
+                      <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                          <div>
+                              <label class="form-label">Statut initial</label>
+                              <select v-model="saeForm.status" class="form-control">
+                                  <option value="ongoing">En cours</option>
+                                  <option value="urgent">Urgent (< 7 jours)</option>
+                                  <option value="done">Terminé</option>
                               </select>
                           </div>
                           <div>
-                              <label class="form-label">Date limite de rendu *</label>
-                              <input type="date" v-model="saeForm.deadline" class="form-control">
+                              <label class="form-label">Type de groupe</label>
+                              <select v-model="saeForm.groupType" class="form-control">
+                                  <option value="Non spécifié">Non spécifié</option>
+                                  <option value="Travail individuel">Travail individuel</option>
+                                  <option value="Travail de groupe">Travail de groupe</option>
+                              </select>
                           </div>
                       </div>
                       <div class="form-group">
                           <label class="form-label">Description et consignes *</label>
-                          <textarea v-model="saeForm.description" class="form-control" placeholder="Objectifs pédagogiques, livrables attendus..."></textarea>
+                          <textarea v-model="saeForm.description" class="form-control" placeholder="Objectifs pédagogiques, livrables attendus..." rows="4"></textarea>
                       </div>
 
                       <div class="form-group">
-                          <label class="form-label">Documents joints (Sujet, ressources, grille d'évaluation) :</label>
-                          <div class="upload-zone" @click="triggerSaeFileInput" style="padding: 20px; cursor: pointer;">
-                              <svg style="width: 24px; height: 24px; color: var(--text-secondary); margin-bottom: 8px;" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                              <div style="font-size: 13px; color: var(--text-secondary); font-weight: 600;">
-                                  {{ selectedSaeFileName || 'Glissez vos fichiers (PDF, ZIP, médias) ou cliquez pour parcourir' }}
-                              </div>
-                              <input type="file" ref="saeFileInput" @change="handleSaeFileSelect" hidden>
-                          </div>
-                      </div>
-
-                      <hr style="border: 0; border-top: 1px solid var(--border-light); margin: 32px 0;">
-
-                      <div class="form-group">
-                          <label class="form-label">Compétences évaluées * <span style="font-weight:normal; color:var(--text-secondary);">(La saisie des compétences est requise)</span></label>
-                          
-                          <div id="skills-container">
-                              <div v-for="(skill, index) in skills" :key="index" class="skill-row" style="display: flex; gap: 12px; margin-bottom: 12px;">
-                                  <input type="text" v-model="skills[index]" class="form-control" placeholder="Intitulé de la compétence (ex: Qualité UX/UI)" required>
-                                  <button v-if="skills.length > 1" @click="removeSkill(index)" class="btn btn-outline" style="padding: 8px; color: var(--status-danger-text);">✖</button>
-                              </div>
-                          </div>
-                          
-                          <button class="btn btn-outline" style="margin-top: 8px;" @click="addSkill">
-                              <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                              Ajouter une compétence
-                          </button>
+                          <label class="form-label">Compétences évaluées *</label>
+                          <textarea v-model="saeForm.competences" class="form-control" placeholder="Ex: Développer des interfaces utilisateur, Optimiser les requêtes SQL..."></textarea>
                       </div>
 
                       <div style="background: var(--bg-app); padding: 16px; border-radius: var(--radius-sm); margin-top: 32px;">
@@ -168,8 +160,8 @@
                   <div class="accordion-header" :class="{ active: activeAccordion === sae.id }" @click="toggleAccordion(sae.id)">
                       {{ sae.title }}
                       <div style="display:flex; align-items:center; gap: 16px;">
-                          <span v-if="sae.status === 'urgent' || sae.status === 'ongoing'" class="badge badge-success">EN ATTENTE (Projet en cours)</span>
-                          <span v-else class="badge badge-warning">À CORRIGER</span>
+                          <span v-if="sae.progress_count === 0" class="badge badge-success">AUCUN RENDU</span>
+                          <span v-else class="badge badge-warning">{{ sae.progress_count }} RENDU(S) DÉPOSÉ(S)</span>
                           <svg class="icon-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
                       </div>
                   </div>
@@ -207,13 +199,14 @@
                                       <div class="item-meta">Déposé le {{ formatDate(rendu.date_depot) }} • {{ rendu.nom_fichier }}</div>
                                   </div>
                                   <div style="display: flex; align-items: center; gap: 24px;">
-                                      <label class="checkbox-wrapper">
-                                          <input type="checkbox" class="eval-checkbox" :checked="rendu.is_evaluated" @change="toggleEvaluatedStatus(rendu)"> Déjà évalué
-                                      </label>
+                                      <span v-if="rendu.status === 'graded'" class="badge badge-success">NOTÉ ({{ rendu.note }}/20)</span>
+                                      <span v-else class="badge badge-warning">À NOTER</span>
                                       
                                       <div class="btn-group" style="display: flex; gap: 8px;">
                                           <a :href="'http://localhost:3000' + rendu.chemin_fichier" target="_blank" class="btn btn-outline" style="text-decoration: none;">Télécharger</a>
-                                          <button class="btn btn-primary" @click="openGradeModal(rendu, sae.title)">Saisir la note</button>
+                                          <button class="btn btn-primary" @click="openGradeModal(rendu, sae.title)">
+                                              {{ rendu.status === 'graded' ? 'Modifier la note' : 'Saisir la note' }}
+                                          </button>
                                       </div>
                                   </div>
                               </div>
@@ -285,18 +278,68 @@
           </div>
       </div>
   </div>
+  <!-- EDIT SAE MODAL -->
+  <div class="modal-overlay" :class="{ active: isEditModalOpen }" @click.self="closeEditModal">
+      <div class="modal-content" style="max-width: 600px;">
+          <h2 class="modal-title">Éditer la SAE</h2>
+          
+          <div v-if="editStatus" class="status-msg" :class="isEditError ? 'error-message' : 'success-message'" style="margin-bottom: 16px;">
+              {{ editStatus }}
+          </div>
+
+          <div class="form-group">
+              <label class="form-label">Titre de la SAE *</label>
+              <input type="text" v-model="editingSae.title" class="form-control">
+          </div>
+          <div class="form-group">
+              <label class="form-label">Date limite de rendu *</label>
+              <input type="date" v-model="editingSae.due_date" class="form-control">
+          </div>
+          <div class="form-group">
+              <label class="form-label">Statut</label>
+              <select v-model="editingSae.status" class="form-control">
+                  <option value="ongoing">En cours</option>
+                  <option value="urgent">Urgent</option>
+                  <option value="done">Terminé</option>
+              </select>
+          </div>
+          <div class="form-group">
+              <label class="form-label">Description</label>
+              <textarea v-model="editingSae.description" class="form-control" rows="3"></textarea>
+          </div>
+          <div class="form-group">
+              <label class="form-label">Compétences</label>
+              <textarea v-model="editingSae.competences" class="form-control" rows="2"></textarea>
+          </div>
+          
+          <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px;">
+              <button class="btn btn-outline" @click="closeEditModal">Annuler</button>
+              <button class="btn btn-primary" @click="submitEditSae" :disabled="isEditingSae">
+                  {{ isEditingSae ? 'Enregistrement...' : 'Mettre à jour' }}
+              </button>
+          </div>
+      </div>
+  </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import Sidebar from '../components/teacher/Sidebar.vue'
 import Header from '../components/teacher/Header.vue'
 
 const route = useRoute()
+const router = useRouter()
 const currentView = computed(() => route.params.view || 'dashboard')
 const saes = ref([])
+
+const switchView = (viewName, saeId = null) => {
+    router.push(`/teacher/${viewName}`)
+    if (saeId) {
+        setTimeout(() => { toggleAccordion(saeId) }, 200)
+    }
+}
 
 const pageInfo = {
   'dashboard': { title: "Vue globale de l'avancement", desc: "Supervision de vos projets du semestre et suivi des rendus." },
@@ -309,29 +352,14 @@ const pageTitle = computed(() => pageInfo[currentView.value]?.title || "Vue")
 const pageDesc = computed(() => pageInfo[currentView.value]?.desc || "")
 
 // Fonctionnalité : Créer une SAE
-const saeForm = ref({ title: '', semestre: 'S4', deadline: '', description: '' })
-const skills = ref(['', '']) // Deux compétences par défaut
-const saeFileInput = ref(null)
-const selectedSaeFile = ref(null)
-const selectedSaeFileName = ref('')
+const saeForm = ref({ title: '', due_date: '', description: '', competences: '', status: 'ongoing', level: 'B.U.T. 2', groupType: 'Travail de groupe' })
 const isCreatingSae = ref(false)
 const createSaeStatus = ref('')
 const isCreateSaeError = ref(false)
 
-const triggerSaeFileInput = () => { saeFileInput.value.click() }
-const handleSaeFileSelect = (event) => {
-    const file = event.target.files[0]
-    if (file) {
-        selectedSaeFile.value = file
-        selectedSaeFileName.value = file.name
-    }
-}
-const addSkill = () => { skills.value.push('') }
-const removeSkill = (index) => { skills.value.splice(index, 1) }
-
 const submitSae = async () => {
-    if (!saeForm.value.title || !saeForm.value.semestre || !saeForm.value.deadline || !saeForm.value.description || skills.value.some(s => !s.trim())) {
-        createSaeStatus.value = "Veuillez remplir tous les champs obligatoires et compétences."
+    if (!saeForm.value.title || !saeForm.value.due_date || !saeForm.value.description || !saeForm.value.competences) {
+        createSaeStatus.value = "Veuillez remplir tous les champs obligatoires (Titre, Description, Compétences, Date de rendu)."
         isCreateSaeError.value = true
         return
     }
@@ -340,28 +368,13 @@ const submitSae = async () => {
     createSaeStatus.value = ''
     
     try {
-        // Ajouter la SAE
-        const saePayload = { ...saeForm.value, skills: skills.value } // Le backend ignorera les skills en DB pour l'instant (MVP)
-        const response = await axios.post('/api/saes', saePayload)
+        await axios.post('/api/saes', saeForm.value)
         
-        const newSaeId = response.data.id;
-
-        // Uploader le fichier si présent
-        if (selectedSaeFile.value) {
-            const formData = new FormData()
-            formData.append('document', selectedSaeFile.value)
-            formData.append('saeId', newSaeId)
-            await axios.post('/api/upload', formData)
-        }
-
         createSaeStatus.value = "SAE soumise avec succès !"
         isCreateSaeError.value = false
         
         // Reset form
-        saeForm.value = { title: '', semestre: 'S4', deadline: '', description: '' }
-        skills.value = ['', '']
-        selectedSaeFile.value = null
-        selectedSaeFileName.value = ''
+        saeForm.value = { title: '', due_date: '', description: '', competences: '', status: 'ongoing', level: 'B.U.T. 2', groupType: 'Travail de groupe' }
         
         // Refresh dashboard
         const resSaes = await axios.get('/api/saes');
@@ -373,6 +386,51 @@ const submitSae = async () => {
     } finally {
         isCreatingSae.value = false
         setTimeout(() => { createSaeStatus.value = '' }, 5000)
+    }
+}
+
+// Fonctionnalité : Éditer & Supprimer
+const isEditModalOpen = ref(false)
+const editingSae = ref({})
+const isEditingSae = ref(false)
+const editStatus = ref('')
+const isEditError = ref(false)
+
+const openEditModal = (sae) => {
+    editingSae.value = { ...sae }
+    isEditModalOpen.value = true
+    editStatus.value = ''
+}
+
+const closeEditModal = () => {
+    isEditModalOpen.value = false
+    editingSae.value = {}
+}
+
+const submitEditSae = async () => {
+    if (!editingSae.value.title || !editingSae.value.due_date) return;
+    isEditingSae.value = true;
+    try {
+        await axios.put(`/api/saes/${editingSae.value.id}`, editingSae.value)
+        const resSaes = await axios.get('/api/saes');
+        saes.value = resSaes.data;
+        closeEditModal();
+    } catch (e) {
+        editStatus.value = e.response?.data?.error || "Erreur lors de la modification";
+        isEditError.value = true;
+    } finally {
+        isEditingSae.value = false;
+    }
+}
+
+const deleteSae = async (id) => {
+    if(!confirm("Voulez-vous vraiment supprimer cette SAE ? Tous les rendus associés seront perdus.")) return;
+    try {
+        await axios.delete(`/api/saes/${id}`)
+        const resSaes = await axios.get('/api/saes');
+        saes.value = resSaes.data;
+    } catch (e) {
+        alert(e.response?.data?.error || "Erreur lors de la suppression")
     }
 }
 
@@ -470,7 +528,7 @@ const isGradingError = ref(false)
 
 const openGradeModal = (rendu, saeTitle) => {
     targetRendu.value = { ...rendu, saeTitle }
-    gradeForm.value.note = rendu.note !== null ? rendu.note : ''
+    gradeForm.value.note = (rendu.status === 'graded' && rendu.note !== null) ? rendu.note : ''
     gradeForm.value.commentaire = rendu.commentaire_prof || ''
     isGradeModalOpen.value = true
 }
@@ -505,6 +563,7 @@ const submitGrade = async () => {
         if (renduToUpdate) {
             renduToUpdate.note = gradeForm.value.note
             renduToUpdate.commentaire_prof = gradeForm.value.commentaire
+            renduToUpdate.status = 'graded'
             renduToUpdate.is_evaluated = true
         }
 

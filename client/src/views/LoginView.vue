@@ -29,6 +29,9 @@
 
           <div class="login-hints">
               <p>Pas encore de compte ? <router-link to="/register" style="color: var(--accent-brand); font-weight: 600; text-decoration: none;">Créer un compte</router-link></p>
+              <div style="margin-top: 16px;">
+                  <router-link to="/" class="btn btn-outline" style="font-size: 13px; padding: 6px 16px;">Retour à l'accueil</router-link>
+              </div>
           </div>
       </div>
   </div>
