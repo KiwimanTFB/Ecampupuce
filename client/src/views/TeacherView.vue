@@ -167,15 +167,12 @@
                   </div>
                   <div class="accordion-body" :class="{ active: activeAccordion === sae.id }">
                       
-                      <!-- SAE en cours -->
-                      <p v-if="sae.status === 'urgent' || sae.status === 'ongoing'" style="font-size: 14px; color: var(--text-secondary);">
-                          Les rendus ne sont pas encore clôturés. Date limite : {{ sae.deadline }}.
-                      </p>
+                      <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">
+                          Date limite fixée au : {{ formatDate(sae.due_date) }}.
+                      </div>
 
-                      <!-- SAE avec rendus -->
-                      <template v-else>
-                          <div v-if="isFetchingRendus" style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">Chargement des rendus...</div>
-                          <template v-else-if="saeRendus[sae.id]">
+                      <div v-if="isFetchingRendus" style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">Chargement des rendus...</div>
+                      <template v-else-if="saeRendus[sae.id]">
                               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border-light);">
                                   <span style="font-size: 13px; color: var(--text-secondary);">{{ saeRendus[sae.id].length }} rendus disponibles</span>
                                   
@@ -202,10 +199,14 @@
                                       <span v-if="rendu.status === 'graded'" class="badge badge-success">NOTÉ ({{ rendu.note }}/20)</span>
                                       <span v-else class="badge badge-warning">À NOTER</span>
                                       
-                                      <div class="btn-group" style="display: flex; gap: 8px;">
+                                      <div class="btn-group" style="display: flex; gap: 8px; align-items: center;">
                                           <a :href="'http://localhost:3000' + rendu.chemin_fichier" target="_blank" class="btn btn-outline" style="text-decoration: none;">Télécharger</a>
-                                          <button class="btn btn-primary" @click="openGradeModal(rendu, sae.title)">
-                                              {{ rendu.status === 'graded' ? 'Modifier la note' : 'Saisir la note' }}
+                                          
+                                          <!-- Saisie Rapide (Inline) -->
+                                          <input type="number" min="0" max="20" step="0.5" v-model="rendu.inputNote" class="form-control" style="width: 80px; text-align: center; padding: 6px;" placeholder="-- / 20">
+                                          <input type="text" v-model="rendu.inputComment" class="form-control" style="width: 150px; padding: 6px;" placeholder="Commentaire...">
+                                          <button class="btn btn-primary" @click="submitInlineGrade(rendu, sae.id)" :disabled="rendu.isSaving">
+                                              {{ rendu.isSaving ? '...' : 'Valider' }}
                                           </button>
                                       </div>
                                   </div>
@@ -253,31 +254,6 @@
       </div>
   </main>
 
-  <!-- MODAL -->
-  <div class="modal-overlay" :class="{ active: isGradeModalOpen }" @click.self="closeGradeModal">
-      <div class="modal-content">
-          <h2 class="modal-title">Évaluer le rendu</h2>
-          <div class="modal-subtitle" v-if="targetRendu">Rendu de {{ targetRendu.etudiant_nom }} • {{ targetRendu.saeTitle }}</div>
-          
-          <label class="form-label">Note obtenue :</label>
-          <div class="grade-input-wrapper" style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-              <input type="number" min="0" max="20" step="0.5" placeholder="--" v-model="gradeForm.note" style="width: 80px; font-size: 24px; font-weight: 700; text-align: center; padding: 8px; border: 2px solid var(--border-light); border-radius: var(--radius-sm); outline: none;">
-              <span>/ 20</span>
-          </div>
-
-          <div class="form-group">
-              <label class="form-label">Commentaire pour les étudiants :</label>
-              <textarea class="form-control" v-model="gradeForm.commentaire" placeholder="Détaillez votre retour pédagogique, les points forts, les axes d'amélioration..."></textarea>
-          </div>
-
-          <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px;">
-              <button class="btn btn-outline" @click="closeGradeModal">Annuler</button>
-              <button class="btn btn-primary" @click="submitGrade" :disabled="isGrading">
-                  {{ isGrading ? 'Enregistrement...' : "Enregistrer l'évaluation" }}
-              </button>
-          </div>
-      </div>
-  </div>
   <!-- EDIT SAE MODAL -->
   <div class="modal-overlay" :class="{ active: isEditModalOpen }" @click.self="closeEditModal">
       <div class="modal-content" style="max-width: 600px;">
@@ -480,7 +456,12 @@ const toggleAccordion = async (saeId) => {
         isFetchingRendus.value = true
         try {
             const res = await axios.get(`/api/rendus?sae_id=${saeId}`)
-            saeRendus.value[saeId] = res.data
+            saeRendus.value[saeId] = res.data.map(r => ({
+                ...r,
+                inputNote: r.status === 'graded' ? r.note : '',
+                inputComment: r.commentaire_prof || '',
+                isSaving: false
+            }))
         } catch (error) {
             console.error("Erreur récupération rendus:", error)
         } finally {
@@ -518,63 +499,37 @@ const formatDate = (dateString) => {
     return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-// Modale de notation
-const isGradeModalOpen = ref(false)
-const targetRendu = ref(null)
-const gradeForm = ref({ note: '', commentaire: '' })
-const isGrading = ref(false)
 const gradingStatus = ref('')
 const isGradingError = ref(false)
 
-const openGradeModal = (rendu, saeTitle) => {
-    targetRendu.value = { ...rendu, saeTitle }
-    gradeForm.value.note = (rendu.status === 'graded' && rendu.note !== null) ? rendu.note : ''
-    gradeForm.value.commentaire = rendu.commentaire_prof || ''
-    isGradeModalOpen.value = true
-}
-
-const closeGradeModal = () => {
-    isGradeModalOpen.value = false
-    targetRendu.value = null
-    gradeForm.value = { note: '', commentaire: '' }
-}
-
-const submitGrade = async () => {
-    if (!gradeForm.value.note) {
-        gradingStatus.value = "Veuillez entrer une note."
+const submitInlineGrade = async (rendu, saeId) => {
+    if (rendu.inputNote === '' || rendu.inputNote === null) {
+        gradingStatus.value = "Veuillez entrer une note valide avant de valider."
         isGradingError.value = true
-        
-        // Timeout pour effacer le statut d'erreur global (affiché au dessus des accordéons)
         setTimeout(() => { gradingStatus.value = '' }, 3000)
         return
     }
     
-    isGrading.value = true
+    rendu.isSaving = true
     
     try {
-        const payload = { note: gradeForm.value.note, commentaire: gradeForm.value.commentaire }
-        await axios.put(`/api/rendus/${targetRendu.value.id}/evaluation`, payload)
+        const payload = { note: rendu.inputNote, commentaire: rendu.inputComment }
+        await axios.put(`/api/rendus/${rendu.id}/evaluation`, payload)
         
-        gradingStatus.value = "Note et commentaires enregistrés !"
+        gradingStatus.value = `Note enregistrée pour ${rendu.etudiant_nom} !`
         isGradingError.value = false
         
-        // Mettre à jour localement le rendu évalué
-        const renduToUpdate = saeRendus.value[targetRendu.value.sae_id].find(r => r.id === targetRendu.value.id)
-        if (renduToUpdate) {
-            renduToUpdate.note = gradeForm.value.note
-            renduToUpdate.commentaire_prof = gradeForm.value.commentaire
-            renduToUpdate.status = 'graded'
-            renduToUpdate.is_evaluated = true
-        }
-
-        closeGradeModal()
+        rendu.note = rendu.inputNote
+        rendu.commentaire_prof = rendu.inputComment
+        rendu.status = 'graded'
+        rendu.is_evaluated = true
     } catch (error) {
         console.error("Erreur évaluation:", error)
         gradingStatus.value = error.response?.data?.error || "Erreur lors de l'évaluation."
         isGradingError.value = true
     } finally {
-        isGrading.value = false
-        setTimeout(() => { gradingStatus.value = '' }, 5000)
+        rendu.isSaving = false
+        setTimeout(() => { gradingStatus.value = '' }, 4000)
     }
 }
 

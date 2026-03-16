@@ -39,6 +39,16 @@
                   </div>
               </div>
 
+              <div class="form-group" v-if="role === 'student'">
+                  <label class="form-label">Promotion</label>
+                  <select v-model="promo" class="form-control" required>
+                      <option value="" disabled>-- Sélectionner votre promotion --</option>
+                      <option value="BUT 1">BUT 1</option>
+                      <option value="BUT 2">BUT 2</option>
+                      <option value="BUT 3">BUT 3</option>
+                  </select>
+              </div>
+
               <div v-if="errorMessage" class="error-message">
                   {{ errorMessage }}
               </div>
@@ -72,6 +82,7 @@ const name = ref('')
 const email = ref('')
 const password = ref('')
 const role = ref('student')
+const promo = ref('')
 const errorMessage = ref('')
 const successMessage = ref('')
 const isLoading = ref(false)
@@ -86,7 +97,8 @@ const handleRegister = async () => {
           name: name.value,
           email: email.value,
           password: password.value,
-          role: role.value
+          role: role.value,
+          promo: promo.value
       })
 
       successMessage.value = 'Compte créé avec succès ! Redirection vers la connexion...'

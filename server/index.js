@@ -66,10 +66,14 @@ app.get('/api/test', (req, res) => {
 
 // POST /api/register - Inscription d'un nouvel utilisateur
 app.post('/api/register', async (req, res) => {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, promo } = req.body;
 
     if (!name || !email || !password || !role) {
-        return res.status(400).json({ error: 'Tous les champs sont requis (name, email, password, role)' });
+        return res.status(400).json({ error: 'Tous les champs obligatoires sont requis' });
+    }
+
+    if (role === 'student' && !promo) {
+        return res.status(400).json({ error: 'La promotion est requise pour un étudiant' });
     }
 
     if (role !== 'student' && role !== 'teacher') {
@@ -89,8 +93,8 @@ app.post('/api/register', async (req, res) => {
 
         // Insérer l'utilisateur
         const result = await db.runAsync(
-            'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
-            [name, email, password_hash, role]
+            'INSERT INTO users (name, email, password, role, promo) VALUES (?, ?, ?, ?, ?)',
+            [name, email, password_hash, role, promo || null]
         );
 
         res.status(201).json({ message: 'Compte créé avec succès', userId: result.lastID });
