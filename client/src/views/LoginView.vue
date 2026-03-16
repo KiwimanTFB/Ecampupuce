@@ -28,9 +28,7 @@
           </form>
 
           <div class="login-hints">
-              <p><strong>Comptes de test SQL :</strong></p>
-              <p>Étudiant : <code>etudiant@univ.fr</code> / <code>password123</code></p>
-              <p>Professeur : <code>prof@univ.fr</code> / <code>password123</code></p>
+              <p>Pas encore de compte ? <router-link to="/register" style="color: var(--accent-brand); font-weight: 600; text-decoration: none;">Créer un compte</router-link></p>
           </div>
       </div>
   </div>

@@ -72,7 +72,7 @@
 
           <!-- PROJECTS -->
           <div v-if="currentView === 'projects'" class="view-section active">
-              <div v-if="saes.length === 0" style="color: var(--text-secondary); font-size: 14px;">Chargement des projets...</div>
+              <div v-if="saes.length === 0" style="color: var(--text-secondary); font-size: 14px;">Aucune donnée disponible.</div>
               
               <div v-for="sae in saes" :key="sae.id" :class="['sae-item', sae.status]">
                   <div class="sae-header">

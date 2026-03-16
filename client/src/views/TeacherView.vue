@@ -25,7 +25,7 @@
                           </div>
                           <div class="card-body" style="padding: 16px;">
                               
-                              <div v-if="saes.length === 0" style="color: var(--text-secondary); font-size: 14px;">Chargement des SAE de l'API...</div>
+                              <div v-if="saes.length === 0" style="color: var(--text-secondary); font-size: 14px;">Aucune donnée disponible.</div>
                               
                               <div v-for="sae in saes" :key="sae.id" class="list-item" style="margin-bottom: 8px;">
                                   <div class="item-info">

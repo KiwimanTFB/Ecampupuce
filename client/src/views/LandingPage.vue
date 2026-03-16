@@ -12,6 +12,9 @@
         <a href="#contact">Campus</a>
       </nav>
       <div class="nav-auth">
+        <router-link to="/register" class="btn btn-secondary register-nav-btn">
+          S'inscrire
+        </router-link>
         <router-link to="/login" class="btn btn-primary login-btn">
           <span>Connexion E-campus</span>
           <svg viewBox="0 0 24 24" class="icon-arrow"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -291,6 +294,8 @@ onMounted(() => {
   --shadow-glow: 0 0 20px rgba(79, 70, 229, 0.4);
 
   min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
   background-color: var(--bg-color);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
@@ -403,6 +408,20 @@ onMounted(() => {
   height: 2px;
   background-color: var(--primary);
   border-radius: 2px;
+}
+
+.nav-auth {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.register-nav-btn {
+  border-radius: 99px !important;
+  padding: 10px 24px !important;
+  font-weight: 600 !important;
+  font-size: 14px;
+  text-decoration: none;
 }
 
 .login-btn {

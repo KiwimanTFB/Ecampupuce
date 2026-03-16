@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');
 const db = require('./db');
+const initDB = require('./init-db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -23,12 +24,13 @@ const storage = multer.diskStorage({
         cb(null, 'uploads/');
     },
     filename: (req, file, cb) => {
-        // Ajout d'un timestamp pour éviter les écrasements de noms
         cb(null, Date.now() + '-' + file.originalname);
     }
 });
 const upload = multer({ storage });
 
+// Initialiser les tables au démarrage
+initDB();
 
 // Middleware d'authentification JWT
 const authenticateToken = (req, res, next) => {
@@ -46,7 +48,6 @@ const authenticateToken = (req, res, next) => {
 
 // Middleware vérifiant que l'utilisateur est un professeur
 const requireTeacher = (req, res, next) => {
-    // Ce middleware doit être appelé APRÈS authenticateToken (qui peuple req.user)
     if (req.user && req.user.role === 'teacher') {
         next();
     } else {
@@ -58,19 +59,52 @@ app.get('/api/test', (req, res) => {
     res.json({ message: "L'API de SaeTrack fonctionne correctement !" });
 });
 
+// POST /api/register - Inscription d'un nouvel utilisateur
+app.post('/api/register', async (req, res) => {
+    const { nom, email, password, role } = req.body;
+
+    if (!nom || !email || !password || !role) {
+        return res.status(400).json({ error: 'Tous les champs sont requis (nom, email, password, role)' });
+    }
+
+    if (role !== 'student' && role !== 'teacher') {
+        return res.status(400).json({ error: 'Le rôle doit être "student" ou "teacher"' });
+    }
+
+    try {
+        // Vérifier si l'email existe déjà
+        const existing = await db.getAsync('SELECT id FROM users WHERE email = ?', [email]);
+        if (existing) {
+            return res.status(409).json({ error: 'Un compte avec cet email existe déjà' });
+        }
+
+        // Hasher le mot de passe
+        const saltRounds = 10;
+        const password_hash = await bcrypt.hash(password, saltRounds);
+
+        // Insérer l'utilisateur
+        const result = await db.runAsync(
+            'INSERT INTO users (nom, email, password_hash, role) VALUES (?, ?, ?, ?)',
+            [nom, email, password_hash, role]
+        );
+
+        res.status(201).json({ message: 'Compte créé avec succès', userId: result.lastID });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Erreur serveur lors de l'inscription" });
+    }
+});
+
 // POST /api/login - Authentification et génération du JWT
 app.post('/api/login', async (req, res) => {
-    console.log("Body reçu :", req.body);
     const { email, password } = req.body;
     
     if (!email || !password) {
-        console.log("Erreur : email ou password manquant dans le body");
         return res.status(400).json({ error: 'Email et mot de passe requis' });
     }
     
     try {
-        const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
-        const user = rows[0];
+        const user = await db.getAsync('SELECT * FROM users WHERE email = ?', [email]);
 
         if (!user) {
             return res.status(400).json({ error: 'Utilisateur introuvable' });
@@ -81,7 +115,6 @@ app.post('/api/login', async (req, res) => {
             return res.status(400).json({ error: 'Mot de passe incorrect' });
         }
 
-        // Créer le payload JWT
         const userPayload = {
             id: user.id,
             nom: user.nom,
@@ -102,9 +135,8 @@ app.post('/api/login', async (req, res) => {
 // GET /api/saes - Récupérer toutes les SAEs (Route protégée)
 app.get('/api/saes', authenticateToken, async (req, res) => {
     try {
-        const [saes] = await db.query('SELECT * FROM saes');
+        const saes = await db.allAsync('SELECT * FROM saes');
         
-        // Formater les booléens (MySQL renvoie 0 ou 1)
         const formattedSaes = saes.map(sae => ({
             ...sae,
             isEvaluated: !!sae.isEvaluated
@@ -121,7 +153,7 @@ app.get('/api/saes', authenticateToken, async (req, res) => {
 app.get('/api/public/saes', async (req, res) => {
     try {
         const { promo, semestre, annee, domaine } = req.query;
-        let query = 'SELECT * FROM saes WHERE is_public = TRUE';
+        let query = 'SELECT * FROM saes WHERE is_public = 1';
         let queryParams = [];
 
         if (promo) {
@@ -141,7 +173,7 @@ app.get('/api/public/saes', async (req, res) => {
             queryParams.push(domaine);
         }
 
-        const [saes] = await db.query(query, queryParams);
+        const saes = await db.allAsync(query, queryParams);
         
         const formattedSaes = saes.map(sae => ({
             ...sae,
@@ -160,8 +192,7 @@ app.get('/api/public/saes', async (req, res) => {
 app.get('/api/saes/:id', authenticateToken, async (req, res) => {
     const saeId = req.params.id;
     try {
-        const [rows] = await db.query('SELECT * FROM saes WHERE id = ?', [saeId]);
-        const sae = rows[0];
+        const sae = await db.getAsync('SELECT * FROM saes WHERE id = ?', [saeId]);
         
         if (sae) {
             sae.isEvaluated = !!sae.isEvaluated;
@@ -184,12 +215,12 @@ app.post('/api/saes', authenticateToken, requireTeacher, async (req, res) => {
             return res.status(400).json({ error: 'Le titre, la description, le semestre et la deadline sont requis' });
         }
 
-        const [result] = await db.query(
+        const result = await db.runAsync(
             'INSERT INTO saes (title, description, deadline, semestre, annee, status, groupType) VALUES (?, ?, ?, ?, ?, ?, ?)',
             [title, description, deadline, semestre, annee, status, groupType]
         );
 
-        res.status(201).json({ message: 'SAE créée avec succès', id: result.insertId });
+        res.status(201).json({ message: 'SAE créée avec succès', id: result.lastID });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Erreur serveur lors de la création de la SAE' });
@@ -209,17 +240,15 @@ app.post('/api/upload', authenticateToken, upload.single('document'), async (req
         const filepath = `/uploads/${req.file.filename}`;
 
         if (!saeId) {
-            return res.status(400).json({ error: 'L\'ID de la SAE est requis' });
+            return res.status(400).json({ error: "L'ID de la SAE est requis" });
         }
 
-        // Insertion du rendu dans la table MySQL
-        await db.query(
+        await db.runAsync(
             'INSERT INTO rendus (sae_id, user_id, nom_fichier, chemin_fichier) VALUES (?, ?, ?, ?)',
             [saeId, userId, filename, filepath]
         );
 
-        // Optionnel : Mettre à jour le statut "deliveryStatus" de la SAE
-        await db.query(
+        await db.runAsync(
             'UPDATE saes SET deliveryStatus = ? WHERE id = ?',
             [`Rendu déposé le ${new Date().toLocaleDateString('fr-FR')}`, saeId]
         );
@@ -228,7 +257,7 @@ app.post('/api/upload', authenticateToken, upload.single('document'), async (req
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Erreur lors de l\'upload du fichier' });
+        res.status(500).json({ error: "Erreur lors de l'upload du fichier" });
     }
 });
 
@@ -240,8 +269,7 @@ app.get('/api/rendus', authenticateToken, requireTeacher, async (req, res) => {
             return res.status(400).json({ error: 'sae_id param is required' });
         }
         
-        // On récupère aussi le nom de l'étudiant via une jointure simple
-        const [rendus] = await db.query(`
+        const rendus = await db.allAsync(`
             SELECT r.*, u.nom as etudiant_nom
             FROM rendus r
             JOIN users u ON r.user_id = u.id
@@ -259,7 +287,7 @@ app.get('/api/rendus', authenticateToken, requireTeacher, async (req, res) => {
 // GET /api/annonces - Récupérer toutes les annonces (Protégé, tout le monde peut lire)
 app.get('/api/annonces', authenticateToken, async (req, res) => {
     try {
-        const [annonces] = await db.query(`
+        const annonces = await db.allAsync(`
             SELECT a.*, u.nom as auteur_nom 
             FROM annonces a 
             JOIN users u ON a.auteur_id = u.id 
@@ -282,7 +310,7 @@ app.post('/api/annonces', authenticateToken, requireTeacher, async (req, res) =>
             return res.status(400).json({ error: 'Le titre et le message sont requis' });
         }
 
-        await db.query(
+        await db.runAsync(
             'INSERT INTO annonces (titre, message, destinataires, auteur_id) VALUES (?, ?, ?, ?)',
             [titre, message, destinataires || 'Tous', auteur_id]
         );
@@ -304,7 +332,7 @@ app.put('/api/rendus/:id/status', authenticateToken, requireTeacher, async (req,
              return res.status(400).json({ error: 'is_evaluated is required' });
         }
 
-        await db.query('UPDATE rendus SET is_evaluated = ? WHERE id = ?', [is_evaluated, renduId]);
+        await db.runAsync('UPDATE rendus SET is_evaluated = ? WHERE id = ?', [is_evaluated ? 1 : 0, renduId]);
         
         res.json({ message: 'Statut du rendu mis à jour' });
     } catch (error) {
@@ -323,20 +351,18 @@ app.put('/api/rendus/:id/evaluation', authenticateToken, requireTeacher, async (
             return res.status(400).json({ error: 'La note est requise' });
         }
 
-        // 1. Mettre à jour le rendu lui-même (note, commentaire, is_evaluated à 1)
-        await db.query(
-            'UPDATE rendus SET note = ?, commentaire_prof = ?, is_evaluated = TRUE WHERE id = ?',
+        // 1. Mettre à jour le rendu
+        await db.runAsync(
+            'UPDATE rendus SET note = ?, commentaire_prof = ?, is_evaluated = 1 WHERE id = ?',
             [note, commentaire || '', renduId]
         );
 
-        // 2. Mettre à jour la SAE correspondante par souci de compatibilité avec les autres vues
-        const [rendusTable] = await db.query('SELECT sae_id FROM rendus WHERE id = ?', [renduId]);
-        if (rendusTable.length > 0) {
-            const saeId = rendusTable[0].sae_id;
-            // Dans ce MVP simple, dés qu'un rendu a une note, toute la SAE est marquée évaluée
-            await db.query(
-                'UPDATE saes SET isEvaluated = TRUE, grade = ?, comment = ? WHERE id = ?',
-                [note, commentaire || '', saeId]
+        // 2. Mettre à jour la SAE correspondante
+        const rendu = await db.getAsync('SELECT sae_id FROM rendus WHERE id = ?', [renduId]);
+        if (rendu) {
+            await db.runAsync(
+                'UPDATE saes SET isEvaluated = 1, grade = ?, comment = ? WHERE id = ?',
+                [note, commentaire || '', rendu.sae_id]
             );
         }
 
@@ -348,12 +374,9 @@ app.put('/api/rendus/:id/evaluation', authenticateToken, requireTeacher, async (
 });
 
 // GET /api/mes-notes - Récupérer les retours (Étudiant)
-// Renvoie simplement la liste des SAEs évaluées de l'étudiant pour rester compatible avec la vue StudentView actuelle
 app.get('/api/mes-notes', authenticateToken, async (req, res) => {
     try {
-        // Dans une vraie BDD avec notes individuelles on ferait une jointure.
-        // Ici on se base sur les SAEs évaluées globalement (compatibilité vue actuelle).
-        const [saes] = await db.query('SELECT * FROM saes WHERE isEvaluated = TRUE');
+        const saes = await db.allAsync('SELECT * FROM saes WHERE isEvaluated = 1');
         const formattedSaes = saes.map(sae => ({
             ...sae,
             isEvaluated: !!sae.isEvaluated
