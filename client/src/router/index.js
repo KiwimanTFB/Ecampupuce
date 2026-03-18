@@ -3,6 +3,9 @@ import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
 import StudentView from '../views/StudentView.vue'
 import TeacherView from '../views/TeacherView.vue'
+import DemandeConfirmationView from '../views/DemandeConfirmationView.vue'
+import AdminLoginView from '../views/AdminLoginView.vue'
+import AdminDashboardView from '../views/AdminDashboardView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -18,9 +21,25 @@ const router = createRouter({
       component: LoginView
     },
     {
+      path: '/login/admin',
+      name: 'admin-login',
+      component: AdminLoginView
+    },
+    {
+      path: '/admin/dashboard',
+      name: 'admin-dashboard',
+      component: AdminDashboardView,
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
       path: '/register',
       name: 'register',
       component: RegisterView
+    },
+    {
+      path: '/confirmation-demande',
+      name: 'confirmation',
+      component: DemandeConfirmationView
     },
     {
       path: '/student/:view?',
@@ -48,16 +67,18 @@ router.beforeEach((to, from) => {
     } 
     
     if (to.meta.requiresAuth && to.meta.role !== userRole) {
-        // Empêcher un étudiant d'aller sur /teacher et inversement
+        // Empêcher d'aller sur un dashboard non autorisé
         if (userRole === 'student') return '/student'
         if (userRole === 'teacher') return '/teacher'
+        if (userRole === 'admin') return '/admin/dashboard'
         return '/login'
     } 
     
-    if (to.path === '/login' && token) {
+    if (to.path.startsWith('/login') && token) {
         // Si l'utilisateur est déjà connecté, l'empêcher de retourner sur le login
         if (userRole === 'student') return '/student'
         if (userRole === 'teacher') return '/teacher'
+        if (userRole === 'admin') return '/admin/dashboard'
         return false // Annule la navigation vers login
     }
     

@@ -35,7 +35,7 @@ if (!fs.existsSync(path.join(__dirname, 'uploads'))) {
 }
 
 // Initialiser les tables au démarrage
-initDB();
+// initDB(); // <-- DISABLED for persistence
 
 // Middleware d'authentification JWT
 const authenticateToken = (req, res, next) => {
@@ -64,16 +64,16 @@ app.get('/api/test', (req, res) => {
     res.json({ message: "L'API de SaeTrack fonctionne correctement !" });
 });
 
-// POST /api/register - Inscription d'un nouvel utilisateur
+// POST /api/register - Demande de création de compte
 app.post('/api/register', async (req, res) => {
-    const { name, email, password, role, promo } = req.body;
+    const { nom, prenom, email, telephone, password, role, numero_etudiant } = req.body;
 
-    if (!name || !email || !password || !role) {
+    if (!nom || !prenom || !email || !telephone || !password || !role) {
         return res.status(400).json({ error: 'Tous les champs obligatoires sont requis' });
     }
 
-    if (role === 'student' && !promo) {
-        return res.status(400).json({ error: 'La promotion est requise pour un étudiant' });
+    if (role === 'student' && !numero_etudiant) {
+        return res.status(400).json({ error: 'Le numéro étudiant est requis pour un étudiant' });
     }
 
     if (role !== 'student' && role !== 'teacher') {
@@ -81,29 +81,27 @@ app.post('/api/register', async (req, res) => {
     }
 
     try {
-        // Vérifier si l'email existe déjà
-        const existing = await db.getAsync('SELECT id_user FROM utilisateurs WHERE email = ?', [email]);
-        if (existing) {
-            return res.status(409).json({ error: 'Un compte avec cet email existe déjà' });
+        // Vérifier dans utilisateurs et demandes_comptes
+        const existingUser = await db.getAsync('SELECT id_user FROM utilisateurs WHERE email = ?', [email]);
+        const existingDemande = await db.getAsync('SELECT id_demande FROM demandes_comptes WHERE email = ?', [email]);
+        if (existingUser || existingDemande) {
+            return res.status(409).json({ error: 'Un compte ou une demande avec cet email existe déjà' });
         }
 
         // Hasher le mot de passe
         const saltRounds = 10;
         const password_hash = await bcrypt.hash(password, saltRounds);
 
-        const nom = name;
-        const prenom = '';
-
-        // Insérer l'utilisateur
+        // Insérer la demande
         const result = await db.runAsync(
-            'INSERT INTO utilisateurs (nom, prenom, email, mot_de_passe, role, annee_promo) VALUES (?, ?, ?, ?, ?, ?)',
-            [nom, prenom, email, password_hash, role, promo || null]
+            'INSERT INTO demandes_comptes (nom, prenom, email, telephone, mot_de_passe, role, numero_etudiant) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [nom, prenom, email, telephone, password_hash, role, numero_etudiant || null]
         );
 
-        res.status(201).json({ message: 'Compte créé avec succès', userId: result.lastID });
+        res.status(201).json({ message: 'Demande envoyée avec succès', demandeId: result.lastID });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: "Erreur serveur lors de l'inscription" });
+        res.status(500).json({ error: "Erreur serveur lors de la demande d'inscription" });
     }
 });
 
@@ -431,6 +429,68 @@ app.get('/api/mes-notes', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Erreur serveur lors de la récupération des notes' });
+    }
+});
+
+// ====== ROUTES ADMINISTRATEUR ======
+const requireAdmin = (req, res, next) => {
+    if (req.user && req.user.role === 'admin') {
+        next();
+    } else {
+        res.status(403).json({ error: 'Accès refusé. Réservé aux administrateurs.' });
+    }
+};
+
+app.post('/api/login/admin', async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        const admin = await db.getAsync('SELECT * FROM utilisateurs WHERE email = ? AND role = "admin"', [email]);
+        if (!admin) return res.status(400).json({ error: 'Administrateur introuvable ou rôle incorrect' });
+
+        const validPassword = await bcrypt.compare(password, admin.mot_de_passe);
+        if (!validPassword) return res.status(400).json({ error: 'Mot de passe incorrect' });
+
+        const token = jwt.sign({ id: admin.id_user, role: admin.role, nom: admin.nom, email: admin.email }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        res.json({ token, user: { id: admin.id_user, nom: admin.nom, role: admin.role, email: admin.email } });
+    } catch (e) {
+        res.status(500).json({ error: 'Erreur serveur.' });
+    }
+});
+
+app.get('/api/admin/demandes', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const demandes = await db.allAsync('SELECT * FROM demandes_comptes WHERE statut = "En attente" ORDER BY date_demande DESC');
+        res.json(demandes);
+    } catch (e) {
+        res.status(500).json({ error: 'Erreur lors de la récupération des demandes.' });
+    }
+});
+
+app.post('/api/admin/demandes/:id/valider', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const id = req.params.id;
+        const demande = await db.getAsync('SELECT * FROM demandes_comptes WHERE id_demande = ?', [id]);
+        if (!demande || demande.statut !== 'En attente') return res.status(404).json({ error: 'Demande introuvable ou déjà traitée.' });
+
+        await db.runAsync(
+            'INSERT INTO utilisateurs (nom, prenom, email, mot_de_passe, role, groupe_td, annee_promo) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [demande.nom, demande.prenom, demande.email, demande.mot_de_passe, demande.role, null, '']
+        );
+        await db.runAsync('UPDATE demandes_comptes SET statut = "Approuvée" WHERE id_demande = ?', [id]);
+        
+        res.json({ message: 'Compte validé et créé avec succès.' });
+    } catch (error) {
+        res.status(500).json({ error: 'Erreur lors de la validation.' });
+    }
+});
+
+app.post('/api/admin/demandes/:id/rejeter', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const id = req.params.id;
+        await db.runAsync('UPDATE demandes_comptes SET statut = "Rejetée" WHERE id_demande = ?', [id]);
+        res.json({ message: 'Demande rejetée.' });
+    } catch (e) {
+        res.status(500).json({ error: 'Erreur.' });
     }
 });
 

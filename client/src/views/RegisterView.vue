@@ -3,19 +3,30 @@
       <div class="register-card">
           <div class="register-header">
               <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-              <h2>Créer un compte SaeTrack</h2>
-              <p>Inscrivez-vous pour accéder à votre espace dédié.</p>
+              <h2>Demande de création de compte</h2>
+              <p>Soumettez votre demande pour accéder à l'intranet.</p>
           </div>
           
           <form @submit.prevent="handleRegister" class="register-form">
-              <div class="form-group">
-                  <label class="form-label">Nom complet</label>
-                  <input type="text" v-model="name" class="form-control" placeholder="Ex : Jean Dupont" required>
+              <div class="form-group" style="display:flex; gap:10px;">
+                  <div style="flex:1;">
+                      <label class="form-label">Prénom</label>
+                      <input type="text" v-model="prenom" class="form-control" placeholder="Jean" required>
+                  </div>
+                  <div style="flex:1;">
+                      <label class="form-label">Nom</label>
+                      <input type="text" v-model="nom" class="form-control" placeholder="Dupont" required>
+                  </div>
               </div>
 
               <div class="form-group">
                   <label class="form-label">Adresse email</label>
                   <input type="email" v-model="email" class="form-control" placeholder="prenom.nom@univ.fr" required>
+              </div>
+
+              <div class="form-group">
+                  <label class="form-label">Téléphone</label>
+                  <input type="tel" v-model="telephone" class="form-control" placeholder="06 12 34 56 78" required>
               </div>
               
               <div class="form-group">
@@ -40,13 +51,8 @@
               </div>
 
               <div class="form-group" v-if="role === 'student'">
-                  <label class="form-label">Promotion</label>
-                  <select v-model="promo" class="form-control" required>
-                      <option value="" disabled>-- Sélectionner votre promotion --</option>
-                      <option value="BUT 1">BUT 1</option>
-                      <option value="BUT 2">BUT 2</option>
-                      <option value="BUT 3">BUT 3</option>
-                  </select>
+                  <label class="form-label">Numéro étudiant</label>
+                  <input type="text" v-model="numero_etudiant" class="form-control" placeholder="Ex: e20231234" required>
               </div>
 
               <div v-if="errorMessage" class="error-message">
@@ -58,7 +64,7 @@
               </div>
 
               <button type="submit" class="btn btn-primary register-btn" :disabled="isLoading">
-                  {{ isLoading ? 'Inscription en cours...' : "S'inscrire" }}
+                  {{ isLoading ? 'Envoi en cours...' : "Soumettre la demande" }}
               </button>
           </form>
 
@@ -78,11 +84,13 @@ import { useRouter } from 'vue-router'
 import axios from 'axios'
 
 const router = useRouter()
-const name = ref('')
+const nom = ref('')
+const prenom = ref('')
 const email = ref('')
+const telephone = ref('')
 const password = ref('')
 const role = ref('student')
-const promo = ref('')
+const numero_etudiant = ref('')
 const errorMessage = ref('')
 const successMessage = ref('')
 const isLoading = ref(false)
@@ -94,18 +102,20 @@ const handleRegister = async () => {
   
   try {
       await axios.post('/api/register', {
-          name: name.value,
+          nom: nom.value,
+          prenom: prenom.value,
           email: email.value,
+          telephone: telephone.value,
           password: password.value,
           role: role.value,
-          promo: promo.value
+          numero_etudiant: numero_etudiant.value
       })
 
-      successMessage.value = 'Compte créé avec succès ! Redirection vers la connexion...'
+      successMessage.value = 'Demande envoyée avec succès !'
       
       // Redirection après un court délai
       setTimeout(() => {
-          router.push('/login')
+          router.push('/confirmation-demande')
       }, 1500)
       
   } catch (error) {
