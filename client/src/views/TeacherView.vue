@@ -12,7 +12,6 @@
               </div>
           </div>
 
-          <!-- DASHBOARD -->
           <div v-if="currentView === 'dashboard'" class="view-section active">
               <div class="grid">
                   <div>
@@ -87,7 +86,6 @@
               </div>
           </div>
 
-          <!-- CREATE SAE -->
           <div v-if="currentView === 'create-sae'" class="view-section active">
               <div class="card" style="max-width: 800px;">
                   <div class="card-header">Proposition d'une nouvelle SAE</div>
@@ -150,7 +148,6 @@
               </div>
           </div>
 
-          <!-- GRADING -->
           <div v-if="currentView === 'grading'" class="view-section active">
               <div v-if="gradingStatus" class="status-msg" :class="isGradingError ? 'error-message' : 'success-message'">
                   {{ gradingStatus }}
@@ -172,17 +169,18 @@
                       </div>
 
                       <div v-if="isFetchingRendus" style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">Chargement des rendus...</div>
-                      <template v-else-if="saeRendus[sae.id]">
+                      
+                      <div v-else-if="saeRendus[sae.id]">
                               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border-light);">
                                   <span style="font-size: 13px; color: var(--text-secondary);">{{ saeRendus[sae.id].length }} rendus disponibles</span>
                                   
                                   <div style="display: flex; gap: 12px;">
                                       <button class="btn btn-outline" style="color: var(--status-success-text); border-color: var(--status-success-border);" @click="markAllEvaluated(sae.id)">
-                                          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                                          <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; margin-right: 4px;"><polyline points="20 6 9 17 4 12"/></svg>
                                           Tout marquer comme évalué
                                       </button>
                                       <button class="btn btn-outline" style="color: var(--accent-purple); border-color: var(--accent-purple);">
-                                          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                          <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; margin-right: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                                           Tout télécharger (.zip)
                                       </button>
                                   </div>
@@ -202,7 +200,6 @@
                                       <div class="btn-group" style="display: flex; gap: 8px; align-items: center;">
                                           <a :href="'http://localhost:3000' + rendu.chemin_fichier" target="_blank" class="btn btn-outline" style="text-decoration: none;">Télécharger</a>
                                           
-                                          <!-- Saisie Rapide (Inline) -->
                                           <input type="number" min="0" max="20" step="0.5" v-model="rendu.inputNote" class="form-control" style="width: 80px; text-align: center; padding: 6px;" placeholder="-- / 20">
                                           <input type="text" v-model="rendu.inputComment" class="form-control" style="width: 150px; padding: 6px;" placeholder="Commentaire...">
                                           <button class="btn btn-primary" @click="submitInlineGrade(rendu, sae.id)" :disabled="rendu.isSaving">
@@ -211,13 +208,10 @@
                                       </div>
                                   </div>
                               </div>
-                          </template>
-                      </template>
-                  </div>
+                      </div> </div>
               </div>
           </div>
 
-          <!-- ANNOUNCEMENTS -->
           <div v-if="currentView === 'announcements'" class="view-section active">
                <div class="card" style="max-width: 800px;">
                   <div class="card-header">Rédiger une nouvelle annonce</div>
@@ -254,7 +248,6 @@
       </div>
   </main>
 
-  <!-- EDIT SAE MODAL -->
   <div class="modal-overlay" :class="{ active: isEditModalOpen }" @click.self="closeEditModal">
       <div class="modal-content" style="max-width: 600px;">
           <h2 class="modal-title">Éditer la SAE</h2>

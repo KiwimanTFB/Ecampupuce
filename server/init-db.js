@@ -7,75 +7,25 @@ function initDB() {
         // Activer les foreign keys
         db.run('PRAGMA foreign_keys = ON');
 
-        // Création de la table users
-        db.run(`
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                email TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL,
-                role TEXT NOT NULL CHECK(role IN ('student', 'teacher')),
-                promo TEXT
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erreur table users:', err.message);
-            else console.log('✅ Table users prête.');
-        });
+        // Création des tables v2
+        const tables = [
+            `CREATE TABLE IF NOT EXISTS utilisateurs (id_user INTEGER PRIMARY KEY AUTOINCREMENT, nom TEXT NOT NULL, prenom TEXT NOT NULL, email TEXT NOT NULL UNIQUE, mot_de_passe TEXT NOT NULL, role TEXT NOT NULL, groupe_td TEXT, annee_promo TEXT);`,
+            `CREATE TABLE IF NOT EXISTS sae (id_sae INTEGER PRIMARY KEY AUTOINCREMENT, titre TEXT NOT NULL, description TEXT NOT NULL, semestre TEXT NOT NULL, annee_univ TEXT NOT NULL, date_debut DATETIME NOT NULL, consignes TEXT, image_mise_en_avant TEXT, statut TEXT DEFAULT 'En attente', niveau TEXT);`,
+            `CREATE TABLE IF NOT EXISTS competences (id_competence INTEGER PRIMARY KEY AUTOINCREMENT, nom_competence TEXT NOT NULL);`,
+            `CREATE TABLE IF NOT EXISTS sae_competences (id_sae INTEGER NOT NULL, id_competence INTEGER NOT NULL, PRIMARY KEY (id_sae, id_competence), FOREIGN KEY (id_sae) REFERENCES sae (id_sae) ON DELETE CASCADE, FOREIGN KEY (id_competence) REFERENCES competences (id_competence) ON DELETE CASCADE);`,
+            `CREATE TABLE IF NOT EXISTS groupes (id_groupe INTEGER PRIMARY KEY AUTOINCREMENT, id_sae INTEGER NOT NULL, nom_groupe TEXT NOT NULL, FOREIGN KEY (id_sae) REFERENCES sae (id_sae) ON DELETE CASCADE);`,
+            `CREATE TABLE IF NOT EXISTS groupe_etudiants (id_groupe INTEGER NOT NULL, id_user INTEGER NOT NULL, PRIMARY KEY (id_groupe, id_user), FOREIGN KEY (id_groupe) REFERENCES groupes (id_groupe) ON DELETE CASCADE, FOREIGN KEY (id_user) REFERENCES utilisateurs (id_user) ON DELETE CASCADE);`,
+            `CREATE TABLE IF NOT EXISTS livrables (id_livrable INTEGER PRIMARY KEY AUTOINCREMENT, id_sae INTEGER NOT NULL, titre_livrable TEXT NOT NULL, date_limite DATETIME NOT NULL, FOREIGN KEY (id_sae) REFERENCES sae (id_sae) ON DELETE CASCADE);`,
+            `CREATE TABLE IF NOT EXISTS rendus (id_rendu INTEGER PRIMARY KEY AUTOINCREMENT, id_livrable INTEGER NOT NULL, id_groupe INTEGER NOT NULL, chemin_fichier TEXT NOT NULL, date_depot DATETIME DEFAULT CURRENT_TIMESTAMP, est_evalue INTEGER DEFAULT 0, note_attribuee REAL, commentaire_prof TEXT, est_public INTEGER DEFAULT 0, tags TEXT, domaine_activite TEXT, FOREIGN KEY (id_livrable) REFERENCES livrables (id_livrable) ON DELETE CASCADE, FOREIGN KEY (id_groupe) REFERENCES groupes (id_groupe) ON DELETE CASCADE);`,
+            `CREATE TABLE IF NOT EXISTS documents (id_document INTEGER PRIMARY KEY AUTOINCREMENT, id_sae INTEGER NOT NULL, nom_fichier TEXT NOT NULL, chemin_fichier TEXT NOT NULL, type_doc TEXT NOT NULL, FOREIGN KEY (id_sae) REFERENCES sae (id_sae) ON DELETE CASCADE);`,
+            `CREATE TABLE IF NOT EXISTS annonces (id_annonce INTEGER PRIMARY KEY AUTOINCREMENT, id_auteur INTEGER NOT NULL, titre TEXT NOT NULL, contenu TEXT NOT NULL, date_publi DATETIME DEFAULT CURRENT_TIMESTAMP, cible_type TEXT, cible_id INTEGER, media_joint TEXT, FOREIGN KEY (id_auteur) REFERENCES utilisateurs (id_user) ON DELETE CASCADE);`
+        ];
 
-        // Création de la table saes
-        db.run(`
-            CREATE TABLE IF NOT EXISTS saes (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT NOT NULL,
-                description TEXT,
-                competences TEXT,
-                due_date TEXT,
-                status TEXT CHECK(status IN ('urgent', 'ongoing', 'done', 'archived')),
-                level TEXT,
-                groupType TEXT,
-                teacher_id INTEGER NOT NULL,
-                FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE CASCADE
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erreur table saes:', err.message);
-            else console.log('✅ Table saes prête.');
-        });
-
-        // La table rendus (optionnelle pour cette étape, on la garde minimaliste pour éviter les erreurs)
-        db.run(`
-            CREATE TABLE IF NOT EXISTS rendus (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                sae_id INTEGER NOT NULL,
-                user_id INTEGER NOT NULL,
-                nom_fichier TEXT NOT NULL,
-                chemin_fichier TEXT NOT NULL,
-                date_depot TEXT DEFAULT (datetime('now')),
-                note REAL,
-                commentaire_prof TEXT,
-                status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'graded')),
-                is_evaluated INTEGER DEFAULT 0,
-                FOREIGN KEY (sae_id) REFERENCES saes(id) ON DELETE CASCADE,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erreur table rendus:', err.message);
-            else console.log('✅ Table rendus prête.');
-        });
-
-        // Création de la table annonces
-        db.run(`
-            CREATE TABLE IF NOT EXISTS annonces (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                titre TEXT NOT NULL,
-                message TEXT NOT NULL,
-                destinataires TEXT DEFAULT 'Tous',
-                date_creation TEXT DEFAULT (datetime('now')),
-                auteur_id INTEGER NOT NULL,
-                FOREIGN KEY (auteur_id) REFERENCES users(id) ON DELETE CASCADE
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erreur table annonces:', err.message);
-            else console.log('✅ Table annonces prête.');
+        tables.forEach((query, index) => {
+            db.run(query, (err) => {
+                if (err) console.error(`❌ Erreur création table (index ${index}):`, err.message);
+                else console.log(`✅ Table créée (index ${index}).`);
+            });
         });
 
         console.log('✅ Initialisation SQLite terminée !');

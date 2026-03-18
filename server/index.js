@@ -82,7 +82,7 @@ app.post('/api/register', async (req, res) => {
 
     try {
         // Vérifier si l'email existe déjà
-        const existing = await db.getAsync('SELECT id FROM users WHERE email = ?', [email]);
+        const existing = await db.getAsync('SELECT id_user FROM utilisateurs WHERE email = ?', [email]);
         if (existing) {
             return res.status(409).json({ error: 'Un compte avec cet email existe déjà' });
         }
@@ -91,10 +91,13 @@ app.post('/api/register', async (req, res) => {
         const saltRounds = 10;
         const password_hash = await bcrypt.hash(password, saltRounds);
 
+        const nom = name;
+        const prenom = '';
+
         // Insérer l'utilisateur
         const result = await db.runAsync(
-            'INSERT INTO users (name, email, password, role, promo) VALUES (?, ?, ?, ?, ?)',
-            [name, email, password_hash, role, promo || null]
+            'INSERT INTO utilisateurs (nom, prenom, email, mot_de_passe, role, annee_promo) VALUES (?, ?, ?, ?, ?, ?)',
+            [nom, prenom, email, password_hash, role, promo || null]
         );
 
         res.status(201).json({ message: 'Compte créé avec succès', userId: result.lastID });
@@ -113,21 +116,21 @@ app.post('/api/login', async (req, res) => {
     }
     
     try {
-        const user = await db.getAsync('SELECT * FROM users WHERE email = ?', [email]);
+        const user = await db.getAsync('SELECT * FROM utilisateurs WHERE email = ?', [email]);
 
         if (!user) {
             return res.status(400).json({ error: 'Utilisateur introuvable' });
         }
 
-        const validPassword = await bcrypt.compare(password, user.password);
+        const validPassword = await bcrypt.compare(password, user.mot_de_passe);
         if (!validPassword) {
             return res.status(400).json({ error: 'Mot de passe incorrect' });
         }
 
         const userPayload = {
-            id: user.id,
-            nom: user.name, // Mapping pour compatibilité vue frontend
-            name: user.name,
+            id: user.id_user,
+            nom: user.nom, // Mapping pour compatibilité vue frontend
+            name: user.nom + ' ' + user.prenom,
             email: user.email,
             role: user.role
         };
@@ -148,9 +151,9 @@ app.get('/api/saes', authenticateToken, async (req, res) => {
         const saes = await db.allAsync(`
             SELECT 
                 s.*,
-                (SELECT COUNT(*) FROM users WHERE role = 'student') as total_students,
-                (SELECT COUNT(DISTINCT user_id) FROM rendus r WHERE r.sae_id = s.id) as progress_count
-            FROM saes s
+                (SELECT COUNT(*) FROM utilisateurs WHERE role = 'student') as total_students,
+                (SELECT COUNT(DISTINCT r.id_groupe) FROM rendus r JOIN livrables l ON r.id_livrable = l.id_livrable WHERE l.id_sae = s.id_sae) as progress_count
+            FROM sae s
         `);
         res.json(saes);
     } catch (error) {
@@ -163,24 +166,16 @@ app.get('/api/saes', authenticateToken, async (req, res) => {
 app.get('/api/public/saes', async (req, res) => {
     try {
         const { promo, semestre, annee, domaine } = req.query;
-        let query = 'SELECT * FROM saes WHERE is_public = 1';
+        let query = 'SELECT * FROM sae WHERE 1 = 1';
         let queryParams = [];
 
-        if (promo) {
-            query += ' AND promo = ?';
-            queryParams.push(promo);
-        }
         if (semestre) {
             query += ' AND semestre = ?';
             queryParams.push(semestre);
         }
         if (annee) {
-            query += ' AND annee = ?';
-            queryParams.push(Number(annee));
-        }
-        if (domaine) {
-            query += ' AND domaine = ?';
-            queryParams.push(domaine);
+            query += ' AND annee_univ = ?';
+            queryParams.push(String(annee));
         }
 
         const saes = await db.allAsync(query, queryParams);
@@ -202,7 +197,7 @@ app.get('/api/public/saes', async (req, res) => {
 app.get('/api/saes/:id', authenticateToken, async (req, res) => {
     const saeId = req.params.id;
     try {
-        const sae = await db.getAsync('SELECT * FROM saes WHERE id = ?', [saeId]);
+        const sae = await db.getAsync('SELECT * FROM sae WHERE id_sae = ?', [saeId]);
         
         if (sae) {
             sae.isEvaluated = !!sae.isEvaluated;
@@ -227,8 +222,8 @@ app.post('/api/saes', authenticateToken, requireTeacher, async (req, res) => {
         }
 
         const result = await db.runAsync(
-            'INSERT INTO saes (title, description, competences, due_date, status, level, groupType, teacher_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            [title, description, competences, due_date, status, level, groupType, teacher_id]
+            'INSERT INTO sae (titre, description, semestre, annee_univ, date_debut, statut, niveau) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [title, description, 'S1', '2023', due_date, status, level]
         );
 
         res.status(201).json({ message: 'SAE créée avec succès', id: result.lastID });
@@ -246,13 +241,12 @@ app.put('/api/saes/:id', authenticateToken, requireTeacher, async (req, res) => 
         const { title, description, competences, due_date, status, level, groupType } = req.body;
 
         // Vérifier que la SAE appartient bien à ce prof
-        const sae = await db.getAsync('SELECT teacher_id FROM saes WHERE id = ?', [saeId]);
+        const sae = await db.getAsync('SELECT id_sae FROM sae WHERE id_sae = ?', [saeId]);
         if (!sae) return res.status(404).json({ error: 'SAE non trouvée' });
-        if (sae.teacher_id !== teacher_id) return res.status(403).json({ error: 'Non autorisé à modifier cette SAE' });
 
         await db.runAsync(
-            'UPDATE saes SET title = ?, description = ?, competences = ?, due_date = ?, status = ?, level = ?, groupType = ? WHERE id = ?',
-            [title, description, competences, due_date, status, level, groupType, saeId]
+            'UPDATE sae SET titre = ?, description = ?, date_debut = ?, statut = ?, niveau = ? WHERE id_sae = ?',
+            [title, description, due_date, status, level, saeId]
         );
 
         res.json({ message: 'SAE mise à jour avec succès' });
@@ -268,11 +262,10 @@ app.delete('/api/saes/:id', authenticateToken, requireTeacher, async (req, res) 
         const saeId = req.params.id;
         const teacher_id = req.user.id;
 
-        const sae = await db.getAsync('SELECT teacher_id FROM saes WHERE id = ?', [saeId]);
+        const sae = await db.getAsync('SELECT id_sae FROM sae WHERE id_sae = ?', [saeId]);
         if (!sae) return res.status(404).json({ error: 'SAE non trouvée' });
-        if (sae.teacher_id !== teacher_id) return res.status(403).json({ error: 'Non autorisé à supprimer cette SAE' });
 
-        await db.runAsync('DELETE FROM saes WHERE id = ?', [saeId]);
+        await db.runAsync('DELETE FROM sae WHERE id_sae = ?', [saeId]);
         res.json({ message: 'SAE supprimée avec succès' });
     } catch (error) {
         console.error(error);
