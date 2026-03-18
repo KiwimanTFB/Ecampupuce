@@ -36,6 +36,36 @@
         </tr>
       </tbody>
     </table>
+
+    <div class="header" style="margin-top: 50px;">
+        <h2>Demandes de création de SAE</h2>
+    </div>
+
+    <div v-if="saesEnAttente.length === 0" class="empty-state">
+        Aucune SAE en attente.
+    </div>
+
+    <table v-else class="demandes-table">
+      <thead>
+        <tr>
+          <th>Titre</th>
+          <th>Professeur auteur</th>
+          <th>Date de début</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="sae in saesEnAttente" :key="sae.id_sae">
+          <td><strong>{{ sae.titre }}</strong></td>
+          <td>{{ sae.prof_nom }} {{ sae.prof_prenom }}</td>
+          <td>{{ new Date(sae.date_debut).toLocaleDateString() }}</td>
+          <td>
+            <button class="btn btn-primary btn-sm" @click="approuverSAE(sae.id_sae)" style="margin-right:8px;">Approuver</button>
+            <button class="btn btn-danger btn-sm" @click="refuserSAE(sae.id_sae)">Supprimer/Refuser</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </template>
 
@@ -45,6 +75,7 @@ import { useRouter } from 'vue-router'
 import axios from 'axios'
 
 const demandes = ref([])
+const saesEnAttente = ref([])
 const router = useRouter()
 
 const fetchDemandes = async () => {
@@ -52,6 +83,16 @@ const fetchDemandes = async () => {
         const token = localStorage.getItem('jwt_token')
         const { data } = await axios.get('/api/admin/demandes', { headers: { Authorization: `Bearer ${token}` }})
         demandes.value = data
+    } catch(e) {
+        console.error(e)
+    }
+}
+
+const fetchSAEsEnAttente = async () => {
+    try {
+        const token = localStorage.getItem('jwt_token')
+        const { data } = await axios.get('/api/admin/saes/pending', { headers: { Authorization: `Bearer ${token}` }})
+        saesEnAttente.value = data
     } catch(e) {
         console.error(e)
     }
@@ -71,13 +112,30 @@ const rejeter = async (id) => {
     fetchDemandes()
 }
 
+const approuverSAE = async (id) => {
+    if(!confirm("Approuver cette SAE et la rendre visible pour les étudiants ?")) return;
+    const token = localStorage.getItem('jwt_token')
+    await axios.put(`/api/admin/saes/${id}/approve`, {}, { headers: { Authorization: `Bearer ${token}` }})
+    fetchSAEsEnAttente()
+}
+
+const refuserSAE = async (id) => {
+    if(!confirm("Refuser et supprimer cette demande de création de SAE ?")) return;
+    const token = localStorage.getItem('jwt_token')
+    await axios.delete(`/api/admin/saes/${id}`, { headers: { Authorization: `Bearer ${token}` }})
+    fetchSAEsEnAttente()
+}
+
 const logout = () => {
     localStorage.removeItem('jwt_token')
     localStorage.removeItem('user_role')
     router.push('/login/admin')
 }
 
-onMounted(() => fetchDemandes())
+onMounted(() => {
+    fetchDemandes()
+    fetchSAEsEnAttente()
+})
 </script>
 
 <style scoped>

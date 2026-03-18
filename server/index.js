@@ -8,6 +8,8 @@ const path = require('path');
 const db = require('./db');
 const initDB = require('./init-db');
 
+const JWT_SECRET = process.env.JWT_SECRET || 'default_super_secret_key_123!';
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -34,6 +36,18 @@ if (!fs.existsSync(path.join(__dirname, 'uploads'))) {
     fs.mkdirSync(path.join(__dirname, 'uploads'), { recursive: true });
 }
 
+// Ensure sae table has id_prof column for Teacher association
+db.run('ALTER TABLE sae ADD COLUMN id_prof INTEGER', (err) => {
+    if (err) {
+        // Ignore column already exists error
+        if (!err.message.includes('duplicate column name')) {
+            console.error('Erreur lors de l\'ajout de la colonne id_prof:', err.message);
+        }
+    } else {
+        console.log('Colonne id_prof ajoutée à la table sae.');
+    }
+});
+
 // Initialiser les tables au démarrage
 // initDB(); // <-- DISABLED for persistence
 
@@ -44,7 +58,7 @@ const authenticateToken = (req, res, next) => {
     
     if (token == null) return res.status(401).json({ error: 'Token manquant' });
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    jwt.verify(token, JWT_SECRET, (err, user) => {
         if (err) return res.status(403).json({ error: 'Token invalide' });
         req.user = user;
         next();
@@ -133,7 +147,7 @@ app.post('/api/login', async (req, res) => {
             role: user.role
         };
 
-        const token = jwt.sign(userPayload, process.env.JWT_SECRET, { expiresIn: '24h' });
+        const token = jwt.sign(userPayload, JWT_SECRET, { expiresIn: '24h' });
 
         res.json({ token, user: userPayload });
 
@@ -176,6 +190,8 @@ app.get('/api/public/saes', async (req, res) => {
             queryParams.push(String(annee));
         }
 
+        query += " AND statut = 'Validé'";
+
         const saes = await db.allAsync(query, queryParams);
         
         const formattedSaes = saes.map(sae => ({
@@ -212,16 +228,16 @@ app.get('/api/saes/:id', authenticateToken, async (req, res) => {
 // POST /api/saes - Créer une nouvelle SAE (Route protégée, PROF UNIQUEMENT)
 app.post('/api/saes', authenticateToken, requireTeacher, async (req, res) => {
     try {
-        const { title, description, competences, due_date, status = 'ongoing', level = 'Non spécifié', groupType = 'Non spécifié' } = req.body;
+        const { titre, description, niveau, semestre, annee_univ, date_debut, consignes } = req.body;
         const teacher_id = req.user.id;
         
-        if (!title || !description || !competences || !due_date) {
-            return res.status(400).json({ error: 'Titre, description, compétences et date limite sont requis.' });
+        if (!titre || !description || !date_debut || !niveau || !semestre || !annee_univ) {
+            return res.status(400).json({ error: 'Titre, description, niveau, semestre, année universitaire et date de début sont requis.' });
         }
 
         const result = await db.runAsync(
-            'INSERT INTO sae (titre, description, semestre, annee_univ, date_debut, statut, niveau) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [title, description, 'S1', '2023', due_date, status, level]
+            "INSERT INTO sae (titre, description, semestre, annee_univ, date_debut, consignes, statut, niveau, id_prof) VALUES (?, ?, ?, ?, ?, ?, 'En attente', ?, ?)",
+            [titre, description, semestre, annee_univ, date_debut, consignes || '', niveau, teacher_id]
         );
 
         res.status(201).json({ message: 'SAE créée avec succès', id: result.lastID });
@@ -443,16 +459,25 @@ const requireAdmin = (req, res, next) => {
 
 app.post('/api/login/admin', async (req, res) => {
     const { email, password } = req.body;
+    
+    if (!email || !password) {
+        return res.status(400).json({ error: 'Email et mot de passe requis' });
+    }
+
     try {
         const admin = await db.getAsync('SELECT * FROM utilisateurs WHERE email = ? AND role = "admin"', [email]);
-        if (!admin) return res.status(400).json({ error: 'Administrateur introuvable ou rôle incorrect' });
+        if (!admin) return res.status(401).json({ error: 'Administrateur introuvable ou rôle incorrect' });
 
-        const validPassword = await bcrypt.compare(password, admin.mot_de_passe);
-        if (!validPassword) return res.status(400).json({ error: 'Mot de passe incorrect' });
+        // Tolérer le texte brut si la BDD n'a pas hashé le mot de passe initial
+        const isMatch = await bcrypt.compare(password, admin.mot_de_passe).catch(() => false);
+        const validPassword = isMatch || (password === admin.mot_de_passe);
+        
+        if (!validPassword) return res.status(401).json({ error: 'Mot de passe incorrect' });
 
-        const token = jwt.sign({ id: admin.id_user, role: admin.role, nom: admin.nom, email: admin.email }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        const token = jwt.sign({ id: admin.id_user, role: admin.role, nom: admin.nom, email: admin.email }, JWT_SECRET, { expiresIn: '24h' });
         res.json({ token, user: { id: admin.id_user, nom: admin.nom, role: admin.role, email: admin.email } });
     } catch (e) {
+        console.error("ERREUR LOGIN ADMIN:", e);
         res.status(500).json({ error: 'Erreur serveur.' });
     }
 });
@@ -491,6 +516,41 @@ app.post('/api/admin/demandes/:id/rejeter', authenticateToken, requireAdmin, asy
         res.json({ message: 'Demande rejetée.' });
     } catch (e) {
         res.status(500).json({ error: 'Erreur.' });
+    }
+});
+
+app.get('/api/admin/saes/pending', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const saes = await db.allAsync(`
+            SELECT s.*, u.nom as prof_nom, u.prenom as prof_prenom
+            FROM sae s
+            LEFT JOIN utilisateurs u ON s.id_prof = u.id_user
+            WHERE s.statut = 'En attente'
+            ORDER BY s.date_debut ASC
+        `);
+        res.json(saes);
+    } catch (e) {
+        res.status(500).json({ error: 'Erreur lors de la récupération des demandes de SAE.' });
+    }
+});
+
+app.put('/api/admin/saes/:id/approve', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const id = req.params.id;
+        await db.runAsync('UPDATE sae SET statut = "Validé" WHERE id_sae = ?', [id]);
+        res.json({ message: 'SAE approuvée et rendue visible.' });
+    } catch (e) {
+        res.status(500).json({ error: 'Erreur lors de l\'approbation de la SAE.' });
+    }
+});
+
+app.delete('/api/admin/saes/:id', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const id = req.params.id;
+        await db.runAsync('DELETE FROM sae WHERE id_sae = ?', [id]);
+        res.json({ message: 'La demande de SAE a été refusée et supprimée.' });
+    } catch (e) {
+        res.status(500).json({ error: 'Erreur lors de la suppression de la SAE.' });
     }
 });
 

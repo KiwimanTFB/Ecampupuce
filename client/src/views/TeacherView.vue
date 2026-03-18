@@ -28,16 +28,18 @@
                               
                               <div v-for="sae in saes" :key="sae.id" class="list-item" style="margin-bottom: 8px;">
                                   <div class="item-info">
-                                      <div class="item-title">{{ sae.title }}</div>
-                                      <div class="item-meta">{{ sae.level || 'Non spécifié' }} • Échéance : {{ formatDate(sae.due_date) }} • {{ sae.groupType || 'Non spécifié' }}</div>
+                                      <div class="item-title">{{ sae.titre }}</div>
+                                      <div class="item-meta">{{ sae.niveau || 'Non spécifié' }} • Début : {{ formatDate(sae.date_debut) }} • {{ sae.semestre || 'S1' }} {{ sae.annee_univ || '' }}</div>
                                   </div>
                                   
-                                  <span v-if="sae.status === 'urgent'" class="badge badge-warning" style="background:#fef3c7; color:#d97706; border-color:#fde68a;">PROCHE ÉCHÉANCE</span>
-                                  <span v-else-if="sae.status === 'done'" class="badge badge-success" style="background:var(--status-success-bg); color:var(--status-success-text); border-color:var(--status-success-border);">TERMINÉ</span>
+                                  <span v-if="sae.statut === 'En attente'" class="badge badge-warning" style="background:#fef3c7; color:#d97706; border-color:#fde68a;">En attente de validation</span>
+                                  <span v-else-if="sae.statut === 'urgent'" class="badge badge-warning" style="background:#fef3c7; color:#d97706; border-color:#fde68a;">PROCHE ÉCHÉANCE</span>
+                                  <span v-else-if="sae.statut === 'done'" class="badge badge-success" style="background:var(--status-success-bg); color:var(--status-success-text); border-color:var(--status-success-border);">TERMINÉ</span>
+                                  <span v-else-if="sae.statut === 'Validé'" class="badge badge-success" style="background:var(--status-success-bg); color:var(--status-success-text); border-color:var(--status-success-border);">VALIDÉ</span>
                                   
                                   <div class="btn-group" style="display: flex; gap: 8px;">
                                       <button class="btn btn-outline" @click="openEditModal(sae)">Éditer</button>
-                                      <button class="btn btn-outline" style="border-color: var(--status-danger-border); color: var(--status-danger-text);" @click="deleteSae(sae.id)">Supprimer</button>
+                                      <button class="btn btn-outline" style="border-color: var(--status-danger-border); color: var(--status-danger-text);" @click="deleteSae(sae.id_sae || sae.id)">Supprimer</button>
                                   </div>
                               </div>
 
@@ -53,8 +55,8 @@
                           <div class="card-body">
                               <div v-for="sae in saes" :key="'prog-'+sae.id" class="progress-block">
                                   <div class="progress-header">
-                                      <span>{{ sae.title }}</span>
-                                      <span :style="{ color: sae.status === 'done' ? 'var(--status-success-text)' : 'var(--text-secondary)' }">
+                                      <span>{{ sae.titre }}</span>
+                                      <span :style="{ color: sae.statut === 'done' ? 'var(--status-success-text)' : 'var(--text-secondary)' }">
                                         {{ sae.progress_count }} / {{ sae.total_students }} rendus
                                       </span>
                                   </div>
@@ -74,9 +76,9 @@
                               </div>
                           </div>
                           <div class="card-body" style="padding: 16px;">
-                              <div v-for="sae in saes.filter(s => s.status !== 'archived')" :key="'cor-'+sae.id" class="list-item" style="padding: 12px; border-color: var(--status-warning-border);">
+                              <div v-for="sae in saes.filter(s => s.statut !== 'archived')" :key="'cor-'+sae.id" class="list-item" style="padding: 12px; border-color: var(--status-warning-border);">
                                   <div class="item-info">
-                                      <div class="item-title">{{ sae.title }} : {{ sae.progress_count }} rendu(s) détecté(s)</div>
+                                      <div class="item-title">{{ sae.titre }} : {{ sae.progress_count }} rendu(s) détecté(s)</div>
                                   </div>
                                   <button class="btn btn-primary" style="padding: 6px 12px;" @click="switchView('grading', sae.id)">Ouvrir</button>
                               </div>
@@ -97,45 +99,47 @@
 
                       <div class="form-group">
                           <label class="form-label">Titre de la SAE *</label>
-                          <input type="text" v-model="saeForm.title" class="form-control" placeholder="Ex: SAE 4.04 - Réalité Virtuelle">
+                          <input type="text" v-model="saeForm.titre" class="form-control" placeholder="Ex: SAE 4.04 - Réalité Virtuelle">
                       </div>
+                      
                       <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
                           <div>
-                              <label class="form-label">Date limite de rendu *</label>
-                              <input type="date" v-model="saeForm.due_date" class="form-control">
+                              <label class="form-label">Description *</label>
+                              <textarea v-model="saeForm.description" class="form-control" placeholder="Description générale" rows="3"></textarea>
                           </div>
                           <div>
+                              <label class="form-label">Consignes</label>
+                              <textarea v-model="saeForm.consignes" class="form-control" placeholder="Détails techniques, livrables attendus..." rows="3"></textarea>
+                          </div>
+                      </div>
+
+                      <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                          <div>
                               <label class="form-label">Niveau (ex: B.U.T. 2)</label>
-                              <input type="text" v-model="saeForm.level" class="form-control" placeholder="B.U.T. 2">
+                              <input type="text" v-model="saeForm.niveau" class="form-control" placeholder="B.U.T. 2">
+                          </div>
+                          <div>
+                              <label class="form-label">Semestre</label>
+                              <select v-model="saeForm.semestre" class="form-control">
+                                  <option value="S1">S1</option>
+                                  <option value="S2">S2</option>
+                                  <option value="S3">S3</option>
+                                  <option value="S4">S4</option>
+                                  <option value="S5">S5</option>
+                                  <option value="S6">S6</option>
+                              </select>
                           </div>
                       </div>
                       
                       <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
                           <div>
-                              <label class="form-label">Statut initial</label>
-                              <select v-model="saeForm.status" class="form-control">
-                                  <option value="ongoing">En cours</option>
-                                  <option value="urgent">Urgent (< 7 jours)</option>
-                                  <option value="done">Terminé</option>
-                              </select>
+                              <label class="form-label">Année Univ.</label>
+                              <input type="text" v-model="saeForm.annee_univ" class="form-control" placeholder="Ex: 2023-2024">
                           </div>
                           <div>
-                              <label class="form-label">Type de groupe</label>
-                              <select v-model="saeForm.groupType" class="form-control">
-                                  <option value="Non spécifié">Non spécifié</option>
-                                  <option value="Travail individuel">Travail individuel</option>
-                                  <option value="Travail de groupe">Travail de groupe</option>
-                              </select>
+                              <label class="form-label">Date de début *</label>
+                              <input type="date" v-model="saeForm.date_debut" class="form-control">
                           </div>
-                      </div>
-                      <div class="form-group">
-                          <label class="form-label">Description et consignes *</label>
-                          <textarea v-model="saeForm.description" class="form-control" placeholder="Objectifs pédagogiques, livrables attendus..." rows="4"></textarea>
-                      </div>
-
-                      <div class="form-group">
-                          <label class="form-label">Compétences évaluées *</label>
-                          <textarea v-model="saeForm.competences" class="form-control" placeholder="Ex: Développer des interfaces utilisateur, Optimiser les requêtes SQL..."></textarea>
                       </div>
 
                       <div style="background: var(--bg-app); padding: 16px; border-radius: var(--radius-sm); margin-top: 32px;">
@@ -153,19 +157,19 @@
                   {{ gradingStatus }}
               </div>
               
-              <div v-for="sae in saes.filter(s => s.status !== 'archived')" :key="'grade-'+sae.id" class="accordion">
-                  <div class="accordion-header" :class="{ active: activeAccordion === sae.id }" @click="toggleAccordion(sae.id)">
-                      {{ sae.title }}
+              <div v-for="sae in saes.filter(s => s.statut !== 'archived')" :key="'grade-'+sae.id" class="accordion">
+                  <div class="accordion-header" :class="{ active: activeAccordion === (sae.id_sae || sae.id) }" @click="toggleAccordion(sae.id_sae || sae.id)">
+                      {{ sae.titre }}
                       <div style="display:flex; align-items:center; gap: 16px;">
                           <span v-if="sae.progress_count === 0" class="badge badge-success">AUCUN RENDU</span>
                           <span v-else class="badge badge-warning">{{ sae.progress_count }} RENDU(S) DÉPOSÉ(S)</span>
                           <svg class="icon-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
                       </div>
                   </div>
-                  <div class="accordion-body" :class="{ active: activeAccordion === sae.id }">
+                  <div class="accordion-body" :class="{ active: activeAccordion === (sae.id_sae || sae.id) }">
                       
                       <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">
-                          Date limite fixée au : {{ formatDate(sae.due_date) }}.
+                          Date fixée au : {{ formatDate(sae.date_debut) }}.
                       </div>
 
                       <div v-if="isFetchingRendus" style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">Chargement des rendus...</div>
@@ -258,15 +262,17 @@
 
           <div class="form-group">
               <label class="form-label">Titre de la SAE *</label>
-              <input type="text" v-model="editingSae.title" class="form-control">
+              <input type="text" v-model="editingSae.titre" class="form-control">
           </div>
           <div class="form-group">
               <label class="form-label">Date limite de rendu *</label>
-              <input type="date" v-model="editingSae.due_date" class="form-control">
+              <input type="date" v-model="editingSae.date_debut" class="form-control">
           </div>
           <div class="form-group">
               <label class="form-label">Statut</label>
-              <select v-model="editingSae.status" class="form-control">
+              <select v-model="editingSae.statut" class="form-control">
+                  <option value="En attente">En attente de validation</option>
+                  <option value="Validé">Validé</option>
                   <option value="ongoing">En cours</option>
                   <option value="urgent">Urgent</option>
                   <option value="done">Terminé</option>
@@ -277,8 +283,8 @@
               <textarea v-model="editingSae.description" class="form-control" rows="3"></textarea>
           </div>
           <div class="form-group">
-              <label class="form-label">Compétences</label>
-              <textarea v-model="editingSae.competences" class="form-control" rows="2"></textarea>
+              <label class="form-label">Consignes</label>
+              <textarea v-model="editingSae.consignes" class="form-control" rows="2"></textarea>
           </div>
           
           <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px;">
@@ -321,14 +327,14 @@ const pageTitle = computed(() => pageInfo[currentView.value]?.title || "Vue")
 const pageDesc = computed(() => pageInfo[currentView.value]?.desc || "")
 
 // Fonctionnalité : Créer une SAE
-const saeForm = ref({ title: '', due_date: '', description: '', competences: '', status: 'ongoing', level: 'B.U.T. 2', groupType: 'Travail de groupe' })
+const saeForm = ref({ titre: '', description: '', consignes: '', niveau: 'B.U.T. 2', semestre: 'S1', annee_univ: '2023-2024', date_debut: '' })
 const isCreatingSae = ref(false)
 const createSaeStatus = ref('')
 const isCreateSaeError = ref(false)
 
 const submitSae = async () => {
-    if (!saeForm.value.title || !saeForm.value.due_date || !saeForm.value.description || !saeForm.value.competences) {
-        createSaeStatus.value = "Veuillez remplir tous les champs obligatoires (Titre, Description, Compétences, Date de rendu)."
+    if (!saeForm.value.titre || !saeForm.value.date_debut || !saeForm.value.description) {
+        createSaeStatus.value = "Veuillez remplir tous les champs obligatoires (Titre, Description, Date de début)."
         isCreateSaeError.value = true
         return
     }
@@ -343,7 +349,7 @@ const submitSae = async () => {
         isCreateSaeError.value = false
         
         // Reset form
-        saeForm.value = { title: '', due_date: '', description: '', competences: '', status: 'ongoing', level: 'B.U.T. 2', groupType: 'Travail de groupe' }
+        saeForm.value = { titre: '', description: '', consignes: '', niveau: 'B.U.T. 2', semestre: 'S1', annee_univ: '2023-2024', date_debut: '' }
         
         // Refresh dashboard
         const resSaes = await axios.get('/api/saes');
@@ -377,10 +383,10 @@ const closeEditModal = () => {
 }
 
 const submitEditSae = async () => {
-    if (!editingSae.value.title || !editingSae.value.due_date) return;
+    if (!editingSae.value.titre || !editingSae.value.date_debut) return;
     isEditingSae.value = true;
     try {
-        await axios.put(`/api/saes/${editingSae.value.id}`, editingSae.value)
+        await axios.put(`/api/saes/${editingSae.value.id_sae || editingSae.value.id}`, editingSae.value)
         const resSaes = await axios.get('/api/saes');
         saes.value = resSaes.data;
         closeEditModal();
