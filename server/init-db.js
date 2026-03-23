@@ -36,6 +36,28 @@ function initDB() {
             else console.log("✅ Administrateur par défaut injecté / vérifié.");
         });
 
+        // Seed pour la Vitrine Publique
+        db.get('SELECT COUNT(*) as count FROM rendus WHERE est_public = 1', (err, row) => {
+            if (!err && row.count === 0) {
+                console.log('🌱 Seed de la Vitrine (Projets Publics)...');
+                db.run(`INSERT OR IGNORE INTO sae (id_sae, titre, description, semestre, annee_univ, date_debut, niveau) VALUES (991, 'Création Numérique', 'Design', 'S1', '2024', CURRENT_TIMESTAMP, 'BUT 1')`);
+                db.run(`INSERT OR IGNORE INTO sae (id_sae, titre, description, semestre, annee_univ, date_debut, niveau) VALUES (992, 'Développement Web', 'Dev', 'S3', '2025', CURRENT_TIMESTAMP, 'BUT 2')`);
+                db.run(`INSERT OR IGNORE INTO sae (id_sae, titre, description, semestre, annee_univ, date_debut, niveau) VALUES (993, 'Expériences Interactives', '3D', 'S5', '2026', CURRENT_TIMESTAMP, 'BUT 3')`);
+                
+                db.run(`INSERT OR IGNORE INTO utilisateurs (id_user, nom, prenom, email, mot_de_passe, role) VALUES (991, 'Bernard', 'Emma', 'emma@test.fr', 'pass', 'student')`);
+                db.run(`INSERT OR IGNORE INTO utilisateurs (id_user, nom, prenom, email, mot_de_passe, role) VALUES (992, 'Martin', 'Lucas', 'lucas@test.fr', 'pass', 'student')`);
+                db.run(`INSERT OR IGNORE INTO utilisateurs (id_user, nom, prenom, email, mot_de_passe, role) VALUES (993, 'Dupont', 'Alice', 'alice@test.fr', 'pass', 'student')`);
+                
+                db.run(`INSERT OR IGNORE INTO groupes (id_groupe, id_sae, nom_groupe) VALUES (991, 991, 'G1'), (992, 992, 'G2'), (993, 993, 'G3')`);
+                db.run(`INSERT OR IGNORE INTO groupe_etudiants (id_groupe, id_user) VALUES (991, 991), (992, 992), (993, 993)`);
+                db.run(`INSERT OR IGNORE INTO livrables (id_livrable, id_sae, titre_livrable, date_limite) VALUES (991, 991, 'Maquette', CURRENT_TIMESTAMP), (992, 992, 'Site Frontend', CURRENT_TIMESTAMP), (993, 993, 'App React', CURRENT_TIMESTAMP)`);
+                
+                db.run(`INSERT OR IGNORE INTO rendus (id_rendu, id_livrable, id_groupe, chemin_fichier, est_public, tags) VALUES (991, 991, 991, 'https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=1000', 1, 'Campagne 360')`);
+                db.run(`INSERT OR IGNORE INTO rendus (id_rendu, id_livrable, id_groupe, chemin_fichier, est_public, tags) VALUES (992, 992, 992, 'https://images.unsplash.com/photo-1512428559087-560fa5ceab42?q=80&w=1200', 1, 'Fintech App')`);
+                db.run(`INSERT OR IGNORE INTO rendus (id_rendu, id_livrable, id_groupe, chemin_fichier, est_public, tags) VALUES (993, 993, 993, 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1400', 1, 'Komorebi Void')`);
+            }
+        });
+
         console.log('✅ Initialisation SQLite terminée !');
     });
 }

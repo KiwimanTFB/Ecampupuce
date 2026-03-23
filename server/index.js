@@ -494,6 +494,46 @@ app.post('/api/admin/demandes/:id/rejeter', authenticateToken, requireAdmin, asy
     }
 });
 
+// --- ROUTES PUBLIQUES VITRINE ---
+// GET /api/public/projets - Retourne les rendus publics avec la SAE correspondante
+app.get('/api/public/projets', async (req, res) => {
+    try {
+        const query = `
+            SELECT 
+                r.id_rendu as id, 
+                COALESCE(r.tags, l.titre_livrable, 'Projet Vierge') as titre, 
+                s.titre as sae_titre, 
+                s.annee_univ as annee, 
+                COALESCE(s.niveau, 'BUT 1') as niveau, 
+                u.prenom || ' ' || u.nom as etudiant, 
+                COALESCE(r.chemin_fichier, 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1400') as image 
+            FROM rendus r
+            JOIN livrables l ON r.id_livrable = l.id_livrable
+            JOIN sae s ON l.id_sae = s.id_sae
+            JOIN groupes g ON r.id_groupe = g.id_groupe
+            JOIN groupe_etudiants ge ON g.id_groupe = ge.id_groupe
+            JOIN utilisateurs u ON ge.id_user = u.id_user
+            WHERE r.est_public = 1
+            GROUP BY r.id_rendu
+        `;
+        const projects = await db.allAsync(query);
+
+        if (!projects || projects.length === 0) {
+            // Fallback de sécurité si la DB n'a pas encore de rendus publics
+            return res.json([
+                { id: 1, titre: 'Komorebi Void', sae_titre: 'WebGL & ThreeJS', annee: '2024', niveau: 'BUT 3', etudiant: 'Sophie L.', image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1400' },
+                { id: 2, titre: 'Éditorial', sae_titre: 'Direction Artistique', annee: '2025', niveau: 'BUT 2', etudiant: 'Thomas M.', image: 'https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=1000' },
+                { id: 3, titre: 'Fintech App', sae_titre: 'UI/UX Design', annee: '2024', niveau: 'BUT 1', etudiant: 'Lucas V.', image: 'https://images.unsplash.com/photo-1512428559087-560fa5ceab42?q=80&w=1200' }
+            ]);
+        }
+
+        res.json(projects);
+    } catch (error) {
+        console.error('Erreur Route Publique Projets:', error);
+        res.status(500).json({ error: 'Erreur Serveur' });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Serveur démarré sur http://localhost:${PORT}`);
 });
