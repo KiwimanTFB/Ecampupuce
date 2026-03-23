@@ -23,30 +23,66 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Configuration Multer
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/');
+        if (file.fieldname === 'vignette') {
+            cb(null, 'uploads/vignettes/');
+        } else if (file.fieldname === 'consignes') {
+            cb(null, 'uploads/consignes/');
+        } else if (file.fieldname === 'document') {
+            cb(null, 'uploads/rendus/');
+        } else {
+            cb(null, 'uploads/');
+        }
     },
     filename: (req, file, cb) => {
-        cb(null, Date.now() + '-' + file.originalname);
+        cb(null, Date.now() + '-' + file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_'));
     }
 });
 const upload = multer({ storage });
-// S'assurer que le dossier uploads existe
-const fs = require('fs');
-if (!fs.existsSync(path.join(__dirname, 'uploads'))) {
-    fs.mkdirSync(path.join(__dirname, 'uploads'), { recursive: true });
-}
+const saeUpload = upload.fields([
+    { name: 'vignette', maxCount: 1 },
+    { name: 'consignes', maxCount: 10 }
+]);
 
-// Ensure sae table has id_prof column for Teacher association
-db.run('ALTER TABLE sae ADD COLUMN id_prof INTEGER', (err) => {
-    if (err) {
-        // Ignore column already exists error
-        if (!err.message.includes('duplicate column name')) {
-            console.error('Erreur lors de l\'ajout de la colonne id_prof:', err.message);
-        }
-    } else {
-        console.log('Colonne id_prof ajoutée à la table sae.');
-    }
-});
+// S'assurer que les dossiers uploads existent
+const fs = require('fs');
+const mkdirSyncSafe = (dir) => { if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true }); };
+mkdirSyncSafe(path.join(__dirname, 'uploads'));
+mkdirSyncSafe(path.join(__dirname, 'uploads', 'vignettes'));
+mkdirSyncSafe(path.join(__dirname, 'uploads', 'consignes'));
+mkdirSyncSafe(path.join(__dirname, 'uploads', 'rendus'));
+
+// Ensure table has new columns
+const addColumnUsers = (colName, colType) => {
+    db.run(`ALTER TABLE utilisateurs ADD COLUMN ${colName} ${colType}`, (err) => {
+        if (err && !err.message.includes('duplicate column name')) console.error(`Erreur ajout colonne ${colName} utils:`, err.message);
+    });
+};
+addColumnUsers('numero_etudiant', 'TEXT');
+
+// Ensure sae table has new columns for SAE advanced creation
+const addColumn = (colName, colType) => {
+    db.run(`ALTER TABLE sae ADD COLUMN ${colName} ${colType}`, (err) => {
+        if (err && !err.message.includes('duplicate column name')) console.error(`Erreur ajout colonne ${colName}:`, err.message);
+    });
+};
+addColumn('id_prof', 'INTEGER');
+addColumn('date_fin', 'DATETIME');
+
+const addColumnRendus = (colName, colType) => {
+    db.run(`ALTER TABLE rendus ADD COLUMN ${colName} ${colType}`, (err) => {
+        if (err && !err.message.includes('duplicate column name')) console.error(`Erreur ajout colonne ${colName} rendus:`, err.message);
+    });
+};
+addColumnRendus('id_user', 'INTEGER');
+addColumnRendus('id_sae', 'INTEGER');
+addColumnRendus('file_path', 'TEXT');
+addColumnRendus('note', 'REAL');
+addColumnRendus('feedback', 'TEXT');
+addColumn('groupe', 'TEXT');
+addColumn('competences', 'TEXT');
+addColumn('vignette_path', 'TEXT');
+addColumn('consignes_paths', 'TEXT');
+addColumn('code', 'TEXT');
 
 // Initialiser les tables au démarrage
 // initDB(); // <-- DISABLED for persistence
@@ -141,10 +177,12 @@ app.post('/api/login', async (req, res) => {
 
         const userPayload = {
             id: user.id_user,
-            nom: user.nom, // Mapping pour compatibilité vue frontend
+            id_user: user.id_user,
+            nom: user.nom,
             name: user.nom + ' ' + user.prenom,
             email: user.email,
-            role: user.role
+            role: user.role,
+            groupe_td: user.groupe_td || null
         };
 
         const token = jwt.sign(userPayload, JWT_SECRET, { expiresIn: '24h' });
@@ -157,16 +195,31 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// GET /api/saes - Récupérer toutes les SAEs (Route protégée)
+// GET /api/saes - Récupérer les SAEs (avec filtrage par groupe pour les étudiants)
 app.get('/api/saes', authenticateToken, async (req, res) => {
     try {
-        const saes = await db.allAsync(`
-            SELECT 
-                s.*,
-                (SELECT COUNT(*) FROM utilisateurs WHERE role = 'student') as total_students,
-                (SELECT COUNT(DISTINCT r.id_groupe) FROM rendus r JOIN livrables l ON r.id_livrable = l.id_livrable WHERE l.id_sae = s.id_sae) as progress_count
-            FROM sae s
-        `);
+        const { role, groupe_td } = req.user;
+
+        let saes;
+        if (role === 'admin' || role === 'teacher') {
+            // Admins et profs voient tout
+            saes = await db.allAsync(`SELECT s.*, u.nom as prof_nom, u.prenom as prof_prenom FROM sae s LEFT JOIN utilisateurs u ON s.id_prof = u.id_user`);
+        } else {
+            // Étudiants : filtrage par héritage de groupe
+            const visibleGroups = getGroupAncestors(groupe_td);
+
+            if (visibleGroups.length === 0) {
+                // Pas de groupe assigné : on ne montre que les SAE sans groupe spécifique
+                saes = await db.allAsync(`SELECT s.* FROM sae s WHERE (s.groupe IS NULL OR s.groupe = '') AND s.statut = 'Valié'`);
+            } else {
+                // Construire la clause IN dynamiquement
+                const placeholders = visibleGroups.map(() => '?').join(', ');
+                saes = await db.allAsync(
+                    `SELECT s.* FROM sae s WHERE s.statut = 'Validé' AND (s.groupe IS NULL OR s.groupe = '' OR s.groupe IN (${placeholders}))`,
+                    visibleGroups
+                );
+            }
+        }
         res.json(saes);
     } catch (error) {
         console.error(error);
@@ -226,18 +279,34 @@ app.get('/api/saes/:id', authenticateToken, async (req, res) => {
 });
 
 // POST /api/saes - Créer une nouvelle SAE (Route protégée, PROF UNIQUEMENT)
-app.post('/api/saes', authenticateToken, requireTeacher, async (req, res) => {
+app.post('/api/saes', authenticateToken, requireTeacher, upload.fields([{ name: 'vignette', maxCount: 1 }, { name: 'consignes', maxCount: 10 }]), async (req, res) => {
     try {
-        const { titre, description, niveau, semestre, annee_univ, date_debut, consignes } = req.body;
+        if (!req.body) return res.status(400).json({ error: "Données manquantes" });
+        const { titre, description, semestre, annee_univ, date_debut, date_fin, groupe, competences, consignes } = req.body;
         const teacher_id = req.user.id;
         
-        if (!titre || !description || !date_debut || !niveau || !semestre || !annee_univ) {
-            return res.status(400).json({ error: 'Titre, description, niveau, semestre, année universitaire et date de début sont requis.' });
+        if (!titre || !description || !date_debut || !semestre || !annee_univ) {
+            return res.status(400).json({ error: 'Titre, description, semestre, année universitaire et date de début sont requis.' });
         }
 
+        const vignette = req.files && req.files['vignette'] ? `/uploads/vignettes/${req.files['vignette'][0].filename}` : null;
+        if (!vignette) {
+             return res.status(400).json({ error: 'La vignette est obligatoire.' });
+        }
+
+        const consignesFiles = req.files && req.files['consignes'] ? req.files['consignes'].map(f => `/uploads/consignes/${f.filename}`) : [];
+
+        let parsedCompetences = competences;
+        if (typeof competences === 'string') {
+             try { parsedCompetences = JSON.parse(competences); } catch(e) { parsedCompetences = []; }
+        }
+
+        const competencesJSON = JSON.stringify(parsedCompetences || []);
+        const consignesJSON = JSON.stringify(consignesFiles);
+
         const result = await db.runAsync(
-            "INSERT INTO sae (titre, description, semestre, annee_univ, date_debut, consignes, statut, niveau, id_prof) VALUES (?, ?, ?, ?, ?, ?, 'En attente', ?, ?)",
-            [titre, description, semestre, annee_univ, date_debut, consignes || '', niveau, teacher_id]
+            "INSERT INTO sae (titre, description, semestre, annee_univ, date_debut, date_fin, groupe, competences, consignes, statut, id_prof, vignette_path, consignes_paths) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'En attente', ?, ?, ?)",
+            [titre, description, semestre, annee_univ, date_debut, date_fin || null, groupe || '', competencesJSON, consignes || '', teacher_id, vignette, consignesJSON]
         );
 
         res.status(201).json({ message: 'SAE créée avec succès', id: result.lastID });
@@ -248,19 +317,37 @@ app.post('/api/saes', authenticateToken, requireTeacher, async (req, res) => {
 });
 
 // PUT /api/saes/:id - Mettre à jour une SAE (Route protégée, PROF créateur UNIQUEMENT)
-app.put('/api/saes/:id', authenticateToken, requireTeacher, async (req, res) => {
+app.put('/api/saes/:id', authenticateToken, requireTeacher, upload.fields([{ name: 'vignette', maxCount: 1 }, { name: 'consignes', maxCount: 10 }]), async (req, res) => {
     try {
         const saeId = req.params.id;
         const teacher_id = req.user.id;
-        const { title, description, competences, due_date, status, level, groupType } = req.body;
+        const { titre, description, competences, date_debut, date_fin, semestre, annee_univ, groupe } = req.body;
 
-        // Vérifier que la SAE appartient bien à ce prof
-        const sae = await db.getAsync('SELECT id_sae FROM sae WHERE id_sae = ?', [saeId]);
+        const sae = await db.getAsync('SELECT id_sae, vignette_path, consignes_paths FROM sae WHERE id_sae = ?', [saeId]);
         if (!sae) return res.status(404).json({ error: 'SAE non trouvée' });
 
+        let parsedCompetences = competences;
+        if (typeof competences === 'string') {
+             try { parsedCompetences = JSON.parse(competences); } catch(e) { parsedCompetences = []; }
+        }
+        const competencesJSON = JSON.stringify(parsedCompetences || []);
+
+        const vignette = req.files && req.files['vignette'] ? `/uploads/vignettes/${req.files['vignette'][0].filename}` : sae.vignette_path;
+        
+        let existingConsignes = sae.consignes_paths ? JSON.parse(sae.consignes_paths) : [];
+        if (req.body.existingConsignes) {
+            try { existingConsignes = JSON.parse(req.body.existingConsignes); } catch(e) {}
+        }
+        
+        let consignesJSON = JSON.stringify(existingConsignes);
+        if (req.files && req.files['consignes']) {
+            const consignesFiles = req.files['consignes'].map(f => `/uploads/consignes/${f.filename}`);
+            consignesJSON = JSON.stringify([...existingConsignes, ...consignesFiles]);
+        }
+
         await db.runAsync(
-            'UPDATE sae SET titre = ?, description = ?, date_debut = ?, statut = ?, niveau = ? WHERE id_sae = ?',
-            [title, description, due_date, status, level, saeId]
+            'UPDATE sae SET titre = ?, description = ?, date_debut = ?, date_fin = ?, groupe = ?, semestre = ?, annee_univ = ?, competences = ?, vignette_path = ?, consignes_paths = ? WHERE id_sae = ? AND id_prof = ?',
+            [titre, description, date_debut, date_fin || null, groupe || '', semestre || '', annee_univ || '2023-2024', competencesJSON, vignette, consignesJSON, saeId, teacher_id]
         );
 
         res.json({ message: 'SAE mise à jour avec succès' });
@@ -287,64 +374,7 @@ app.delete('/api/saes/:id', authenticateToken, requireTeacher, async (req, res) 
     }
 });
 
-// POST /api/upload - Déposer un fichier (Route protégée)
-app.post('/api/upload', authenticateToken, upload.single('document'), async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ error: 'Aucun fichier sélectionné' });
-        }
-
-        const saeId = req.body.saeId;
-        const userId = req.user.id;
-        const filename = req.file.originalname;
-        const filepath = `/uploads/${req.file.filename}`;
-
-        if (!saeId) {
-            return res.status(400).json({ error: "L'ID de la SAE est requis" });
-        }
-
-        // Optionnel: vérifier si la SAE existe
-        const sae = await db.getAsync('SELECT id FROM saes WHERE id = ?', [saeId]);
-        if (!sae) {
-            return res.status(404).json({ error: "SAE introuvable" });
-        }
-
-        await db.runAsync(
-            'INSERT INTO rendus (sae_id, user_id, nom_fichier, chemin_fichier) VALUES (?, ?, ?, ?)',
-            [saeId, userId, filename, filepath]
-        );
-
-        res.json({ message: 'Fichier uploadé avec succès', filename, filepath });
-
-    } catch (error) {
-        console.error('Erreur API Upload:', error);
-        res.status(500).json({ error: "Erreur lors de l'upload du fichier" });
-    }
-});
-
-// GET /api/rendus - Récupérer les rendus par SAE (Route protégée, PROF UNIQUEMENT)
-app.get('/api/rendus', authenticateToken, requireTeacher, async (req, res) => {
-    try {
-        const { sae_id } = req.query;
-        if (!sae_id) {
-            return res.status(400).json({ error: 'sae_id param is required' });
-        }
-        
-        const rendus = await db.allAsync(`
-            SELECT r.*, u.name as etudiant_nom
-            FROM rendus r
-            JOIN users u ON r.user_id = u.id
-            WHERE r.sae_id = ?
-            ORDER BY r.date_depot DESC
-        `, [sae_id]);
-        
-        res.json(rendus);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Erreur serveur lors de la récupération des rendus' });
-    }
-});
-
+// (Legacy upload and rendus GET routes removed)
 // GET /api/annonces - Récupérer toutes les annonces (Protégé, tout le monde peut lire)
 app.get('/api/annonces', authenticateToken, async (req, res) => {
     try {
@@ -450,13 +480,45 @@ app.get('/api/mes-notes', authenticateToken, async (req, res) => {
 
 // ====== ROUTES ADMINISTRATEUR ======
 const requireAdmin = (req, res, next) => {
-    if (req.user && req.user.role === 'admin') {
-        next();
-    } else {
-        res.status(403).json({ error: 'Accès refusé. Réservé aux administrateurs.' });
-    }
+    if (req.user && req.user.role === 'admin') next();
+    else res.status(403).json({ error: 'Accès refusé. Réservé aux administrateurs.' });
 };
 
+// ============================================
+// ARBORESCENCE DES GROUPES MMI
+// ============================================
+// Chaque clé est un parent, ses valeurs sont ses enfants directs.
+// Un étudiant en MMI1A1 verra les SAE de: MMI1A1 + MMI1A + MMI1
+const GROUP_TREE = {
+    'MMI1':  ['MMI1A', 'MMI1B'],
+    'MMI1A': ['MMI1A1', 'MMI1A2'],
+    'MMI1B': ['MMI1B1', 'MMI1B2'],
+    'MMI2':  ['MMI2A', 'MMI2B'],
+    'MMI2A': ['MMI2A1', 'MMI2A2'],
+    'MMI2B': ['MMI2B1', 'MMI2B2'],
+    'MMI3':  ['MMI3_GR1', 'MMI3_GR2', 'MMI3-FI', 'MMI3-FA'],
+    'MMI3-FA': ['MMI3-FA-CN', 'MMI3-FA-DW'],
+    'MMI3-FA-CN': ['MMI3-FA-CN-A1', 'MMI3-FA-CN-A2'],
+    'MMI3-FA-DW': ['MMI3-FA-DW-A1', 'MMI3-FA-DW-A2'],
+};
+
+/**
+ * Retourne le groupe lui-même + TOUS ses ancêtres dans GROUP_TREE.
+ * Ex: 'MMI1A1' => ['MMI1A1', 'MMI1A', 'MMI1']
+ */
+function getGroupAncestors(groupe) {
+    if (!groupe) return [];
+    const result = [groupe];
+    // Chercher parmi tous les parents celui qui contient ce groupe
+    for (const [parent, children] of Object.entries(GROUP_TREE)) {
+        if (children.includes(groupe)) {
+            // Remonter récursivement
+            result.push(...getGroupAncestors(parent));
+            break;
+        }
+    }
+    return [...new Set(result)];
+}    
 app.post('/api/login/admin', async (req, res) => {
     const { email, password } = req.body;
     
@@ -466,10 +528,19 @@ app.post('/api/login/admin', async (req, res) => {
 
     try {
         const admin = await db.getAsync('SELECT * FROM utilisateurs WHERE email = ? AND role = "admin"', [email]);
-        if (!admin) return res.status(401).json({ error: 'Administrateur introuvable ou rôle incorrect' });
+        if (!admin || !admin.mot_de_passe) {
+            return res.status(401).json({ error: 'Administrateur introuvable ou rôle incorrect' });
+        }
 
         // Tolérer le texte brut si la BDD n'a pas hashé le mot de passe initial
-        const isMatch = await bcrypt.compare(password, admin.mot_de_passe).catch(() => false);
+        let isMatch = false;
+        try {
+            isMatch = await bcrypt.compare(password, admin.mot_de_passe);
+        } catch (bcryptErr) {
+            // Ignorer l'erreur si le hash est invalide (ex: texte brut)
+            console.warn("Bcrypt compare error (possibly plain text password):", bcryptErr.message);
+        }
+        
         const validPassword = isMatch || (password === admin.mot_de_passe);
         
         if (!validPassword) return res.status(401).json({ error: 'Mot de passe incorrect' });
@@ -494,12 +565,13 @@ app.get('/api/admin/demandes', authenticateToken, requireAdmin, async (req, res)
 app.post('/api/admin/demandes/:id/valider', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const id = req.params.id;
+        const { groupe } = req.body;
         const demande = await db.getAsync('SELECT * FROM demandes_comptes WHERE id_demande = ?', [id]);
         if (!demande || demande.statut !== 'En attente') return res.status(404).json({ error: 'Demande introuvable ou déjà traitée.' });
 
         await db.runAsync(
             'INSERT INTO utilisateurs (nom, prenom, email, mot_de_passe, role, groupe_td, annee_promo) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [demande.nom, demande.prenom, demande.email, demande.mot_de_passe, demande.role, null, '']
+            [demande.nom, demande.prenom, demande.email, demande.mot_de_passe, demande.role, groupe || null, '']
         );
         await db.runAsync('UPDATE demandes_comptes SET statut = "Approuvée" WHERE id_demande = ?', [id]);
         
@@ -534,15 +606,110 @@ app.get('/api/admin/saes/pending', authenticateToken, requireAdmin, async (req, 
     }
 });
 
+app.get('/api/admin/saes/all', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const saes = await db.allAsync(`
+            SELECT s.*, u.nom as prof_nom, u.prenom as prof_prenom
+            FROM sae s
+            LEFT JOIN utilisateurs u ON s.id_prof = u.id_user
+            ORDER BY s.date_debut DESC
+        `);
+        res.json(saes);
+    } catch (e) {
+        res.status(500).json({ error: 'Erreur lors de la récupération de toutes les SAEs.' });
+    }
+});
+
+app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const users = await db.allAsync('SELECT id_user, nom, prenom, email, role, numero_etudiant, groupe_td, annee_promo FROM utilisateurs ORDER BY nom ASC');
+        res.json(users);
+    } catch (e) {
+        res.status(500).json({ error: 'Erreur lors de la récupération des utilisateurs.' });
+    }
+});
+
+app.put('/api/admin/users/:id', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const id = req.params.id;
+        const { nom, prenom, email, role, groupe_td, numero_etudiant, mot_de_passe } = req.body;
+        
+        let query = 'UPDATE utilisateurs SET nom = ?, prenom = ?, email = ?, role = ?, groupe_td = ?, numero_etudiant = ?';
+        let params = [nom, prenom, email, role, groupe_td || null, numero_etudiant || null];
+        
+        if (mot_de_passe && mot_de_passe.trim() !== '') {
+            const hashedPassword = await bcrypt.hash(mot_de_passe, 10);
+            query += ', mot_de_passe = ?';
+            params.push(hashedPassword);
+        }
+        
+        query += ' WHERE id_user = ?';
+        params.push(id);
+        
+        await db.runAsync(query, params);
+        res.json({ message: 'Utilisateur mis à jour avec succès.' });
+    } catch (e) {
+        res.status(500).json({ error: 'Erreur lors de la mise à jour de l\'utilisateur.' });
+    }
+});
+
 app.put('/api/admin/saes/:id/approve', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const id = req.params.id;
-        await db.runAsync('UPDATE sae SET statut = "Validé" WHERE id_sae = ?', [id]);
+        const { code } = req.body;
+        if (!code || code.trim() === '') return res.status(400).json({ error: 'Le code SAE est obligatoire.' });
+
+        const existing = await db.getAsync('SELECT id_sae FROM sae WHERE code = ? AND id_sae != ?', [code, id]);
+        if (existing) {
+            return res.status(409).json({ error: 'Ce code SAE est déjà utilisé.' });
+        }
+
+        await db.runAsync('UPDATE sae SET statut = "Validé", code = ? WHERE id_sae = ?', [code, id]);
         res.json({ message: 'SAE approuvée et rendue visible.' });
     } catch (e) {
         res.status(500).json({ error: 'Erreur lors de l\'approbation de la SAE.' });
     }
 });
+
+app.put('/api/admin/saes/:id', authenticateToken, requireAdmin, upload.fields([{ name: 'vignette', maxCount: 1 }, { name: 'consignes', maxCount: 10 }]), async (req, res) => {
+    try {
+        const saeId = req.params.id;
+        const { titre, description, competences, date_debut, date_fin, semestre, annee_univ, groupe } = req.body;
+
+        const sae = await db.getAsync('SELECT id_sae, vignette_path, consignes_paths FROM sae WHERE id_sae = ?', [saeId]);
+        if (!sae) return res.status(404).json({ error: 'SAE non trouvée' });
+
+        let parsedCompetences = competences;
+        if (typeof competences === 'string') {
+             try { parsedCompetences = JSON.parse(competences); } catch(e) { parsedCompetences = []; }
+        }
+        const competencesJSON = JSON.stringify(parsedCompetences || []);
+
+        const vignette = req.files && req.files['vignette'] ? `/uploads/vignettes/${req.files['vignette'][0].filename}` : sae.vignette_path;
+        
+        let existingConsignes = sae.consignes_paths ? JSON.parse(sae.consignes_paths) : [];
+        if (req.body.existingConsignes) {
+            try { existingConsignes = JSON.parse(req.body.existingConsignes); } catch(e) {}
+        }
+        
+        let consignesJSON = JSON.stringify(existingConsignes);
+        if (req.files && req.files['consignes']) {
+            const consignesFiles = req.files['consignes'].map(f => `/uploads/consignes/${f.filename}`);
+            consignesJSON = JSON.stringify([...existingConsignes, ...consignesFiles]);
+        }
+
+        await db.runAsync(
+            'UPDATE sae SET titre = ?, description = ?, date_debut = ?, date_fin = ?, groupe = ?, semestre = ?, annee_univ = ?, competences = ?, vignette_path = ?, consignes_paths = ? WHERE id_sae = ?',
+            [titre, description, date_debut, date_fin || null, groupe || '', semestre || '', annee_univ || '2023-2024', competencesJSON, vignette, consignesJSON, saeId]
+        );
+
+        res.json({ message: 'SAE modifiée avec succès par l\'administrateur' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erreur serveur lors de la mise à jour de la SAE' });
+    }
+});
+
 
 app.delete('/api/admin/saes/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
@@ -551,6 +718,97 @@ app.delete('/api/admin/saes/:id', authenticateToken, requireAdmin, async (req, r
         res.json({ message: 'La demande de SAE a été refusée et supprimée.' });
     } catch (e) {
         res.status(500).json({ error: 'Erreur lors de la suppression de la SAE.' });
+    }
+});
+
+// ============================================
+// CYCLE DE VIE DES RENDUS (SAEs)
+// ============================================
+
+// Étudiant: Déposer un rendu
+app.post('/api/rendus', authenticateToken, upload.single('document'), async (req, res) => {
+    try {
+        if (req.user.role !== 'student') return res.status(403).json({ error: 'Accès réservé.' });
+        
+        const saeId = req.body.saeId;
+        const userId = req.user.id_user;
+        const commentaire = req.body.commentaire || '';
+        
+        if (!saeId) return res.status(400).json({ error: 'ID de SAE manquant.' });
+        if (!req.file) return res.status(400).json({ error: 'Fichier manquant.' });
+        
+        const sae = await db.getAsync('SELECT date_fin FROM sae WHERE id_sae = ?', [saeId]);
+        if (!sae) return res.status(404).json({ error: 'SAE introuvable.' });
+        
+        if (sae.date_fin && new Date() > new Date(sae.date_fin)) {
+            return res.status(403).json({ error: 'La date limite pour ce rendu est dépassée.' });
+        }
+        
+        const filePath = `/uploads/rendus/${req.file.filename}`;
+        
+        const existing = await db.getAsync('SELECT id_rendu FROM rendus WHERE id_user = ? AND id_sae = ?', [userId, saeId]);
+        if (existing) {
+            await db.runAsync(
+                'UPDATE rendus SET file_path = ?, commentaire_etudiant = ?, date_depot = CURRENT_TIMESTAMP WHERE id_rendu = ?', 
+                [filePath, commentaire, existing.id_rendu]
+            );
+        } else {
+            await db.runAsync(
+                'INSERT INTO rendus (id_user, id_sae, file_path, commentaire_etudiant) VALUES (?, ?, ?, ?)', 
+                [userId, saeId, filePath, commentaire]
+            );
+        }
+        res.json({ message: 'Rendu déposé avec succès.' });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Erreur lors du dépôt.' });
+    }
+});
+
+// Étudiant: Voir ses notes
+app.get('/api/mes-notes', authenticateToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'student') return res.status(403).json({ error: 'Accès réservé.' });
+        const notes = await db.allAsync(`
+            SELECT r.*, s.titre, s.code 
+            FROM rendus r
+            JOIN sae s ON r.id_sae = s.id_sae
+            WHERE r.id_user = ? AND r.est_evalue = 1
+            ORDER BY r.date_depot DESC
+        `, [req.user.id_user]);
+        res.json(notes);
+    } catch (e) {
+        res.status(500).json({ error: 'Erreur Serveur.' });
+    }
+});
+
+// Professeur/Admin: Récupérer les rendus d'une SAE
+app.get('/api/rendus/:saeId', authenticateToken, async (req, res) => {
+    try {
+        if (req.user.role === 'student') return res.status(403).json({ error: 'Accès réservé.' });
+        const saeId = req.params.saeId;
+        const rendus = await db.allAsync(`
+            SELECT r.*, u.nom, u.prenom, u.groupe_td, u.email
+            FROM rendus r
+            JOIN utilisateurs u ON r.id_user = u.id_user
+            WHERE r.id_sae = ?
+        `, [saeId]);
+        res.json(rendus);
+    } catch (e) {
+        res.status(500).json({ error: 'Erreur récupération.' });
+    }
+});
+
+// Professeur/Admin: Noter un rendu
+app.put('/api/rendus/:id/note', authenticateToken, async (req, res) => {
+    try {
+        if (req.user.role === 'student') return res.status(403).json({ error: 'Accès réservé.' });
+        const { note, feedback } = req.body;
+        const id_rendu = req.params.id;
+        await db.runAsync('UPDATE rendus SET note = ?, feedback = ?, est_evalue = 1 WHERE id_rendu = ?', [note || null, feedback || '', id_rendu]);
+        res.json({ message: 'Note enregistrée.' });
+    } catch (e) {
+        res.status(500).json({ error: 'Erreur de notation.' });
     }
 });
 

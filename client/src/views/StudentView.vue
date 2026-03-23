@@ -8,10 +8,6 @@
           <div class="page-title">
               <h1>{{ pageTitle }}</h1>
               <p>{{ pageDesc }}</p>
-              
-              <div v-if="apiMessage" style="color: var(--status-success-text); margin-top: 10px; font-weight: 500;">
-                  Message de l'API : {{ apiMessage }}
-              </div>
           </div>
 
           <!-- DASHBOARD -->
@@ -20,26 +16,23 @@
                   <div>
                       <div class="section-title">Échéances prioritaires (&lt; 7 jours)</div>
                       <div v-if="urgentSaes.length === 0" style="color: var(--text-secondary); font-size: 14px; margin-bottom: 24px;">Aucune échéance prioritaire.</div>
-                      <div v-for="sae in urgentSaes" :key="sae.id" class="sae-item urgent">
+                      <div v-for="sae in urgentSaes" :key="sae.id_sae" class="sae-item urgent" @click="viewSaeDetail(sae)" style="cursor: pointer;">
                           <div class="sae-header">
-                              <div class="sae-title">{{ sae.title }}</div>
+                              <div class="sae-title">{{ sae.titre }}</div>
                               <span class="badge badge-danger">URGENT</span>
                           </div>
-                          <div class="sae-meta">À rendre le {{ formatDate(sae.due_date) }} • {{ sae.groupType || 'Travail de groupe' }}</div>
+                          <div class="sae-meta">À rendre le {{ formatDate(sae.date_debut) }} • {{ sae.groupe || 'Travail de groupe' }}</div>
                           <div class="sae-desc" style="font-size: 13px; color: var(--text-primary); margin-bottom: 8px;">{{ sae.description }}</div>
-                          <div class="btn-group">
-                              <button class="btn btn-primary" @click="switchView('deliverables')">Déposer maintenant</button>
-                          </div>
                       </div>
 
                       <div class="section-title">Échéances normales</div>
                       <div v-if="ongoingSaes.length === 0" style="color: var(--text-secondary); font-size: 14px; margin-bottom: 24px;">Aucune échéance en cours.</div>
-                      <div v-for="sae in ongoingSaes" :key="sae.id" class="sae-item ongoing">
+                      <div v-for="sae in ongoingSaes" :key="sae.id_sae" class="sae-item ongoing" @click="viewSaeDetail(sae)" style="cursor: pointer;">
                           <div class="sae-header">
-                              <div class="sae-title">{{ sae.title }}</div>
+                              <div class="sae-title">{{ sae.titre }}</div>
                               <span class="badge badge-info">EN COURS</span>
                           </div>
-                          <div class="sae-meta">À rendre le {{ formatDate(sae.due_date) }} • {{ sae.groupType || 'Non spécifié' }}</div>
+                          <div class="sae-meta">À rendre le {{ formatDate(sae.date_debut) }} • {{ sae.groupe || 'Non spécifié' }}</div>
                           <div class="sae-desc" style="font-size: 13px; color: var(--text-primary); margin-bottom: 8px;">{{ sae.description }}</div>
                       </div>
                   </div>
@@ -54,16 +47,13 @@
                               <div v-if="annonces.length === 0" style="color: var(--text-secondary); font-size: 14px; padding: 12px;">
                                   Aucune annonce publiée.
                               </div>
-                              <div v-for="(annonce, index) in annonces" :key="annonce.id" class="feed-item" :class="{ 'active': index === 0 }">
+                              <div v-for="(annonce, index) in annonces" :key="annonce.id_annonce" class="feed-item" :class="{ 'active': index === 0 }">
                                   <div class="feed-header">
                                       <div class="feed-title">{{ annonce.titre }}</div>
-                                      <div class="feed-time">{{ formatDate(annonce.date_creation) }}</div>
+                                      <div class="feed-time">{{ formatDate(annonce.date_publi || annonce.date_creation) }}</div>
                                   </div>
                                   <div class="feed-body">
-                                      {{ annonce.message }}
-                                      <div style="margin-top: 8px; font-size: 12px; color: var(--text-secondary); font-style: italic;">
-                                          Par : {{ annonce.auteur_nom }} ({{ annonce.destinataires }})
-                                      </div>
+                                      {{ annonce.contenu || annonce.message }}
                                   </div>
                               </div>
                           </div>
@@ -72,57 +62,92 @@
               </div>
           </div>
 
-          <!-- PROJECTS -->
+          <!-- PROJECTS GALLERY -->
           <div v-if="currentView === 'projects'" class="view-section active">
               <div v-if="saes.length === 0" style="color: var(--text-secondary); font-size: 14px;">Aucune SAE pour le moment</div>
               
-              <div v-for="sae in saes" :key="sae.id" :class="['sae-item', sae.status]">
+              <div v-for="sae in saes" :key="sae.id_sae" class="sae-item ongoing" @click="viewSaeDetail(sae)" style="cursor: pointer;">
                   <div class="sae-header">
-                      <div class="sae-title">{{ sae.title }}</div>
-                      <span v-if="sae.status === 'urgent'" class="badge badge-danger">URGENT</span>
-                      <span v-else-if="sae.status === 'ongoing'" class="badge badge-info">EN COURS</span>
-                      <span v-else-if="sae.status === 'done'" class="badge badge-success">TERMINÉ</span>
+                      <div class="sae-title">{{ sae.titre }}</div>
                   </div>
                   <div class="sae-desc">{{ sae.description }}</div>
                   <div class="sae-details">
-                      <div class="detail-item">Échéance : {{ formatDate(sae.due_date) }}</div>
-                      <div class="detail-item">{{ sae.groupType }}</div>
+                      <div class="detail-item">Affecté au groupe : {{ sae.groupe }}</div>
+                      <div class="detail-item">Semestre : {{ sae.semestre }}</div>
                   </div>
               </div>
           </div>
 
-          <!-- DELIVERABLES -->
-          <div v-if="currentView === 'deliverables'" class="view-section active">
-              <div class="grid">
+          <!-- SAE DETAIL (New View) -->
+          <div v-if="currentView === 'sae-detail'" class="view-section active">
+              <button class="btn btn-outline" @click="currentView = 'projects'" style="margin-bottom: 20px;">&larr; Retour aux SAEs</button>
+              
+              <div v-if="selectedSaeDetails" class="grid" style="grid-template-columns: 2fr 1fr; gap: 24px;">
                   <div>
                       <div class="card">
-                          <div class="card-header">Nouveau dépôt</div>
+                          <div class="card-header" style="font-size: 18px; display: flex; align-items: center; justify-content: space-between;">
+                              <div>
+                                  {{ selectedSaeDetails.titre }}
+                                  <span class="badge badge-info" v-if="selectedSaeDetails.code" style="margin-left: 8px;">{{ selectedSaeDetails.code }}</span>
+                              </div>
+                          </div>
+                          
                           <div class="card-body">
-                              <div class="form-group" style="margin-bottom: 20px;">
-                                  <label class="form-label">Sélectionnez la SAE concernée</label>
-                                  <select v-model="selectedSaeId" class="form-control">
-                                      <option value="" disabled>-- Choisir une SAE --</option>
-                                      <option v-for="sae in saes" :key="sae.id" :value="sae.id">
-                                          {{ sae.title }}
-                                      </option>
-                                  </select>
+                              <img v-if="selectedSaeDetails.vignette_path" :src="'http://localhost:3000' + selectedSaeDetails.vignette_path" style="width:100%; max-height: 250px; object-fit: cover; border-radius: 8px; margin-bottom: 16px;">
+                              
+                              <p style="white-space: pre-wrap; font-size: 14px; line-height: 1.6; color: #374151;">{{ selectedSaeDetails.description }}</p>
+                              
+                              <div style="margin-top: 24px; padding: 16px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13px; color: #475569;">
+                                  <div style="margin-bottom: 8px;"><strong>📅 Période :</strong> {{ formatDateDayOnly(selectedSaeDetails.date_debut) }} - {{ formatDateDayOnly(selectedSaeDetails.date_fin) }}</div>
+                                  <div style="margin-bottom: 8px;"><strong>👥 Groupe ciblé :</strong> {{ selectedSaeDetails.groupe || 'Tous' }}</div>
+                                  <div v-if="selectedSaeDetails.semestre"><strong>🎓 Semestre :</strong> {{ selectedSaeDetails.semestre }}</div>
+                              </div>
+                          </div>
+                      </div>
+
+                      <div class="card" style="margin-top: 24px;" v-if="selectedSaeDetails.parsedConsignes && selectedSaeDetails.parsedConsignes.length > 0">
+                          <div class="card-header">Fichiers joints</div>
+                          <div class="card-body" style="display: flex; gap: 12px; flex-wrap: wrap;">
+                              <div v-for="(file, idx) in selectedSaeDetails.parsedConsignes" :key="idx">
+                                  <a :href="'http://localhost:3000' + file" target="_blank" class="btn btn-outline btn-sm" style="display:inline-flex; align-items:center; gap:8px;">
+                                      📄 Document {{ idx + 1 }}
+                                  </a>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div>
+                      <div class="card">
+                          <div class="card-header">Déposer mon rendu</div>
+                          <div class="card-body" v-if="!isDeadlinePassed">
+                              <div class="form-group" style="margin-bottom: 16px;">
+                                  <label class="form-label" style="font-weight: bold; margin-bottom: 8px; display: block;">Notes / Liens (optionnel)</label>
+                                  <textarea v-model="commentaireRendu" class="form-control" rows="3" placeholder="Lien Trello, GitHub, ou notes pour l'enseignant..." style="resize: vertical;"></textarea>
                               </div>
 
-                              <div class="upload-zone" @click="triggerFileInput" style="cursor: pointer; position: relative;">
-                                  <svg class="upload-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                                  <div style="font-size: 15px; font-weight: 600; margin-bottom: 8px;">
-                                      {{ selectedFileName || 'Cliquez ou glissez vos fichiers ici' }}
+                              <div class="upload-zone" @click="triggerFileInput" style="cursor: pointer; position: relative; padding: 30px 16px; border: 2px dashed #9ca3af; border-radius:8px; text-align:center; background:#f9fafb; transition: background 0.2s;">
+                                  <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #374151; word-break: break-all;">
+                                      {{ selectedFileName || 'Cliquez ou glissez votre rendu ici' }}
                                   </div>
-                                  <input type="file" ref="fileInput" @change="handleFileSelect" hidden>
+                                  <div style="font-size: 12px; color: #6b7280;">Format ZIP ou PDF</div>
+                                  <input type="file" ref="fileInput" @change="handleFileSelect" accept=".zip,.pdf" hidden>
                               </div>
 
-                              <div v-if="uploadMessage" :class="['alert', isUploadSuccess ? 'alert-success' : 'alert-danger']" style="margin-top: 16px; padding: 12px; border-radius: 4px; font-size: 14px;" :style="{ backgroundColor: isUploadSuccess ? 'var(--status-success-bg)' : 'var(--status-danger-bg)', color: isUploadSuccess ? 'var(--status-success-text)' : 'var(--status-danger-text)' }">
+                              <div v-if="uploadMessage" :class="['alert', isUploadSuccess ? 'alert-success' : 'alert-danger']" style="margin-top: 16px; padding: 12px; border-radius: 4px; font-size: 13px; text-align:center;">
                                   {{ uploadMessage }}
                               </div>
 
-                              <button class="btn btn-primary" @click="submitUpload" :disabled="!selectedFile || !selectedSaeId || isUploading" style="margin-top: 16px; width: 100%; justify-content: center;">
-                                  {{ isUploading ? 'Envoi en cours...' : 'Confirmer le dépôt' }}
+                              <button class="btn btn-primary" @click="submitUpload" :disabled="!selectedFile || isUploading" style="margin-top: 16px; width: 100%; justify-content: center; padding: 12px; font-weight: bold;">
+                                  {{ isUploading ? 'Envoi en cours...' : 'Envoyer mon rendu' }}
                               </button>
+                          </div>
+                          <div class="card-body" v-else>
+                              <div class="alert alert-danger" style="margin-top:0; padding:16px; text-align:center; background:#fee2e2; color:#991b1b; border-radius:8px;">
+                                  <div style="font-size: 24px; margin-bottom:8px;">⏳</div>
+                                  <strong style="font-size: 15px;">Délai expiré</strong><br>
+                                  <div style="margin-top: 8px; font-size: 13px;">La date limite pour ce rendu a été atteinte. Vous ne pouvez plus déposer ni modifier de fichiers.</div>
+                              </div>
                           </div>
                       </div>
                   </div>
@@ -131,69 +156,86 @@
 
           <!-- GRADES -->
           <div v-if="currentView === 'grades'" class="view-section active">
-              <div class="section-title">Semestre 4</div>
-              
               <div v-if="mesNotes.length === 0" style="color: var(--text-secondary); font-size: 14px;">Aucune évaluation disponible pour le moment.</div>
               
-              <div v-for="rendu in mesNotes" :key="rendu.rendu_id" class="feedback-card">
-                  <div class="grade-box" :style="{ borderColor: rendu.rendu_status === 'pending' ? 'var(--status-warning-border)' : 'var(--status-success-border)', backgroundColor: rendu.rendu_status === 'pending' ? 'var(--status-warning-bg)' : 'transparent' }">
-                      <div v-if="rendu.rendu_status === 'pending'" class="grade-score" style="font-size: 14px; color: var(--status-warning-text);">En attente</div>
-                      <div v-else class="grade-score">{{ rendu.note }}<span style="font-size: 18px; color: var(--text-secondary);">/20</span></div>
+              <div v-for="note in mesNotes" :key="note.id_rendu" class="feedback-card">
+                  <div class="grade-box" style="border-color: var(--status-success-border);">
+                      <div class="grade-score">{{ note.note !== null ? note.note : '?' }}<span style="font-size: 18px; color: var(--text-secondary);">/20</span></div>
                       <div class="grade-label">Note Finale</div>
                   </div>
                   <div class="feedback-content">
-                      <div class="feedback-title">{{ rendu.title }}</div>
-                      <div v-if="rendu.rendu_status === 'pending'" class="feedback-comment" style="font-style: italic; color: var(--text-secondary);">
-                          Votre rendu ("{{ rendu.nom_fichier }}") a bien été réceptionné le {{ formatDate(rendu.date_depot) }}.
+                      <div class="feedback-title">{{ note.titre }} <span class="badge badge-info" v-if="note.code">{{ note.code }}</span></div>
+                      <div class="feedback-comment">
+                          "{{ note.feedback || 'Aucun commentaire du correcteur.' }}"
                       </div>
-                      <div v-else class="feedback-comment">
-                          "{{ rendu.commentaire_prof || 'Aucun commentaire.' }}"
+                      <div style="font-size: 11px; color: #9ca3af; margin-top: 8px;">
+                          Document rendu déposé le : {{ formatDate(note.date_depot) }}
                       </div>
                   </div>
               </div>
           </div>
 
       </div>
+      
+      <div v-if="toastMsg" class="toast" :class="toastType">
+          {{ toastMsg }}
+      </div>
   </main>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 import Sidebar from '../components/student/Sidebar.vue'
 import Header from '../components/student/Header.vue'
 
 const route = useRoute()
-const currentView = computed(() => route.params.view || 'dashboard')
-const apiMessage = ref('')
+const currentView = ref(route.params.view || 'dashboard')
+watch(() => route.params.view, (newVal) => { if(newVal) currentView.value = newVal })
+
 const saes = ref([])
 const annonces = ref([])
+const mesNotes = ref([])
 
-// Champs Upload
+const selectedSaeDetails = ref(null)
 const fileInput = ref(null)
 const selectedFile = ref(null)
 const selectedFileName = ref('')
-const selectedSaeId = ref('')
+const commentaireRendu = ref('')
 const isUploading = ref(false)
 const uploadMessage = ref('')
 const isUploadSuccess = ref(false)
 
-const pageInfo = {
-  'dashboard': { title: "Vue d'ensemble", desc: "Suivi de vos situations d'apprentissage et d'évaluation en cours." },
-  'projects': { title: "Projets SAE (Semestre 4)", desc: "Consultez et gérez vos projets du semestre actuel." },
-  'deliverables': { title: "Espace Documents", desc: "Déposez vos travaux et consultez l'historique de vos rendus." },
-  'grades': { title: "Notes & Retours", desc: "Consultez vos évaluations et les commentaires de vos enseignants." },
-  'archives': { title: "Anciens semestres", desc: "Consultez l'historique de vos SAE des années et semestres passés." }
+const toastMsg = ref('')
+const toastType = ref('success')
+const showToast = (msg, type = 'success') => {
+    toastMsg.value = msg
+    toastType.value = type
+    setTimeout(() => { toastMsg.value = '' }, 4000)
 }
 
-const pageTitle = computed(() => pageInfo[currentView.value]?.title || "Vue")
+let pollingInterval = null;
+
+const pageInfo = {
+  'dashboard': { title: "Vue d'ensemble", desc: "Suivi de vos situations d'apprentissage et d'évaluation en cours." },
+  'projects': { title: "Projets SAE", desc: "Consultez et gérez vos projets du semestre actuel." },
+  'sae-detail': { title: "Détail de la SAE", desc: "Consultez le sujet et déposez votre travail." },
+  'grades': { title: "Notes & Retours", desc: "Consultez vos évaluations et les commentaires de vos enseignants." }
+}
+
+const pageTitle = computed(() => pageInfo[currentView.value]?.title || "Espace Étudiant")
 const pageDesc = computed(() => pageInfo[currentView.value]?.desc || "")
 
-const urgentSaes = computed(() => saes.value.filter(s => s.status !== 'done' && s.status !== 'archived' && isUrgent(s.due_date)))
-const ongoingSaes = computed(() => saes.value.filter(s => s.status !== 'done' && s.status !== 'archived' && !isUrgent(s.due_date)))
-const doneSaes = computed(() => saes.value.filter(s => s.status === 'done'))
-const mesNotes = ref([])
+const isDeadlinePassed = computed(() => {
+    if (!selectedSaeDetails.value || !selectedSaeDetails.value.date_fin) return false;
+    const deadline = new Date(selectedSaeDetails.value.date_fin);
+    deadline.setHours(23, 59, 59, 999);
+    return new Date() > deadline;
+})
+
+const urgentSaes = computed(() => saes.value.filter(s => isUrgent(s.date_debut)))
+const ongoingSaes = computed(() => saes.value.filter(s => !isUrgent(s.date_debut)))
 
 function isUrgent(due_date) {
     if (!due_date) return false
@@ -204,13 +246,33 @@ function isUrgent(due_date) {
     return diffDays >= 0 && diffDays <= 7
 }
 
-// Outils de formatage
 function formatDate(dateString) {
     if (!dateString) return ''
     const date = new Date(dateString)
     return new Intl.DateTimeFormat('fr-FR', {
         day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit'
     }).format(date)
+}
+
+function formatDateDayOnly(dateString) {
+    if (!dateString) return ''
+    const date = new Date(dateString)
+    return new Intl.DateTimeFormat('fr-FR', {
+        day: '2-digit', month: 'short', year: 'numeric'
+    }).format(date)
+}
+
+function viewSaeDetail(sae) {
+    let parsedConsignes = []
+    if (sae.consignes_paths) {
+        try { parsedConsignes = JSON.parse(sae.consignes_paths) } catch(e) {}
+    }
+    selectedSaeDetails.value = { ...sae, parsedConsignes }
+    selectedFile.value = null
+    selectedFileName.value = ''
+    commentaireRendu.value = ''
+    uploadMessage.value = ''
+    currentView.value = 'sae-detail'
 }
 
 function triggerFileInput() {
@@ -220,6 +282,11 @@ function triggerFileInput() {
 function handleFileSelect(event) {
     const file = event.target.files[0]
     if (file) {
+        if (!file.name.endsWith('.zip') && file.type !== 'application/pdf') {
+            uploadMessage.value = 'Format non autorisé. ZIP ou PDF uniquement.';
+            isUploadSuccess.value = false;
+            return;
+        }
         selectedFile.value = file
         selectedFileName.value = file.name
         uploadMessage.value = ''
@@ -227,54 +294,80 @@ function handleFileSelect(event) {
 }
 
 async function submitUpload() {
-    if (!selectedFile.value || !selectedSaeId.value) return
+    if (!selectedFile.value || !selectedSaeDetails.value) return
 
     isUploading.value = true
     uploadMessage.value = ''
 
     const formData = new FormData()
     formData.append('document', selectedFile.value)
-    formData.append('saeId', selectedSaeId.value)
+    formData.append('saeId', selectedSaeDetails.value.id_sae)
+    if (commentaireRendu.value) formData.append('commentaire', commentaireRendu.value)
 
     try {
-        const response = await axios.post('/api/upload', formData)
+        const token = localStorage.getItem('jwt_token')
+        await axios.post('/api/rendus', formData, {
+            headers: { Authorization: `Bearer ${token}` }
+        })
 
         isUploadSuccess.value = true
         uploadMessage.value = "Document déposé avec succès !"
+        showToast("Rendu déposé.", "success")
         
-        // Réinitialiser le form
         selectedFile.value = null
         selectedFileName.value = ''
         if (fileInput.value) fileInput.value.value = ''
         
-        // Rafraîchir les SAEs pour voir le changement de statut
-        const resSaes = await axios.get('/api/saes')
-        saes.value = resSaes.data
-        
     } catch (error) {
         isUploadSuccess.value = false
         uploadMessage.value = error.response?.data?.error || "Erreur lors de l'envoi du fichier"
+        showToast("Erreur lors de l'envoi", "error")
     } finally {
         isUploading.value = false
     }
 }
 
-onMounted(async () => {
+const fetchData = async () => {
     try {
-        const resTest = await axios.get('/api/test');
-        apiMessage.value = resTest.data.message;
-
-        const [resSaesGlobal, resAnnonces, resNotes] = await Promise.all([
-            axios.get('/api/saes'),
-            axios.get('/api/annonces'),
-            axios.get('/api/mes-notes')
+        const token = localStorage.getItem('jwt_token')
+        const opts = { headers: { Authorization: `Bearer ${token}` } }
+        
+        const [resSaes, resAnnonces, resNotes] = await Promise.all([
+            axios.get('/api/saes', opts).catch(() => ({data: []})),
+            axios.get('/api/annonces', opts).catch(() => ({data: []})),
+            axios.get('/api/mes-notes', opts).catch(() => ({data: []}))
         ])
         
-        saes.value = resSaesGlobal.data;
-        annonces.value = resAnnonces.data;
-        mesNotes.value = resNotes.data;
-    } catch (error) {
-        console.error("Erreur API:", error);
-    }
-})
+        if(resSaes.data.length > 0) saes.value = resSaes.data.filter(s => s.statut === 'Validé');
+        if(resAnnonces.data) annonces.value = resAnnonces.data;
+        if(resNotes.data) mesNotes.value = resNotes.data;
+    } catch (e) { console.error("Erreur Sync", e) }
+}
+
+onMounted(() => {
+    fetchData()
+    // MISSION 4: ZERO REFRESH POLLING
+    pollingInterval = setInterval(fetchData, 5000);
+});
 </script>
+
+<style scoped>
+.sae-item { border: 1px solid #e5e7eb; padding: 16px; border-radius: 8px; margin-bottom: 12px; transition: transform 0.2s, box-shadow 0.2s; background: white; }
+.sae-item:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+.toast { position: fixed; top: 20px; right: 20px; padding: 16px 24px; background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: bold; animation: slideIn 0.3s ease-out forwards; color: white; }
+.toast.success { background: #10b981; }
+.toast.error { background: #ef4444; }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+.badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+.badge-danger { background: #fee2e2; color: #ef4444; }
+.badge-info { background: #e0f2fe; color: #0ea5e9; }
+.btn { padding: 8px 16px; border-radius: 6px; font-weight: 500; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; }
+.btn-primary { background: #3b82f6; color: white; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-outline { background: white; border-color: #d1d5db; color: #374151; }
+.btn-outline:hover { background: #f3f4f6; }
+.form-control { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
+.alert { border: 1px solid transparent; }
+.alert-success { background: #d1fae5; color: #065f46; border-color: #34d399; }
+.alert-danger { background: #fee2e2; color: #991b1b; border-color: #f87171; }
+</style>

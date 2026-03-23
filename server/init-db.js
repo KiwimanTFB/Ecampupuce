@@ -10,7 +10,7 @@ function initDB() {
         // Création des tables v2
         const tables = [
             `CREATE TABLE IF NOT EXISTS utilisateurs (id_user INTEGER PRIMARY KEY AUTOINCREMENT, nom TEXT NOT NULL, prenom TEXT NOT NULL, email TEXT NOT NULL UNIQUE, mot_de_passe TEXT NOT NULL, role TEXT NOT NULL, groupe_td TEXT, annee_promo TEXT);`,
-            `CREATE TABLE IF NOT EXISTS sae (id_sae INTEGER PRIMARY KEY AUTOINCREMENT, titre TEXT NOT NULL, description TEXT NOT NULL, semestre TEXT NOT NULL, annee_univ TEXT NOT NULL, date_debut DATETIME NOT NULL, consignes TEXT, image_mise_en_avant TEXT, statut TEXT DEFAULT 'En attente', niveau TEXT);`,
+            `CREATE TABLE IF NOT EXISTS sae (id_sae INTEGER PRIMARY KEY AUTOINCREMENT, titre TEXT NOT NULL, description TEXT NOT NULL, semestre TEXT NOT NULL, annee_univ TEXT NOT NULL, date_debut DATETIME NOT NULL, date_fin DATETIME, groupe TEXT, competences TEXT, consignes TEXT, image_mise_en_avant TEXT, statut TEXT DEFAULT 'En attente', niveau TEXT, vignette_path TEXT, consignes_paths TEXT, code TEXT);`,
             `CREATE TABLE IF NOT EXISTS competences (id_competence INTEGER PRIMARY KEY AUTOINCREMENT, nom_competence TEXT NOT NULL);`,
             `CREATE TABLE IF NOT EXISTS sae_competences (id_sae INTEGER NOT NULL, id_competence INTEGER NOT NULL, PRIMARY KEY (id_sae, id_competence), FOREIGN KEY (id_sae) REFERENCES sae (id_sae) ON DELETE CASCADE, FOREIGN KEY (id_competence) REFERENCES competences (id_competence) ON DELETE CASCADE);`,
             `CREATE TABLE IF NOT EXISTS groupes (id_groupe INTEGER PRIMARY KEY AUTOINCREMENT, id_sae INTEGER NOT NULL, nom_groupe TEXT NOT NULL, FOREIGN KEY (id_sae) REFERENCES sae (id_sae) ON DELETE CASCADE);`,
