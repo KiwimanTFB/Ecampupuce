@@ -1,14 +1,15 @@
 <template>
-  <div class="min-h-screen bg-white dark:bg-[#0a0a0a] text-neutral-900 dark:text-stone-200 pt-40 pb-32 transition-colors duration-500">
+  <div class="bg-white dark:bg-[#0a0a0a] text-neutral-900 dark:text-stone-200 pt-40 pb-32 transition-colors duration-500">
     
-    <main class="max-w-[1400px] mx-auto px-6 md:px-12">
+    <main class="container mx-auto px-6">
       <!-- Entête Ultra Minimaliste -->
       <div class="mb-32 flex flex-col md:flex-row md:items-end justify-between gap-12 animate-fade-in-up">
         <div>
            <p class="text-blue-600 dark:text-stone-500 tracking-[0.3em] uppercase text-xs mb-6 font-sans font-bold">Archive</p>
-           <h1 class="text-5xl md:text-8xl lg:text-[7rem] font-sans font-black tracking-tighter leading-[0.9] text-neutral-950 dark:text-white">
+           <h1 class="sr-only">Découvrez les projets MMI de l'IUT de Vélizy</h1>
+           <p aria-hidden="true" class="text-5xl md:text-8xl lg:text-[7rem] font-sans font-black tracking-tighter leading-[0.9] text-neutral-950 dark:text-white">
              Fonds <br><span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">Visuel.</span>
-           </h1>
+           </p>
         </div>
         <p class="font-sans text-neutral-600 dark:text-stone-400 max-w-sm text-sm font-medium leading-relaxed">
           Sélection drastique des créations du département MMI. Des expériences interactives, des identités de marque et des architectures repoussant les frontières.
@@ -22,6 +23,7 @@
            @click="activeFilter = filter.value"
            class="group relative text-lg md:text-2xl font-sans font-bold text-center transition-all duration-500 tracking-wide bg-transparent border-0 outline-none focus:outline-none"
            :class="activeFilter === filter.value ? 'text-neutral-900 dark:text-white' : 'text-neutral-400 dark:text-stone-500 hover:text-neutral-800 dark:hover:text-neutral-300'"
+           :aria-label="`Filtrer par ${filter.label}`"
          >
            {{ filter.label }}
            <span class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 h-[3px] bg-gradient-to-r from-blue-600 to-purple-600 transition-all duration-500 ease-out rounded-full"
@@ -29,20 +31,38 @@
          </button>
       </div>
 
-      <div v-if="loading" class="flex justify-center items-center py-32">
-        <div class="w-px h-16 bg-neutral-300 dark:bg-stone-700 animate-pulse"></div>
-      </div>
+      <transition name="fade" mode="out-in">
+         <!-- Skeleton Loading -->
+         <div v-if="loading" key="skeleton" class="columns-1 md:columns-2 lg:columns-3 gap-12 w-full">
+            <div v-for="i in 6" :key="`skel-${i}`" class="mb-24 break-inside-avoid w-full">
+               <div class="relative bg-neutral-200 dark:bg-[#0f0f0f] w-full rounded-2xl animate-pulse overflow-hidden" :style="{ aspectRatio: i % 3 === 0 ? '1/1' : i % 2 === 0 ? '4/5' : '16/9' }">
+                  <div class="absolute bottom-0 left-0 right-0 p-6 md:p-8 flex flex-col justify-end">
+                     <div class="h-2 w-1/4 bg-neutral-300 dark:bg-white/10 rounded mb-3"></div>
+                     <div class="h-6 w-3/4 bg-neutral-300 dark:bg-white/10 rounded mb-6"></div>
+                     <div class="h-[2px] w-full bg-neutral-300 dark:bg-white/5 mb-4"></div>
+                     <div class="flex justify-between items-center w-full">
+                        <div class="h-2 w-1/3 bg-neutral-300 dark:bg-white/10 rounded"></div>
+                        <div class="h-5 w-16 bg-neutral-300 dark:bg-white/10 rounded-full"></div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
 
-      <!-- Grille Mansonry Authentique (CSS Columns) -->
-      <transition-group 
-         name="project-list" 
-         tag="div" 
-         class="columns-1 md:columns-2 lg:columns-3 gap-12 w-full"
-         v-else
-      >
-        <div v-for="project in displayedProjects" :key="project.id" 
+         <!-- Grille Mansonry Authentique (CSS Columns) -->
+         <transition-group 
+            v-else
+            key="projects"
+            name="project-list" 
+            tag="div" 
+            class="columns-1 md:columns-2 lg:columns-3 gap-12 w-full"
+         >
+        <article v-for="project in displayedProjects" :key="project.id" 
              @click="openProject(project)"
-             class="group project-item cursor-pointer break-inside-avoid mb-24 w-full inline-block"> 
+             class="group project-item cursor-pointer break-inside-avoid mb-24 w-full inline-block"
+             tabindex="0"
+             :aria-label="`Voir les détails du projet ${project.titre}`"
+             @keyup.enter="openProject(project)"> 
              
           <div class="relative overflow-hidden bg-neutral-100 dark:bg-[#0f0f0f] w-full rounded-2xl" :class="project.aspectClass">
              <!-- Image avec transition noir&blanc vers couleur -->
@@ -70,8 +90,9 @@
                 
               </div>
           </div>
-        </div>
+        </article>
       </transition-group>
+      </transition>
 
       <!-- Modale de Détail (Tech / IUT) -->
       <transition name="modal">
@@ -82,8 +103,7 @@
           <!-- Conteneur Modale -->
           <div class="relative w-full max-w-5xl bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row border border-neutral-200 dark:border-white/10 z-10" @click.stop>
              
-             <!-- Bouton Fermer -->
-             <button @click="closeProject" class="absolute top-4 right-4 md:top-6 md:right-6 z-20 text-neutral-500 hover:text-neutral-900 dark:text-stone-400 dark:hover:text-white transition-colors p-2 bg-white/50 dark:bg-black/50 rounded-full backdrop-blur-sm border border-transparent dark:border-white/10">
+             <button @click="closeProject" class="absolute top-4 right-4 md:top-6 md:right-6 z-20 text-neutral-500 hover:text-neutral-900 dark:text-stone-400 dark:hover:text-white transition-colors p-2 bg-white/50 dark:bg-black/50 rounded-full backdrop-blur-sm border border-transparent dark:border-white/10" aria-label="Fermer la modale du projet">
                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
              </button>
              
@@ -137,7 +157,7 @@ const openProject = (project) => {
 
 const closeProject = () => {
   selectedProject.value = null;
-  document.body.style.overflow = '';
+  document.body.style.overflow = 'auto';
 };
 
 const filters = [
@@ -175,12 +195,22 @@ const applyObserver = () => {
 onMounted(async () => {
   try {
     const response = await fetch('/api/public/projets');
-    const data = await response.json();
     
-    // Au cas où l'API est asynchrone, assigner le tableau final récupéré de la BDD
+    if (!response.ok) {
+       throw new Error(`API Error: HTTP ${response.status}`);
+    }
+    
+    const data = await response.json();
     ALL_PROJECTS.value = data;
   } catch (error) {
-    console.error('Erreur API Vitrine:', error);
+    console.error('Erreur API Vitrine (500), fallback sur Mock local:', error);
+    try {
+      const mockResponse = await fetch('/mock-projects.json');
+      const mockData = await mockResponse.json();
+      ALL_PROJECTS.value = mockData;
+    } catch (mockError) {
+      console.error('Erreur critique lors du fallback Mock:', mockError);
+    }
   } finally {
     loading.value = false;
     applyObserver();
@@ -244,5 +274,14 @@ watch(activeFilter, () => {
 .modal-leave-to {
   opacity: 0;
   transform: scale(0.98);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

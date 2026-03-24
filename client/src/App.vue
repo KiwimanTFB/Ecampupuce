@@ -13,7 +13,7 @@ const isPublicRoute = computed(() => publicRoutes.includes(route.name))
 
 <template>
   <!-- Layout Public - Vitrine -->
-  <div v-if="isPublicRoute" class="vitrine-layout min-h-screen flex flex-col bg-[#0a0a0a] overflow-x-hidden w-full">
+  <div v-if="isPublicRoute" class="vitrine-layout flex flex-col bg-[#0a0a0a] w-full">
     <HeaderPublic />
     <div class="flex-grow w-full">
       <router-view></router-view>
@@ -25,5 +25,10 @@ const isPublicRoute = computed(() => publicRoutes.includes(route.name))
   <router-view v-else></router-view>
 </template>
 
-<style scoped>
+<style>
+html, body { 
+  height: auto !important; 
+  overflow-y: auto !important; 
+  overflow-x: hidden !important;
+}
 </style>

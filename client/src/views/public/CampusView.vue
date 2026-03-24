@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-[#0a0a0a] text-stone-200">
     <main class="pt-40 pb-0">
       
-      <section class="max-w-[1400px] mx-auto px-6 md:px-12 mb-32">
+      <section class="container mx-auto px-6 mb-32">
          <p class="text-stone-500 tracking-[0.3em] uppercase text-xs mb-8 font-sans font-medium animate-fade-in-up">L'Espace</p>
          <h1 class="text-6xl md:text-8xl font-serif font-light leading-none tracking-tighter mb-12 animate-fade-in-up" style="animation-delay: 100ms;">
            Le <span class="italic text-stone-400">Campus.</span>
@@ -10,11 +10,11 @@
       </section>
 
       <!-- Galerie Awwwards Parallaxe Asymétrique -->
-      <section class="max-w-[1400px] mx-auto px-6 md:px-12 mb-40">
+      <section class="container mx-auto px-6 mb-40">
          <div class="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-16">
             
             <!-- Image 1 -->
-            <div class="md:col-span-7 animate-on-scroll group cursor-default">
+            <article class="md:col-span-7 animate-on-scroll group cursor-default">
                <div class="relative overflow-hidden aspect-[4/3] bg-[#0f0f0f]">
                   <img src="https://images.unsplash.com/photo-1598425237654-4fb05a4151a6?q=80&w=1200&auto=format&fit=crop" class="w-full h-full object-cover filter grayscale-[40%] contrast-125 transform group-hover:scale-105 transition-transform duration-[2s] ease-out" alt="Studio" />
                </div>
@@ -22,7 +22,7 @@
                   <h3 class="text-lg text-white font-medium">Plateau Tournage</h3>
                   <span class="text-[10px] text-stone-500 uppercase tracking-[0.2em] w-1/2 text-right">Équipement Cinéma & Lumières</span>
                </div>
-            </div>
+            </article>
             
             <!-- Context Text -->
             <div class="md:col-span-5 flex flex-col justify-center animate-on-scroll" style="animation-delay: 200ms;">
@@ -33,7 +33,7 @@
             </div>
             
             <!-- Image 2 -->
-            <div class="md:col-span-5 md:mt-24 animate-on-scroll group cursor-default">
+            <article class="md:col-span-5 md:mt-24 animate-on-scroll group cursor-default">
                <div class="relative overflow-hidden aspect-square bg-[#0f0f0f]">
                   <img src="https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=800&auto=format&fit=crop" class="w-full h-full object-cover filter grayscale-[40%] contrast-125 transform group-hover:scale-105 transition-transform duration-[2s] ease-out" alt="Macs" />
                </div>
@@ -41,10 +41,10 @@
                   <h3 class="text-lg text-white font-medium">Laboratoires Créatifs</h3>
                   <span class="text-[10px] text-stone-500 uppercase tracking-[0.2em] w-1/2 text-right">Stations Apple & PC</span>
                </div>
-            </div>
+            </article>
             
             <!-- Image 3 -->
-            <div class="md:col-span-7 animate-on-scroll group cursor-default">
+            <article class="md:col-span-7 animate-on-scroll group cursor-default">
                <div class="relative overflow-hidden aspect-[16/9] bg-[#0f0f0f]">
                   <img src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=1200&auto=format&fit=crop" class="w-full h-full object-cover filter grayscale-[40%] contrast-125 transform group-hover:scale-105 transition-transform duration-[2s] ease-out" alt="FabLab" />
                </div>
@@ -52,14 +52,14 @@
                   <h3 class="text-lg text-white font-medium">FabLab & 3D</h3>
                   <span class="text-[10px] text-stone-500 uppercase tracking-[0.2em] w-1/2 text-right">Impression 3D & UX Labs</span>
                </div>
-            </div>
+            </article>
 
          </div>
       </section>
 
       <!-- Minimal Map Section -->
       <section class="bg-[#050505] py-32 border-t border-white/5 relative">
-         <div class="max-w-[1400px] mx-auto px-6 md:px-12 grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
+         <div class="container mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
             
             <div class="animate-on-scroll">
                <h2 class="text-4xl md:text-5xl font-serif font-light tracking-tighter mb-12">Situation.</h2>

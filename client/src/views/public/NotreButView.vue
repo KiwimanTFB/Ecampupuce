@@ -1,9 +1,9 @@
 <template>
-  <div class="min-h-screen bg-[#0a0a0a] text-stone-200">
+  <div class="bg-[#0a0a0a] text-stone-200">
     <main class="pt-40 pb-32">
       
       <!-- Header Studio -->
-      <section class="max-w-[1400px] mx-auto px-6 md:px-12 mb-40">
+      <section class="min-h-screen py-20 container mx-auto px-6 mb-40">
          <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
             <div class="animate-fade-in-up">
                <p class="text-stone-500 tracking-[0.3em] uppercase text-xs mb-8 font-sans font-medium">Manifeste</p>
@@ -37,45 +37,45 @@
       </section>
 
       <!-- Expertises -->
-      <section class="max-w-[1400px] mx-auto px-6 md:px-12 mb-40">
+      <section class="min-h-screen py-20 container mx-auto px-6 mb-40">
          <h2 class="text-3xl font-serif font-light tracking-tighter mb-20 animate-on-scroll">L'Expertise.</h2>
          
          <div class="grid grid-cols-1 md:grid-cols-3 border-t border-white/10">
             <!-- Col 1 -->
-            <div class="py-12 md:pr-12 md:border-r border-white/10 border-b md:border-b-0 animate-on-scroll group">
+            <article class="py-12 md:pr-12 md:border-r border-white/10 border-b md:border-b-0 animate-on-scroll group">
                <span class="text-stone-600 font-serif text-4xl mb-8 block italic group-hover:text-white transition-colors duration-500">I.</span>
                <h3 class="text-xs uppercase tracking-[0.2em] font-sans font-medium text-white mb-6">Design System & UI/UX</h3>
                <p class="text-stone-400 font-sans font-light leading-relaxed text-sm">
                  Création d'interfaces utilisateur élégantes, minimalistes et centrées sur l'accessibilité. Maîtrise des grilles, de la typographie et du mouvement.
                </p>
-            </div>
+            </article>
             <!-- Col 2 -->
-            <div class="py-12 md:px-12 md:border-r border-white/10 border-b md:border-b-0 animate-on-scroll group" style="animation-delay: 150ms;">
+            <article class="py-12 md:px-12 md:border-r border-white/10 border-b md:border-b-0 animate-on-scroll group" style="animation-delay: 150ms;">
                <span class="text-stone-600 font-serif text-4xl mb-8 block italic group-hover:text-white transition-colors duration-500">II.</span>
                <h3 class="text-xs uppercase tracking-[0.2em] font-sans font-medium text-white mb-6">Creative Coding</h3>
                <p class="text-stone-400 font-sans font-light leading-relaxed text-sm">
                  Développement front-end avancé. Animation, WebGL, et optimisation absolue des performances pour un rendu pur et fluide.
                </p>
-            </div>
+            </article>
             <!-- Col 3 -->
-            <div class="py-12 md:pl-12 animate-on-scroll group" style="animation-delay: 300ms;">
+            <article class="py-12 md:pl-12 animate-on-scroll group" style="animation-delay: 300ms;">
                <span class="text-stone-600 font-serif text-4xl mb-8 block italic group-hover:text-white transition-colors duration-500">III.</span>
                <h3 class="text-xs uppercase tracking-[0.2em] font-sans font-medium text-white mb-6">Direction Artistique</h3>
                <p class="text-stone-400 font-sans font-light leading-relaxed text-sm">
                  Supervision visuelle globale, identité de marque, motion design et production de contenus visuels de haute volée.
                </p>
-            </div>
+            </article>
          </div>
       </section>
       
       <!-- Témoignages Style Awwwards -->
-      <section class="bg-[#0f0f0f] py-32 border-y border-white/5">
-         <div class="max-w-[1400px] mx-auto px-6 md:px-12">
+      <section class="min-h-screen py-20 bg-[#0f0f0f] border-y border-white/5">
+         <div class="container mx-auto px-6">
             <h2 class="text-xl md:text-3xl font-serif font-light tracking-tighter mb-24 text-center italic text-stone-400 animate-on-scroll">"Une vision audacieuse de l'art numérique."</h2>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-24">
                <!-- Témoignage 1 -->
-               <div class="animate-on-scroll cursor-default group">
+               <article class="animate-on-scroll cursor-default group">
                   <div class="font-serif text-2xl md:text-3xl font-light text-white leading-snug mb-12 relative">
                      <span class="absolute -left-8 -top-4 text-stone-700 text-6xl italic group-hover:text-stone-500 transition-colors duration-500 opacity-50">"</span>
                      L'hybridation des compétences m'a permis de pousser des concepts visuels que je peux moi-même coder et optimiser.
@@ -87,10 +87,10 @@
                         <p class="text-stone-500">Creative Developer</p>
                      </div>
                   </div>
-               </div>
+               </article>
                
                <!-- Témoignage 2 -->
-               <div class="animate-on-scroll cursor-default group" style="animation-delay: 200ms;">
+               <article class="animate-on-scroll cursor-default group" style="animation-delay: 200ms;">
                   <div class="font-serif text-2xl md:text-3xl font-light text-white leading-snug mb-12 relative">
                      <span class="absolute -left-8 -top-4 text-stone-700 text-6xl italic group-hover:text-stone-500 transition-colors duration-500 opacity-50">"</span>
                      Nous n'apprenons pas seulement des outils, nous forgeons une culture esthétique et une exigence quasi obsessionnelle.
@@ -102,7 +102,7 @@
                         <p class="text-stone-500">Art Director</p>
                      </div>
                   </div>
-               </div>
+               </article>
             </div>
          </div>
       </section>

@@ -7,11 +7,11 @@
         : 'bg-transparent dark:bg-[#0a0a0a]/50 backdrop-blur-md border-transparent dark:border-white/5 py-6'
     ]"
   >
-    <div class="container mx-auto px-8 md:px-12 w-full">
+    <div class="container mx-auto px-6 w-full">
       <div class="flex items-center justify-between w-full">
         
         <!-- Logo Tech/IUT -->
-        <router-link to="/" class="group flex items-center relative z-50">
+        <router-link to="/" class="group flex items-center relative z-50" aria-label="Retour à l'accueil Ecampupuce">
           <span class="text-2xl font-sans font-black tracking-tight text-neutral-900 dark:text-white transition-colors duration-300 group-hover:text-blue-600 dark:group-hover:text-neutral-300">
              Ecampupuce<span class="text-blue-600 dark:text-blue-500">.</span>
           </span>
@@ -25,6 +25,7 @@
              :to="link.path" 
              class="relative group py-2 flex flex-col items-center"
              active-class="is-active"
+             :aria-label="`Aller à la page ${link.name}`"
           >
              <span class="text-sm uppercase tracking-wider font-sans font-bold text-neutral-500 dark:text-stone-400 group-hover:text-blue-600 dark:group-hover:text-white transition-colors duration-300">
                {{ link.name }}
@@ -35,7 +36,7 @@
           <div class="w-px h-5 bg-neutral-300 dark:bg-white/10 mx-2"></div>
           
           <!-- Bouton Theme Toggle -->
-          <button @click="toggleTheme" class="relative items-center justify-center flex p-2 rounded-full bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:text-blue-600 dark:hover:text-white transition-colors focus:outline-none">
+          <button @click="toggleTheme" class="relative items-center justify-center flex p-2 rounded-full bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:text-blue-600 dark:hover:text-white transition-colors focus:outline-none" aria-label="Basculer le thème sombre/clair">
              <!-- Sun icon -->
              <svg v-if="!isDarkMode" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
              <!-- Moon icon -->
@@ -44,7 +45,7 @@
           
           <!-- Bouton Accent Tech -->
           <div class="flex items-center ml-2">
-            <router-link to="/auth/login" class="group relative overflow-hidden text-xs uppercase tracking-wider font-sans font-bold text-white px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:shadow-lg hover:shadow-blue-500/25 hover:-translate-y-0.5 transition-all duration-300 rounded-md">
+            <router-link to="/login" class="group relative overflow-hidden text-xs uppercase tracking-wider font-sans font-bold text-white px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:shadow-lg hover:shadow-blue-500/25 hover:-translate-y-0.5 transition-all duration-300 rounded-md" aria-label="Accéder au portail professionnel">
               <span class="relative z-10 flex items-center gap-2">
                  Portail Pro
                  <svg class="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -57,12 +58,12 @@
 
         <!-- Toggle Mobile & Menu Burger -->
         <div class="md:hidden flex items-center gap-4">
-          <button @click="toggleTheme" class="relative items-center justify-center flex p-2 rounded-full bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition-colors focus:outline-none">
+          <button @click="toggleTheme" class="relative items-center justify-center flex p-2 rounded-full bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition-colors focus:outline-none" aria-label="Basculer le thème sombre/clair">
              <svg v-if="!isDarkMode" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
              <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
           </button>
           
-          <button class="w-8 h-8 flex flex-col items-center justify-center gap-1.5 group">
+          <button class="w-8 h-8 flex flex-col items-center justify-center gap-1.5 group" aria-label="Ouvrir le menu de navigation">
              <span class="w-6 h-[2px] bg-black dark:bg-white transition-all duration-300 origin-center"></span>
              <span class="w-6 h-[2px] bg-black dark:bg-white transition-all duration-300 group-hover:w-4"></span>
              <span class="w-6 h-[2px] bg-black dark:bg-white transition-all duration-300 origin-center"></span>
@@ -125,6 +126,7 @@ html {
   font-family: 'Inter', sans-serif;
   scroll-behavior: smooth;
   background-color: #ffffff; /* Default base */
+  height: auto;
 }
 
 html.dark {
@@ -133,6 +135,7 @@ html.dark {
 
 body {
   background-color: transparent !important;
+  height: auto;
 }
 
 .font-serif {
