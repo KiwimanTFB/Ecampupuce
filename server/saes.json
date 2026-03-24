@@ -1,0 +1,41 @@
+[
+  {
+    "id": 1,
+    "title": "SAE 4.03 - Architecture Découplée",
+    "description": "Développement d'une plateforme avec séparation stricte Front-end / Back-end et communication via requêtes HTTP JSON.",
+    "deadline": "2026-03-15",
+    "status": "urgent",
+    "groupType": "Projet de groupe (3)",
+    "level": "BUT2",
+    "deliveryStatus": "Aucun document déposé",
+    "isEvaluated": false,
+    "grade": null,
+    "comment": null
+  },
+  {
+    "id": 2,
+    "title": "SAE 4.02 - Portfolio Professionnel",
+    "description": "Mise à jour du portfolio en ligne pour intégrer les travaux de deuxième année en vue de la recherche de stage.",
+    "deadline": "2026-03-28",
+    "status": "ongoing",
+    "groupType": "Projet individuel",
+    "level": "BUT2",
+    "deliveryStatus": "En attente de dépôt",
+    "isEvaluated": false,
+    "grade": null,
+    "comment": null
+  },
+  {
+    "id": 3,
+    "title": "SAE 4.01 - Ergonomie et Web Design",
+    "description": "Conception d'une interface utilisateur cohérente, accessible et ergonomique selon le cahier des charges.",
+    "deadline": "2026-03-01",
+    "status": "done",
+    "groupType": "Projet de groupe (2 à 3)",
+    "level": "BUT2",
+    "deliveryStatus": "Rendu déposé le 28 Fév 2026 à 14h22",
+    "isEvaluated": true,
+    "grade": 15.5,
+    "comment": "Excellent travail sur l'accessibilité des couleurs et la hiérarchie de l'information. La maquette est très intuitive. Attention cependant à la taille des zones cliquables sur la version mobile qui sont parfois un peu trop petites pour respecter les standards (44x44px minimum). Bon projet dans l'ensemble."
+  }
+]
