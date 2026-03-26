@@ -1,121 +1,226 @@
 <template>
   <div class="text-neutral-900 dark:text-stone-200 bg-white dark:bg-[#0a0a0a] transition-colors duration-500">
     <main>
-      <!-- Hero Section Minimalist & Scrollytelling -->
-      <section class="relative flex flex-col justify-center pt-40 pb-24 container mx-auto px-6">
-        
-        <!-- Background Blob / Glow -->
-        <div class="absolute top-1/4 left-1/4 w-[50rem] h-[50rem] bg-blue-500/5 dark:bg-stone-800/20 rounded-full mix-blend-screen filter blur-[120px] animate-blob"></div>
 
-        <!-- Parallax Floating Images -->
-        <div class="absolute inset-0 pointer-events-none hidden md:block z-0">
-           <!-- Image 1 : Top Right -->
-           <img src="https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=600" 
-                class="absolute top-[15%] right-[10%] w-[250px] aspect-[3/4] object-cover filter grayscale-[30%] opacity-30 dark:opacity-80 transition-opacity duration-500"
-                :style="{ transform: `translateY(${scrollY * -0.3}px) rotate(${scrollY * 0.02}deg)` }" />
-           
-           <!-- Image 2 : Bottom Left -->
-           <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=600" 
-                class="absolute bottom-[10%] left-[5%] w-[320px] aspect-video object-cover filter grayscale-[40%] opacity-20 dark:opacity-60 transition-opacity duration-500"
-                :style="{ transform: `translateY(${scrollY * -0.15}px) rotate(${scrollY * -0.01}deg)` }" />
-                
-           <!-- Image 3 : Center Right (très lent) -->
-           <img src="https://images.unsplash.com/photo-1512428559087-560fa5ceab42?q=80&w=600" 
-                class="absolute top-[50%] right-[30%] w-[200px] aspect-square object-cover filter grayscale-[50%] opacity-15 dark:opacity-40 mix-blend-screen transition-opacity duration-500"
-                :style="{ transform: `translateY(${scrollY * -0.5}px)` }" />
+      <!-- ══ 1. HERO SECTION ════════════════════════════════════════ -->
+      <section class="relative flex flex-col justify-center pt-40 pb-24 min-h-[90vh] container mx-auto px-6 overflow-hidden">
+
+        <!-- Glow blob -->
+        <div class="absolute top-1/4 left-1/3 w-[600px] h-[600px] bg-blue-500/5 dark:bg-blue-600/10 rounded-full filter blur-[120px] animate-blob pointer-events-none"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-purple-500/5 dark:bg-purple-600/8 rounded-full filter blur-[100px] animate-blob-slow pointer-events-none"></div>
+
+        <!-- Parallax images (desktop) -->
+        <div class="absolute inset-0 pointer-events-none hidden lg:block z-0">
+          <img src="https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=600"
+               class="absolute top-[15%] right-[8%] w-[220px] aspect-[3/4] object-cover opacity-25 dark:opacity-60 transition-opacity duration-500"
+               :style="{ transform: `translateY(${scrollY * -0.28}px) rotate(2deg)` }"
+               alt="" aria-hidden="true" />
+          <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=600"
+               class="absolute bottom-[12%] left-[3%] w-[280px] aspect-video object-cover opacity-15 dark:opacity-50"
+               :style="{ transform: `translateY(${scrollY * -0.12}px) rotate(-1deg)` }"
+               alt="" aria-hidden="true" />
         </div>
 
-        <div class="relative z-10 w-full mt-24 flex flex-col gap-12">
-           <p class="text-blue-600 dark:text-blue-400 tracking-[0.3em] uppercase text-xs opacity-0 animate-fade-in-up font-sans font-bold">Département MMI</p>
-           
-           <!-- Titre Tech IUT -->
-           <h1 class="text-5xl md:text-7xl lg:text-[7rem] font-sans font-extrabold leading-[1.05] tracking-tighter opacity-0 animate-fade-in-up animation-delay-300 max-w-5xl text-neutral-950 dark:text-white transition-colors duration-500">
-             Repousser les limites du <br/>
-             <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-500 dark:to-purple-500">numérique.</span>
-           </h1>
-           
-           <!-- Clutter visuel tech: bouton plein et bordure gradient -->
-           <div class="flex flex-col md:flex-row items-start md:items-center gap-8 md:gap-16 opacity-0 animate-fade-in-up animation-delay-600 max-w-3xl my-12 border-l-4 border-blue-600/20 dark:border-blue-500/30 pl-8">
-              <p class="font-sans text-neutral-600 dark:text-neutral-300 text-sm md:text-base leading-relaxed max-w-md font-medium transition-colors duration-500">
-                 Une synergie pure entre ingénierie complexe et design d'avant-garde. Nous formons les talents qui façonnent l'avenir du web productif.
-              </p>
-              
-              <router-link to="/vitrine" class="group flex items-center gap-4 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-md text-xs uppercase tracking-wider font-sans font-bold hover:shadow-xl hover:shadow-blue-500/25 hover:-translate-y-1 transition-all duration-300 shrink-0" aria-label="Explorer nos Projets">
-                 Explorer nos Projets
-                 <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+        <!-- Content -->
+        <div class="relative z-10 w-full mt-12 flex flex-col gap-10">
+          <p class="text-blue-600 dark:text-blue-400 tracking-[0.3em] uppercase text-xs font-bold opacity-0 animate-fade-in">
+            IUT Paris-Saclay — Département MMI Vélizy
+          </p>
+
+          <h1 class="text-5xl md:text-7xl lg:text-[6.5rem] font-black leading-[1.02] tracking-tighter opacity-0 animate-fade-in animation-delay-200 max-w-5xl text-neutral-950 dark:text-white">
+            Repousser les limites<br />
+            du <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-500">numérique.</span>
+          </h1>
+
+          <div class="flex flex-col md:flex-row items-start md:items-center gap-8 opacity-0 animate-fade-in animation-delay-500 max-w-3xl border-l-4 border-blue-600/20 dark:border-blue-500/30 pl-8">
+            <p class="font-sans text-neutral-600 dark:text-neutral-400 text-sm md:text-base leading-relaxed max-w-sm">
+              Une formation hybride alliant design, développement web et communication numérique. Nous formons les talents qui façonnent le web de demain.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-3 shrink-0">
+              <router-link to="/projets" class="btn-primary" aria-label="Explorer nos projets">
+                Explorer nos projets
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
               </router-link>
-           </div>
-        </div>
-      </section>
-
-      <!-- Manifesto Scrollytelling -->
-      <section class="py-40 border-t border-neutral-200 dark:border-white/5 relative z-10 flex flex-col items-center transition-colors duration-500">
-        <div class="container mx-auto px-6 flex flex-col items-center">
-            
-            <div class="h-40 w-[2px] bg-gradient-to-b from-blue-600/30 dark:from-blue-500/50 to-transparent mb-16 animate-on-scroll"></div>
-
-            <h2 class="text-3xl md:text-5xl lg:text-5xl font-sans font-extrabold leading-tight text-center max-w-5xl mx-auto animate-on-scroll cursor-default text-neutral-900 dark:text-white transition-colors duration-500">
-               Nous concevons un web <span class="text-blue-600 dark:text-blue-400">intelligent</span>, immersif et méticuleusement architecturé, où chaque ligne de code porte une intention.
-            </h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-16 mt-40 w-full border-t border-neutral-200 dark:border-white/5 pt-20 transition-colors duration-500">
-               <article class="animate-on-scroll flex flex-col items-start group cursor-default">
-                  <span class="text-neutral-300 dark:text-neutral-800 font-sans font-black text-6xl tracking-tighter mb-6 block group-hover:text-blue-600 dark:group-hover:text-blue-500 transition-colors duration-500">01.</span>
-                  <h3 class="text-xs uppercase tracking-widest font-sans font-bold text-neutral-900 dark:text-white mb-6">Esthétisme</h3>
-                  <p class="text-neutral-600 dark:text-stone-400 font-sans font-medium dark:font-normal leading-relaxed text-sm">Le refus du compromis visuel. Une direction artistique pointue, inspirée par le modernisme et les interfaces ergonomiques contemporaines.</p>
-               </article>
-               <article class="animate-on-scroll flex flex-col items-start group cursor-default" style="animation-delay: 150ms;">
-                  <span class="text-neutral-300 dark:text-neutral-800 font-sans font-black text-6xl tracking-tighter mb-6 block group-hover:text-blue-600 dark:group-hover:text-blue-500 transition-colors duration-500">02.</span>
-                  <h3 class="text-xs uppercase tracking-widest font-sans font-bold text-neutral-900 dark:text-white mb-6">Ingénierie</h3>
-                  <p class="text-neutral-600 dark:text-stone-400 font-sans font-medium dark:font-normal leading-relaxed text-sm">Des architectures front-end robustes, des stacks JavaScript réactives et un code pur pensé exclusivement pour la performance et la scalabilité.</p>
-               </article>
-               <article class="animate-on-scroll flex flex-col items-start group cursor-default" style="animation-delay: 300ms;">
-                  <span class="text-neutral-300 dark:text-neutral-800 font-sans font-black text-6xl tracking-tighter mb-6 block group-hover:text-blue-600 dark:group-hover:text-blue-500 transition-colors duration-500">03.</span>
-                  <h3 class="text-xs uppercase tracking-widest font-sans font-bold text-neutral-900 dark:text-white mb-6">Data & Logique</h3>
-                  <p class="text-neutral-600 dark:text-stone-400 font-sans font-medium dark:font-normal leading-relaxed text-sm">L'art de l'intégration continue, des bases de données complexes et de la sécurité. Répondant aux standards les plus stricts de l'industrie.</p>
-               </article>
+              <router-link to="/inscription/parcoursup" class="btn-secondary" aria-label="Rejoindre le BUT MMI">
+                Rejoindre le BUT
+              </router-link>
             </div>
-            
-        </div>
-      </section>
-      
-      <!-- Section Stats Dashboard -->
-      <section class="py-32 bg-neutral-50 dark:bg-[#050505] border-t border-neutral-200 dark:border-white/5 relative z-10 w-full stats-section animate-on-scroll transition-colors duration-500">
-        <div class="container mx-auto px-6">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-             
-             <!-- Card 1 -->
-             <article class="bg-white dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-8 text-center hover:border-blue-500/50 dark:hover:border-blue-500/50 transition-colors shadow-sm dark:shadow-none flex flex-col items-center justify-center gap-4">
-                <span class="text-6xl font-sans font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600"><span v-text="count1"></span></span>
-                <h3 class="uppercase tracking-widest text-xs font-bold text-neutral-500 dark:text-neutral-500">SAE Professionnalisantes</h3>
-             </article>
+          </div>
 
-             <!-- Card 2 -->
-             <article class="bg-white dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-8 text-center hover:border-blue-500/50 dark:hover:border-blue-500/50 transition-colors shadow-sm dark:shadow-none flex flex-col items-center justify-center gap-4">
-                <span class="text-6xl font-sans font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600"><span v-text="count2"></span></span>
-                <h3 class="uppercase tracking-widest text-xs font-bold text-neutral-500 dark:text-neutral-500">Années d'innovation</h3>
-             </article>
-
-             <!-- Card 3 -->
-             <article class="bg-white dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-8 text-center hover:border-blue-500/50 dark:hover:border-blue-500/50 transition-colors shadow-sm dark:shadow-none flex flex-col items-center justify-center gap-4">
-                <span class="text-6xl font-sans font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600"><span v-text="count3"></span>%</span>
-                <h3 class="uppercase tracking-widest text-xs font-bold text-neutral-500 dark:text-neutral-500">Tech-Forward</h3>
-             </article>
-
+          <!-- Tags tech -->
+          <div class="flex flex-wrap gap-2 opacity-0 animate-fade-in animation-delay-700">
+            <span v-for="tag in techTags" :key="tag" class="tech-tag">{{ tag }}</span>
           </div>
         </div>
       </section>
-      
-      <!-- Outro Section Découverte Tech -->
-      <section class="py-20 bg-neutral-50 dark:bg-[#050505] border-t border-neutral-200 dark:border-white/5 relative z-10 w-full flex flex-col items-center text-center px-6 transition-colors duration-500">
-        <h2 class="text-4xl md:text-6xl font-sans font-extrabold text-neutral-950 dark:text-white tracking-tighter mb-10 animate-on-scroll transition-colors duration-500">
-          L'expérience continue.
-        </h2>
-        <router-link to="/vitrine" class="px-12 py-5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-sans font-bold uppercase tracking-wider rounded-md hover:shadow-xl hover:shadow-purple-500/20 hover:-translate-y-1 transition-all duration-300 animate-on-scroll" style="animation-delay: 200ms;" aria-label="Explorer la Vitrine Web MMI">
-          Explorer la Vitrine Web
-        </router-link>
+
+      <!-- ══ 2. APERÇU PROJETS ══════════════════════════════════════ -->
+      <section class="py-32 border-t border-neutral-100 dark:border-white/5 transition-colors duration-500">
+        <div class="container mx-auto px-6">
+
+          <div class="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-20 animate-on-scroll">
+            <div>
+              <p class="text-blue-600 dark:text-blue-400 tracking-[0.3em] uppercase text-xs font-bold mb-4">Sélection</p>
+              <h2 class="text-4xl md:text-6xl font-black tracking-tighter text-neutral-950 dark:text-white leading-[1.05]">
+                Nos meilleurs<br /><span class="text-neutral-400 dark:text-stone-600">projets.</span>
+              </h2>
+            </div>
+            <router-link to="/projets" class="btn-text shrink-0 animate-on-scroll">
+              Voir tous les projets →
+            </router-link>
+          </div>
+
+          <!-- Skeleton -->
+          <div v-if="loadingProjects" class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div v-for="i in 3" :key="i" class="aspect-[3/4] bg-neutral-100 dark:bg-[#111] rounded-2xl animate-pulse"></div>
+          </div>
+
+          <!-- Grid projets -->
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <article
+              v-for="(project, i) in featuredProjects"
+              :key="project.id"
+              class="project-card animate-on-scroll group cursor-pointer"
+              :style="{ animationDelay: `${i * 100}ms` }"
+              @click="openModal(project)"
+              :aria-label="`Voir le projet ${project.titre}`"
+              tabindex="0"
+              @keyup.enter="openModal(project)"
+            >
+              <div class="relative overflow-hidden rounded-2xl bg-neutral-100 dark:bg-[#111]" :class="['aspect-[4/5]', 'aspect-[3/4]', 'aspect-[1/1]'][i % 3]">
+                <img :src="project.image" :alt="project.titre"
+                     class="w-full h-full object-cover transition-all duration-700 group-hover:scale-105 filter grayscale group-hover:grayscale-0" />
+                <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
+                  <span class="text-[10px] text-blue-400 uppercase tracking-widest font-bold mb-1">{{ project.sae_titre }}</span>
+                  <h3 class="text-white text-xl font-black tracking-tight">{{ project.titre }}</h3>
+                  <p class="text-stone-400 text-xs mt-1">{{ formatSemestre(project) }}</p>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <!-- Pas de projets -->
+          <div v-if="!loadingProjects && featuredProjects.length === 0" class="text-center py-20">
+            <p class="text-neutral-400 dark:text-stone-500 text-sm">Aucun projet public disponible pour le moment.</p>
+          </div>
+
+        </div>
       </section>
+
+      <!-- ══ 3. SECTION FORMATION & ÉQUIPE ═════════════════════════ -->
+      <section class="py-32 bg-neutral-50 dark:bg-[#050505] border-t border-neutral-100 dark:border-white/5 transition-colors duration-500">
+        <div class="container mx-auto px-6">
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-24 items-start">
+
+            <!-- Bloc Formation -->
+            <div class="animate-on-scroll">
+              <p class="text-blue-600 dark:text-blue-400 tracking-[0.3em] uppercase text-xs font-bold mb-6">Formation</p>
+              <h2 class="text-4xl md:text-5xl font-black tracking-tighter text-neutral-950 dark:text-white mb-8 leading-[1.05]">
+                Le BUT MMI<br /><span class="font-light italic text-neutral-500 dark:text-stone-500">en 3 ans.</span>
+              </h2>
+              <p class="text-neutral-600 dark:text-stone-400 leading-relaxed mb-10">
+                Le Bachelor Universitaire de Technologie Métiers du Multimédia et de l'Internet forme des professionnels polyvalents du numérique, capables d'évoluer entre conception créative et ingénierie web.
+              </p>
+
+              <!-- Parcours -->
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+                <div v-for="parcours in parcoursList" :key="parcours.code" class="parcours-card">
+                  <span class="text-2xl font-black text-blue-600 dark:text-blue-500 mb-2 block">{{ parcours.code }}</span>
+                  <p class="text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white">{{ parcours.nom }}</p>
+                  <p class="text-xs text-neutral-500 dark:text-stone-500 mt-1 leading-relaxed">{{ parcours.desc }}</p>
+                </div>
+              </div>
+
+              <router-link to="/but" class="btn-primary inline-flex">
+                Découvrir le BUT MMI
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+              </router-link>
+            </div>
+
+            <!-- Stats -->
+            <div class="grid grid-cols-2 gap-4 animate-on-scroll stats-block">
+              <div v-for="stat in stats" :key="stat.label" class="stat-card">
+                <span class="text-4xl font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 block mb-2">
+                  {{ stat.value }}
+                </span>
+                <p class="text-xs uppercase tracking-widest font-bold text-neutral-500 dark:text-stone-500">{{ stat.label }}</p>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ══ 4. SECTION CONTACT & INSCRIPTION ══════════════════════ -->
+      <section class="py-32 border-t border-neutral-100 dark:border-white/5 transition-colors duration-500">
+        <div class="container mx-auto px-6">
+
+          <div class="text-center mb-20 animate-on-scroll">
+            <p class="text-blue-600 dark:text-blue-400 tracking-[0.3em] uppercase text-xs font-bold mb-6">Rejoindre la promo</p>
+            <h2 class="text-4xl md:text-6xl font-black tracking-tighter text-neutral-950 dark:text-white mb-6 leading-[1.05]">
+              Prêt à intégrer<br />le département ?
+            </h2>
+            <p class="text-neutral-600 dark:text-stone-400 max-w-xl mx-auto leading-relaxed">
+              Plusieurs voies d'accès selon votre profil. Découvrez comment rejoindre le BUT MMI et façonner votre avenir numérique.
+            </p>
+          </div>
+
+          <!-- CTA Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto animate-on-scroll">
+            <router-link
+              v-for="cta in ctaCards"
+              :key="cta.route"
+              :to="cta.route"
+              class="cta-card group"
+              :aria-label="cta.title"
+            >
+              <div class="cta-card__number">{{ cta.number }}</div>
+              <h3 class="cta-card__title">{{ cta.title }}</h3>
+              <p class="cta-card__desc">{{ cta.desc }}</p>
+              <span class="cta-card__arrow">→</span>
+            </router-link>
+          </div>
+
+          <!-- Contact rapide -->
+          <div class="text-center mt-20 animate-on-scroll">
+            <p class="text-neutral-500 dark:text-stone-500 text-sm mb-4">Une question ?</p>
+            <router-link to="/campus#contact" class="btn-text text-lg">
+              Nous contacter directement →
+            </router-link>
+          </div>
+
+        </div>
+      </section>
+
     </main>
+
+    <!-- Modale projet -->
+    <transition name="modal">
+      <div v-if="selectedProject" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-xl p-4 md:p-12" @click.self="closeModal">
+        <div class="relative w-full max-w-4xl bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row border border-neutral-200 dark:border-white/10 z-10" @click.stop>
+          <button @click="closeModal" class="absolute top-4 right-4 z-20 text-neutral-500 hover:text-neutral-900 dark:text-stone-400 dark:hover:text-white p-2 bg-white/70 dark:bg-black/70 rounded-full backdrop-blur-sm border border-neutral-200 dark:border-white/10" aria-label="Fermer">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+          <div class="w-full md:w-1/2 h-[40vh] md:h-auto min-h-[350px] relative bg-neutral-100 dark:bg-[#111]">
+            <img :src="selectedProject.image" :alt="selectedProject.titre" class="absolute inset-0 w-full h-full object-cover" />
+          </div>
+          <div class="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
+            <span class="text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-blue-500 mb-4 block">{{ selectedProject.sae_titre }}</span>
+            <h2 class="text-3xl md:text-4xl font-black tracking-tighter text-neutral-950 dark:text-white mb-4 leading-tight">{{ selectedProject.titre }}</h2>
+            <div class="flex flex-wrap gap-2 mb-6">
+              <span class="chip">{{ selectedProject.niveau }}</span>
+              <span class="chip">{{ selectedProject.annee }}</span>
+              <span v-if="selectedProject.domaine_activite" class="chip chip--blue">{{ selectedProject.domaine_activite }}</span>
+            </div>
+            <p class="text-xs text-neutral-400 dark:text-stone-500 uppercase tracking-widest font-bold mb-2">Réalisé par</p>
+            <p class="text-lg font-bold text-neutral-900 dark:text-white">{{ selectedProject.etudiant }}</p>
+          </div>
+        </div>
+      </div>
+    </transition>
+
   </div>
 </template>
 
@@ -123,82 +228,184 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 
 const scrollY = ref(0);
-const statsVisible = ref(false);
-const count1 = ref(0);
-const count2 = ref(0);
-const count3 = ref(0);
+const loadingProjects = ref(true);
+const featuredProjects = ref([]);
+const selectedProject = ref(null);
 
-const animateValue = (obj, start, end, duration) => {
-  let startTimestamp = null;
-  const step = (timestamp) => {
-    if (!startTimestamp) startTimestamp = timestamp;
-    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-    obj.value = Math.floor(progress * (end - start) + start);
-    if (progress < 1) {
-      window.requestAnimationFrame(step);
-    }
-  };
-  window.requestAnimationFrame(step);
+const techTags = ['Vue.js', 'Creative Coding', 'UI/UX Design', 'Motion Design', '3D & WebGL', 'Branding'];
+
+const parcoursList = [
+  { code: 'DC', nom: 'Développement Communicant', desc: 'Front-end, APIs, stratégie digitale' },
+  { code: 'CN', nom: 'Création Numérique', desc: 'Motion, 3D, identité visuelle' },
+  { code: 'COM', nom: 'Communication', desc: 'Stratégie, événementiel, médias' }
+];
+
+const stats = [
+  { value: '6', label: 'Semestres' },
+  { value: '3', label: 'Parcours' },
+  { value: '100%', label: 'Numérique' },
+  { value: '~30', label: 'Étudiants/promo' }
+];
+
+const ctaCards = [
+  {
+    number: '01',
+    title: 'Parcoursup',
+    desc: 'Vous êtes lycéen ? Retrouvez notre fiche et tous les critères de sélection.',
+    route: '/inscription/parcoursup'
+  },
+  {
+    number: '02',
+    title: 'Candidature spontanée',
+    desc: 'Transfert, étudiant étranger ou reconversion ? Candidatez directement.',
+    route: '/inscription/candidature'
+  },
+  {
+    number: '03',
+    title: 'Journée d\'intégration',
+    desc: 'Admis ? Découvrez le programme de votre première journée dans la promo.',
+    route: '/inscription/integration'
+  }
+];
+
+// ── Formatage semestre pour les projets
+const formatSemestre = (project) => {
+  if (!project.semestre) return project.niveau || '';
+  const sem = project.semestre.toUpperCase();
+  const semNum = parseInt(sem.replace('S', ''));
+  if (semNum >= 4 && project.domaine_activite) {
+    return `${sem} | ${project.domaine_activite}`;
+  }
+  return `${sem} — ${project.niveau || ''}`;
 };
 
-const handleScroll = () => {
-  scrollY.value = window.scrollY;
+const openModal = (project) => {
+  selectedProject.value = project;
+  document.body.style.overflow = 'hidden';
+};
+const closeModal = () => {
+  selectedProject.value = null;
+  document.body.style.overflow = '';
 };
 
-onMounted(() => {
+const handleScroll = () => { scrollY.value = window.scrollY; };
+
+onMounted(async () => {
   window.addEventListener('scroll', handleScroll, { passive: true });
-  
+
+  // Intersection observer pour les animations
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         entry.target.classList.add('is-visible');
-        
-        if (entry.target.classList.contains('stats-section') && !statsVisible.value) {
-           statsVisible.value = true;
-           animateValue(count1, 0, 8, 2000);
-           animateValue(count2, 0, 3, 2000);
-           animateValue(count3, 0, 100, 2000);
-        }
-        
         observer.unobserve(entry.target);
       }
     });
-  }, { threshold: 0.1 });
-
+  }, { threshold: 0.08 });
   document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
+
+  // Fetch 6 projets vedettes
+  try {
+    const res = await fetch('/api/public/projets?limit=6');
+    if (res.ok) featuredProjects.value = await res.json();
+  } catch {
+    // Fallback silencieux
+    featuredProjects.value = [];
+  } finally {
+    loadingProjects.value = false;
+  }
 });
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll);
+  document.body.style.overflow = '';
 });
 </script>
 
 <style scoped>
-.animate-fade-in-up {
-  opacity: 0;
-  animation: fadeInUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+@keyframes fadeIn { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes blob { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-20px,30px) scale(1.08); } }
+@keyframes blobSlow { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(20px,-20px) scale(1.05); } }
+
+.animate-fade-in { opacity: 0; animation: fadeIn 1.2s cubic-bezier(0.16,1,0.3,1) forwards; }
+.animation-delay-200 { animation-delay: 0.2s; }
+.animation-delay-500 { animation-delay: 0.5s; }
+.animation-delay-700 { animation-delay: 0.7s; }
+.animate-blob { animation: blob 14s infinite alternate ease-in-out; }
+.animate-blob-slow { animation: blobSlow 18s infinite alternate ease-in-out; }
+.animate-on-scroll { opacity: 0; transform: translateY(36px); transition: opacity 0.9s cubic-bezier(0.16,1,0.3,1), transform 0.9s cubic-bezier(0.16,1,0.3,1); }
+.animate-on-scroll.is-visible { opacity: 1; transform: translateY(0); }
+
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 14px 28px;
+  background: linear-gradient(to right, #2563eb, #7c3aed);
+  color: #fff; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;
+  border-radius: 6px; text-decoration: none; border: none; cursor: pointer;
+  transition: box-shadow 0.3s, transform 0.2s;
 }
-.animate-on-scroll {
-  opacity: 0;
-  transform: translateY(40px);
-  transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+.btn-primary:hover { box-shadow: 0 12px 30px -6px rgba(37,99,235,0.35); transform: translateY(-2px); }
+
+.btn-secondary {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 14px 28px;
+  border: 1px solid #d4d4d4; color: #262626;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;
+  border-radius: 6px; text-decoration: none; background: transparent;
+  transition: border-color 0.2s, color 0.2s;
 }
-.animate-on-scroll.is-visible {
-  opacity: 1;
-  transform: translateY(0);
+.dark .btn-secondary { border-color: rgba(255,255,255,0.2); color: #fff; }
+.btn-secondary:hover { border-color: #2563eb; color: #2563eb; }
+
+.btn-text { font-size: 13px; font-weight: 700; color: #737373; text-decoration: none; transition: color 0.2s; }
+.btn-text:hover { color: #2563eb; }
+.dark .btn-text { color: #a8a29e; }
+.dark .btn-text:hover { color: #60a5fa; }
+
+.tech-tag {
+  padding: 4px 12px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; font-weight: 700;
+  border: 1px solid #e5e5e5; border-radius: 99px; color: #737373; background: #fafafa;
 }
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(50px); }
-  to { opacity: 1; transform: translateY(0); }
+.dark .tech-tag { border-color: rgba(255,255,255,0.1); color: #78716c; background: rgba(255,255,255,0.05); }
+
+.project-card { transition: transform 0.3s ease; }
+.project-card:hover { transform: translateY(-4px); }
+
+.parcours-card {
+  padding: 20px; border: 1px solid #e5e5e5; border-radius: 12px;
+  background: #fff; transition: border-color 0.3s;
 }
-@keyframes blob {
-  0% { transform: translate(0px, 0px) scale(1); }
-  50% { transform: translate(-30px, 50px) scale(1.1); }
-  100% { transform: translate(0px, 0px) scale(1); }
+.dark .parcours-card { border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); }
+.parcours-card:hover { border-color: rgba(37,99,235,0.5); }
+
+.stat-card {
+  padding: 24px; border: 1px solid #e5e5e5; border-radius: 16px;
+  background: #fff; display: flex; flex-direction: column; justify-content: center;
 }
-.animate-blob {
-  animation: blob 15s infinite alternate ease-in-out;
+.dark .stat-card { border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); }
+
+.cta-card {
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 32px; border: 1px solid #e5e5e5; border-radius: 16px;
+  background: #fff; text-decoration: none;
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
 }
-.animation-delay-300 { animation-delay: 0.3s; }
-.animation-delay-600 { animation-delay: 0.6s; }
+.dark .cta-card { border-color: rgba(255,255,255,0.1); background: #0f0f0f; }
+.cta-card:hover { border-color: rgba(37,99,235,0.4); box-shadow: 0 20px 40px -15px rgba(37,99,235,0.1); transform: translateY(-4px); }
+.cta-card__number { font-size: 48px; font-weight: 900; color: #f5f5f5; line-height: 1; margin-bottom: 8px; }
+.dark .cta-card__number { color: #262626; }
+.cta-card__title { font-size: 17px; font-weight: 900; color: #171717; letter-spacing: -0.02em; }
+.dark .cta-card__title { color: #fff; }
+.cta-card__desc { font-size: 13px; color: #737373; line-height: 1.6; flex-grow: 1; }
+.dark .cta-card__desc { color: #78716c; }
+.cta-card__arrow { color: #2563eb; font-weight: 700; margin-top: 8px; display: inline-block; transition: transform 0.2s; }
+.cta-card:hover .cta-card__arrow { transform: translateX(4px); }
+
+.chip { padding: 4px 12px; font-size: 12px; font-weight: 700; letter-spacing: 0.02em; border-radius: 99px; background: #f5f5f5; color: #525252; }
+.dark .chip { background: rgba(255,255,255,0.1); color: #d4d4d4; }
+.chip--blue { background: #eff6ff; color: #1d4ed8; }
+.dark .chip--blue { background: rgba(37,99,235,0.2); color: #93c5fd; }
+
+.modal-enter-active, .modal-leave-active { transition: all 0.35s cubic-bezier(0.16,1,0.3,1); }
+.modal-enter-from, .modal-leave-to { opacity: 0; transform: scale(0.97); }
 </style>

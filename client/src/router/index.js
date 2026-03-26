@@ -7,23 +7,42 @@ import DemandeConfirmationView from '../views/DemandeConfirmationView.vue'
 import AdminLoginView from '../views/AdminLoginView.vue'
 import AdminDashboardView from '../views/AdminDashboardView.vue'
 
+// ─── Vues Publiques ───────────────────────────────────────────
 import AccueilView from '../views/public/AccueilView.vue'
-import VitrineView from '../views/public/VitrineView.vue'
+import PublicShowcaseView from '../views/public/PublicShowcaseView.vue'
 import NotreButView from '../views/public/NotreButView.vue'
 import CampusView from '../views/public/CampusView.vue'
 
+// ─── Vues Inscription ─────────────────────────────────────────
+import ParcoursupView from '../views/public/inscription/ParcoursupView.vue'
+import CandidatureView from '../views/public/inscription/CandidatureView.vue'
+import IntegrationView from '../views/public/inscription/IntegrationView.vue'
+
 const router = createRouter({
   history: createWebHistory(),
+  scrollBehavior(to, from, savedPosition) {
+    if (to.hash) {
+      return { el: to.hash, behavior: 'smooth', top: 80 }
+    }
+    if (savedPosition) return savedPosition
+    return { top: 0, behavior: 'smooth' }
+  },
   routes: [
+    // ─── Routes Publiques ─────────────────────────────────
     {
       path: '/',
       name: 'accueil',
       component: AccueilView
     },
     {
+      path: '/projets',
+      name: 'nos-projets',
+      component: PublicShowcaseView
+    },
+    {
+      // Rétrocompatibilité — /vitrine redirige vers /projets
       path: '/vitrine',
-      name: 'vitrine',
-      component: VitrineView
+      redirect: '/projets'
     },
     {
       path: '/but',
@@ -35,6 +54,25 @@ const router = createRouter({
       name: 'campus',
       component: CampusView
     },
+
+    // ─── Routes Inscription ───────────────────────────────
+    {
+      path: '/inscription/parcoursup',
+      name: 'parcoursup',
+      component: ParcoursupView
+    },
+    {
+      path: '/inscription/candidature',
+      name: 'candidature',
+      component: CandidatureView
+    },
+    {
+      path: '/inscription/integration',
+      name: 'integration',
+      component: IntegrationView
+    },
+
+    // ─── Routes Privées ───────────────────────────────────
     {
       path: '/login',
       name: 'login',
@@ -76,33 +114,26 @@ const router = createRouter({
   ]
 })
 
-// Navigation Guard (Validation du JWT & Rôle)
+// ─── Navigation Guard ──────────────────────────────────────────
 router.beforeEach((to, from) => {
   const token = localStorage.getItem('jwt_token')
   const userRole = localStorage.getItem('user_role')
 
   if (to.meta.requiresAuth && !token) {
-    // Rediriger vers la page de login s'il n'y a pas de token
     return '/login'
   }
-
   if (to.meta.requiresAuth && to.meta.role !== userRole) {
-    // Empêcher d'aller sur un dashboard non autorisé
     if (userRole === 'student') return '/student'
     if (userRole === 'teacher') return '/teacher'
     if (userRole === 'admin') return '/admin/dashboard'
     return '/login'
   }
-
   if (to.path.startsWith('/login') && token) {
-    // Si l'utilisateur est déjà connecté, l'empêcher de retourner sur le login
     if (userRole === 'student') return '/student'
     if (userRole === 'teacher') return '/teacher'
     if (userRole === 'admin') return '/admin/dashboard'
-    return false // Annule la navigation vers login
+    return false
   }
-
-  // Par défaut, la route est autorisée
   return true
 })
 
