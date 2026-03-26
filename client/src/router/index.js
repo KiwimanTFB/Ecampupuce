@@ -12,6 +12,7 @@ import AccueilView from '../views/public/AccueilView.vue'
 import PublicShowcaseView from '../views/public/PublicShowcaseView.vue'
 import NotreButView from '../views/public/NotreButView.vue'
 import CampusView from '../views/public/CampusView.vue'
+import ContactView from '../views/public/ContactView.vue'
 
 // ─── Vues Inscription ─────────────────────────────────────────
 import ParcoursupView from '../views/public/inscription/ParcoursupView.vue'
@@ -50,9 +51,19 @@ const router = createRouter({
       component: NotreButView
     },
     {
-      path: '/campus',
-      name: 'campus',
+      path: '/le-campus',
+      name: 'le-campus',
       component: CampusView
+    },
+    {
+      // Rétrocompatibilité — /campus redirige vers /le-campus
+      path: '/campus',
+      redirect: '/le-campus'
+    },
+    {
+      path: '/contact',
+      name: 'contact',
+      component: ContactView
     },
 
     // ─── Routes Inscription ───────────────────────────────

@@ -186,8 +186,8 @@
           <!-- Contact rapide -->
           <div class="text-center mt-20 animate-on-scroll">
             <p class="text-neutral-500 dark:text-stone-500 text-sm mb-4">Une question ?</p>
-            <router-link to="/campus#contact" class="btn-text text-lg">
-              Nous contacter directement →
+            <router-link to="/contact" class="btn-text text-lg">
+              Nous contacter directement &rarr;
             </router-link>
           </div>
 
@@ -231,6 +231,18 @@ const scrollY = ref(0);
 const loadingProjects = ref(true);
 const featuredProjects = ref([]);
 const selectedProject = ref(null);
+
+// ══════════════════════════════════════════════════════════
+//  FALLBACK — affiché si l'API est vide ou indisponible
+// ══════════════════════════════════════════════════════════
+const FALLBACK_PROJECTS = [
+  { id: 1, image: 'https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=800', titre: 'Campagne 360°', sae_titre: 'SAE 1.01', semestre: 'S1', niveau: 'BUT 1', annee: '2025', etudiant: 'Emma Bernard', domaine_activite: 'Communication' },
+  { id: 2, image: 'https://images.unsplash.com/photo-1512428559087-560fa5ceab42?q=80&w=800', titre: 'Fintech Dashboard', sae_titre: 'SAE 3.01', semestre: 'S3', niveau: 'BUT 2', annee: '2025', etudiant: 'Lucas Martin', domaine_activite: 'Développement Web' },
+  { id: 3, image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800', titre: 'Komorebi Void', sae_titre: 'SAE 5.02', semestre: 'S5', niveau: 'BUT 3', annee: '2025', etudiant: 'Alice Dupont', domaine_activite: '3D & Jeux' },
+  { id: 4, image: 'https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?q=80&w=800', titre: 'Brand Identity', sae_titre: 'SAE 2.01', semestre: 'S2', niveau: 'BUT 1', annee: '2024', etudiant: 'Hugo Renard', domaine_activite: 'Design' },
+  { id: 5, image: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?q=80&w=800', titre: 'Montage Cinéma', sae_titre: 'SAE 4.03', semestre: 'S4', niveau: 'BUT 2', annee: '2025', etudiant: 'Léa Fontaine', domaine_activite: 'Audiovisuel' },
+  { id: 6, image: 'https://images.unsplash.com/photo-1541462608143-67571c6738dd?q=80&w=800', titre: 'Portfolio Pro', sae_titre: 'SAE 6.01', semestre: 'S6', niveau: 'BUT 3', annee: '2026', etudiant: 'Noah Petit', domaine_activite: 'Développement Web' },
+];
 
 const techTags = ['Vue.js', 'Creative Coding', 'UI/UX Design', 'Motion Design', '3D & WebGL', 'Branding'];
 
@@ -304,15 +316,26 @@ onMounted(async () => {
   }, { threshold: 0.08 });
   document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
 
-  // Fetch 6 projets vedettes
+  // Fetch des 6 projets vedettes
   try {
     const res = await fetch('/api/public/projets?limit=6');
-    if (res.ok) featuredProjects.value = await res.json();
+    if (res.ok) {
+      const data = await res.json();
+      featuredProjects.value = data.length > 0 ? data : FALLBACK_PROJECTS;
+    } else {
+      featuredProjects.value = FALLBACK_PROJECTS;
+    }
   } catch {
-    // Fallback silencieux
-    featuredProjects.value = [];
+    featuredProjects.value = FALLBACK_PROJECTS;
   } finally {
     loadingProjects.value = false;
+    // Re-déclenche les animations sur les nouvelles cartes
+    setTimeout(() => {
+      const obs2 = new IntersectionObserver((entries) => {
+        entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('is-visible'); obs2.unobserve(e.target); } });
+      }, { threshold: 0 });
+      document.querySelectorAll('.project-card:not(.is-visible)').forEach(el => obs2.observe(el));
+    }, 30);
   }
 });
 

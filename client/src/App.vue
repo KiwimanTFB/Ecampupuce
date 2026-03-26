@@ -8,7 +8,7 @@ const route = useRoute()
 
 // Toutes les routes publiques (vitrine + inscription)
 const publicRoutes = [
-  'accueil', 'nos-projets', 'notre-but', 'campus',
+  'accueil', 'nos-projets', 'notre-but', 'le-campus', 'contact',
   'parcoursup', 'candidature', 'integration'
 ]
 const isPublicRoute = computed(() => publicRoutes.includes(route.name))

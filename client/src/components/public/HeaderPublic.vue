@@ -25,9 +25,9 @@
             <span>Accueil</span>
           </router-link>
 
-          <!-- LE BUT Dropdown -->
           <div class="relative" @mouseenter="openDropdown('but')" @mouseleave="closeDropdown('but')">
-            <button
+            <router-link
+              to="/but"
               class="nav-link flex items-center gap-1.5"
               :class="{'nav-link--active': isButActive}"
               :aria-expanded="activeDropdown === 'but'"
@@ -38,7 +38,7 @@
               <svg class="w-3 h-3 transition-transform duration-300" :class="activeDropdown === 'but' ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="width:12px;height:12px;">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
               </svg>
-            </button>
+            </router-link>
 
             <transition name="dropdown">
               <div v-if="activeDropdown === 'but'" class="dropdown-panel" role="menu" aria-labelledby="btn-but">
@@ -49,7 +49,7 @@
                     <span class="dropdown-item__desc">Galerie des créations MMI</span>
                   </div>
                 </router-link>
-                <router-link to="/but" class="dropdown-item" role="menuitem" @click="closeDropdown('but')">
+                <router-link to="/but#equipe" class="dropdown-item" role="menuitem" @click="closeDropdown('but')">
                   <span class="dropdown-item__icon">→</span>
                   <div>
                     <span class="dropdown-item__title">Notre Équipe</span>
@@ -109,9 +109,14 @@
             </transition>
           </div>
 
+          <!-- Le Campus -->
+          <router-link to="/le-campus" class="nav-link" :class="{'nav-link--active': $route.name === 'le-campus'}">
+            <span>Le Campus</span>
+          </router-link>
+
           <!-- Nous contacter -->
-          <router-link to="/campus#contact" class="nav-link" :class="{'nav-link--active': $route.name === 'campus'}">
-            <span>Nous contacter</span>
+          <router-link to="/contact" class="nav-link" :class="{'nav-link--active': $route.name === 'contact'}">
+            <span>Contacter</span>
           </router-link>
 
           <div class="w-px h-5 bg-neutral-300 dark:bg-white/10 mx-1"></div>
@@ -163,16 +168,18 @@
           <router-link to="/" class="mobile-link" @click="closeMobile">Accueil</router-link>
 
           <div class="mobile-group">
-            <button class="mobile-group__header" @click="mobileSubOpen = mobileSubOpen === 'but' ? '' : 'but'">
-              <span>LE BUT</span>
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:16px;height:16px;" :style="mobileSubOpen === 'but' ? 'transform:rotate(180deg)' : ''">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
+            <div class="mobile-group__header flex justify-between items-center w-full">
+              <router-link to="/but" class="flex-1 text-left font-black" @click="closeMobile">LE BUT</router-link>
+              <button @click="mobileSubOpen = mobileSubOpen === 'but' ? '' : 'but'" class="p-2" aria-label="Ouvrir le sous-menu LE BUT">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:16px;height:16px;" :class="mobileSubOpen === 'but' ? 'rotate-180 transition-transform' : 'transition-transform'">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            </div>
             <transition name="accordion">
               <div v-if="mobileSubOpen === 'but'" class="mobile-sub">
                 <router-link to="/projets" class="mobile-sub__link" @click="closeMobile">Nos Projets</router-link>
-                <router-link to="/but" class="mobile-sub__link" @click="closeMobile">Notre Équipe</router-link>
+                <router-link to="/but#equipe" class="mobile-sub__link" @click="closeMobile">Notre Équipe</router-link>
                 <router-link to="/but#apres" class="mobile-sub__link" @click="closeMobile">Et après le BUT ?</router-link>
               </div>
             </transition>
@@ -194,7 +201,8 @@
             </transition>
           </div>
 
-          <router-link to="/campus#contact" class="mobile-link" @click="closeMobile">Nous contacter</router-link>
+          <router-link to="/le-campus" class="mobile-link" @click="closeMobile">Le Campus</router-link>
+          <router-link to="/contact" class="mobile-link" @click="closeMobile">Nous contacter</router-link>
 
           <div style="margin-top:32px;padding-top:32px;border-top:1px solid rgba(0,0,0,0.08);">
             <router-link to="/login" class="btn-portal" style="display:flex;justify-content:center;" @click="closeMobile">

@@ -80,29 +80,71 @@
         </div>
 
         <!-- Grille 4 colonnes desktop -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           <article
-            v-for="(member, i) in TEAM_MEMBERS"
-            :key="member.nom"
-            class="team-card animate-on-scroll group"
-            :style="`animation-delay:${i * 60}ms`"
+            v-for="(member, i) in TEAM_DATA"
+            :key="member.email || member.nom"
+            class="team-card animate-on-scroll"
+            :style="`animation-delay:${i * 55}ms`"
           >
-            <!-- Photo -->
+            <!-- Photo ratio 1:1 strict -->
             <div class="team-card__photo">
               <img
-                :src="member.photo || `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(member.prenom + ' ' + member.nom)}&backgroundColor=2563eb,7c3aed,1d4ed8&backgroundType=gradientLinear&fontFamily=Inter&fontWeight=700&fontSize=38&textColor=ffffff`"
+                :src="member.photo || `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(member.prenom + ' ' + member.nom)}&backgroundColor=2563eb,7c3aed,1d4ed8&backgroundType=gradientLinear&fontWeight=700&fontSize=38&textColor=ffffff`"
                 :alt="`Photo de ${member.prenom} ${member.nom}`"
-                class="w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-700"
+                class="w-full h-full object-cover"
                 loading="lazy"
               />
             </div>
-            <!-- Corps -->
+            <!-- Infos -->
             <div class="team-card__body">
               <h3 class="team-card__name">{{ member.prenom }} {{ member.nom }}</h3>
               <p class="team-card__role">{{ member.role }}</p>
-              <p v-if="member.specialite" class="team-card__spec">{{ member.specialite }}</p>
+              <a
+                v-if="member.email"
+                :href="`mailto:${member.email}`"
+                class="team-card__email"
+                :aria-label="`Envoyer un email à ${member.prenom} ${member.nom}`"
+              >{{ member.email }}</a>
             </div>
           </article>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION CRITÈRES D'ADMISSION — Layout magazine
+      ═══════════════════════════════════════════════════════ -->
+      <section id="criteres" class="border-t border-neutral-100 dark:border-white/5 py-28">
+        <div class="container mx-auto px-6">
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+
+            <div class="lg:col-span-4 animate-on-scroll lg:sticky lg:top-32">
+              <p class="text-neutral-400 dark:text-stone-600 tracking-[0.3em] uppercase text-xs font-bold mb-6">Sélection</p>
+              <h2 class="text-3xl md:text-4xl font-black tracking-tighter text-neutral-950 dark:text-white leading-tight mb-8">
+                Critères<br />d'admission.
+              </h2>
+              <p class="text-neutral-500 dark:text-stone-500 text-sm leading-relaxed">
+                Le recrutement se fait sur dossier. Nous privilégions les profils curieux, engagés et ayant une appétence forte pour le numérique.
+              </p>
+            </div>
+
+            <div class="lg:col-span-8">
+              <div
+                v-for="(critere, i) in CRITERES"
+                :key="critere.title"
+                class="mag-item animate-on-scroll"
+                :style="`animation-delay:${i * 80}ms`"
+              >
+                <span class="mag-item__num">{{ String(i + 1).padStart(2, '0') }}</span>
+                <div class="mag-item__content">
+                  <h3 class="mag-item__title">{{ critere.title }}</h3>
+                  <p class="mag-item__desc">{{ critere.desc }}</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
       </section>
 
@@ -132,15 +174,15 @@
               <div
                 v-for="(path, i) in AFTER_BUT"
                 :key="path.title"
-                class="after-item animate-on-scroll"
+                class="mag-item animate-on-scroll"
                 :style="`animation-delay:${i * 80}ms`"
               >
-                <span class="after-item__num">{{ String(i + 1).padStart(2, '0') }}</span>
-                <div class="after-item__content">
-                  <h3 class="after-item__title">{{ path.title }}</h3>
-                  <p class="after-item__desc">{{ path.desc }}</p>
+                <span class="mag-item__num">{{ String(i + 1).padStart(2, '0') }}</span>
+                <div class="mag-item__content">
+                  <h3 class="mag-item__title">{{ path.title }}</h3>
+                  <p class="mag-item__desc">{{ path.desc }}</p>
                 </div>
-                <span class="after-item__arrow">→</span>
+                <span class="mag-item__arrow">→</span>
               </div>
             </div>
 
@@ -177,70 +219,20 @@
 import { onMounted } from 'vue';
 
 // ══════════════════════════════════════════════════════════════
-//  ÉQUIPE — DATA-DRIVEN
-//  ▶ Ajouter un membre : créer un nouvel objet dans ce tableau
-//  ▶ Retirer un membre : supprimer l'objet correspondant
-//  ▶ Champs requis   : prenom, nom, role
-//  ▶ Champs optionnels: specialite, photo (URL)
-//     → Si photo est null/absent : avatar DiceBear auto-généré
+//  TEAM_DATA — ÉQUIPE (données éditables)
+//  ▶ Champs requis   : prenom, nom, role, email
+//  ▶ Champs optionnels: photo (URL ou null)
+//     → Si photo = null : avatar DiceBear auto-généré avec initiales
 // ══════════════════════════════════════════════════════════════
-const TEAM_MEMBERS = [
-  {
-    prenom: 'Marie',
-    nom: 'Lefebvre',
-    role: 'Responsable du département',
-    specialite: 'UX Design & Ergonomie Web',
-    photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=400&h=400&fit=crop'
-  },
-  {
-    prenom: 'Thomas',
-    nom: 'Bernard',
-    role: 'Enseignant-chercheur',
-    specialite: 'Développement Web & Architecture',
-    photo: 'https://images.unsplash.com/photo-1502767089025-6572583495b9?q=80&w=400&h=400&fit=crop'
-  },
-  {
-    prenom: 'Julie',
-    nom: 'Moreau',
-    role: 'Enseignante',
-    specialite: 'Motion Design & After Effects',
-    photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&h=400&fit=crop'
-  },
-  {
-    prenom: 'Pierre',
-    nom: 'Dubois',
-    role: 'Intervenant pro',
-    specialite: 'Stratégie de Communication',
-    photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=400&h=400&fit=crop'
-  },
-  {
-    prenom: 'Sophie',
-    nom: 'Martin',
-    role: 'Enseignante',
-    specialite: 'Infographie & Direction Artistique',
-    photo: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?q=80&w=400&h=400&fit=crop'
-  },
-  {
-    prenom: 'Lucas',
-    nom: 'Petit',
-    role: 'Intervenant pro',
-    specialite: '3D, Jeux Vidéo & Unreal Engine',
-    photo: null
-  },
-  {
-    prenom: 'Amélie',
-    nom: 'Gauthier',
-    role: 'Enseignante',
-    specialite: 'Photographie & Retouche',
-    photo: null
-  },
-  {
-    prenom: 'Romain',
-    nom: 'Girard',
-    role: 'Enseignant-chercheur',
-    specialite: 'Réseaux Sociaux & Stratégie Digitale',
-    photo: null
-  }
+const TEAM_DATA = [
+  { prenom: 'Marie',   nom: 'Lefebvre', role: 'Responsable de département',   email: 'm.lefebvre@iut-velizy.fr',  photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=400&h=400&fit=crop' },
+  { prenom: 'Thomas',  nom: 'Bernard',  role: 'Enseignant-chercheur',          email: 't.bernard@iut-velizy.fr',   photo: 'https://images.unsplash.com/photo-1502767089025-6572583495b9?q=80&w=400&h=400&fit=crop' },
+  { prenom: 'Julie',   nom: 'Moreau',   role: 'Enseignante',                   email: 'j.moreau@iut-velizy.fr',    photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&h=400&fit=crop' },
+  { prenom: 'Pierre',  nom: 'Dubois',   role: 'Intervenant professionnel',     email: 'p.dubois@iut-velizy.fr',    photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=400&h=400&fit=crop' },
+  { prenom: 'Sophie',  nom: 'Martin',   role: 'Enseignante',                   email: 's.martin@iut-velizy.fr',    photo: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?q=80&w=400&h=400&fit=crop' },
+  { prenom: 'Lucas',   nom: 'Petit',    role: 'Intervenant professionnel',     email: 'l.petit@iut-velizy.fr',     photo: null },
+  { prenom: 'Amélie',  nom: 'Gauthier', role: 'Enseignante',                   email: 'a.gauthier@iut-velizy.fr',  photo: null },
+  { prenom: 'Romain',  nom: 'Girard',   role: 'Enseignant-chercheur',          email: 'r.girard@iut-velizy.fr',    photo: null },
 ];
 
 // ══════════════════════════════════════════════════════════════
@@ -261,6 +253,28 @@ const EXPERTISES = [
     roman: 'III.',
     title: 'Direction Artistique',
     desc: "Identité de marque, motion design et production de contenus visuels. Du concept à la mise en ligne."
+  }
+];
+
+// ══════════════════════════════════════════════════════════════
+//  CRITÈRES DE SÉLECTION
+// ══════════════════════════════════════════════════════════════
+const CRITERES = [
+  {
+    title: 'Notes scolaires',
+    desc: 'Bulletins de 1ʳᵉ et Terminale. Une attention toute particulière est portée aux matières analytiques et aux spécialités.'
+  },
+  {
+    title: 'Lettre de motivation (Projet motivé)',
+    desc: 'La cohérence de votre projet professionnel, votre niveau d\'expression et votre véritable intérêt pour la création numérique.'
+  },
+  {
+    title: 'Portfolio / Projets personnels',
+    desc: 'Tout projet personnel : site web, compte de curation, chaine vidéo, design, photo, investissement associatif... est un réel atout.'
+  },
+  {
+    title: 'Appréciations & Savoir-être',
+    desc: 'Assiduité, comportement et avis du chef d\'établissement constituent un critère non négligeable pour un travail en équipe.'
   }
 ];
 
@@ -326,54 +340,58 @@ onMounted(() => {
 /* ── Team Cards — 4 colonnes ── */
 .team-card {
   display: flex; flex-direction: column; overflow: hidden;
-  border-radius: 12px; border: 1px solid #ebebeb; background: #fff;
-  transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+  background: transparent;
+  transition: transform 0.3s;
 }
-.dark .team-card { border-color: rgba(255,255,255,0.08); background: #0f0f0f; }
-.team-card:hover { border-color: rgba(37,99,235,0.35); transform: translateY(-4px); box-shadow: 0 16px 40px -12px rgba(37,99,235,0.12); }
-.dark .team-card:hover { border-color: rgba(37,99,235,0.3); }
+.team-card:hover { transform: translateY(-4px); }
 
-.team-card__photo { width: 100%; aspect-ratio: 1/1; overflow: hidden; background: #f5f5f5; flex-shrink: 0; }
-.dark .team-card__photo { background: #111; }
+.team-card__photo { width: 100%; aspect-ratio: 1/1; overflow: hidden; flex-shrink: 0; }
+.dark .team-card__photo { }
 
-.team-card__body { padding: 16px 18px 20px; display: flex; flex-direction: column; gap: 3px; }
+.team-card__body { padding: 16px 0 20px; display: flex; flex-direction: column; gap: 3px; }
 .team-card__name { font-size: 14px; font-weight: 900; letter-spacing: -0.01em; color: #171717; line-height: 1.2; }
 .dark .team-card__name { color: #f0f0f0; }
 .team-card__role { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #2563eb; margin-top: 2px; }
 .dark .team-card__role { color: #3b82f6; }
-.team-card__spec { font-size: 11px; color: #a3a3a3; margin-top: 4px; line-height: 1.4; }
-.dark .team-card__spec { color: #57534e; }
+.team-card__email {
+  font-size: 11px; color: #a3a3a3; text-decoration: none; margin-top: 6px; display: block;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: color 0.2s;
+}
+.team-card__email:hover { color: #2563eb; }
+.dark .team-card__email { color: #57534e; }
+.dark .team-card__email:hover { color: #60a5fa; }
 
-/* ── After BUT — List éditoriale ── */
-.after-item {
+/* ── Listes Éditoriales (Critères et Après) ── */
+.mag-item {
   display: flex; align-items: flex-start; gap: 24px;
   padding: 28px 0;
   border-bottom: 1px solid #f0f0f0;
   transition: all 0.2s;
 }
-.dark .after-item { border-bottom-color: rgba(255,255,255,0.06); }
-.after-item:last-child { border-bottom: none; }
-.after-item:hover .after-item__num { color: #2563eb; }
-.dark .after-item:hover .after-item__num { color: #60a5fa; }
+.dark .mag-item { border-bottom-color: rgba(255,255,255,0.06); }
+.mag-item:last-child { border-bottom: none; }
+.mag-item:hover .mag-item__num { color: #2563eb; }
+.dark .mag-item:hover .mag-item__num { color: #60a5fa; }
 
-.after-item__num {
+.mag-item__num {
   font-size: 11px; font-weight: 900; color: #d4d4d4; letter-spacing: 0.05em;
   min-width: 28px; padding-top: 4px; flex-shrink: 0;
   transition: color 0.2s;
 }
-.dark .after-item__num { color: #404040; }
+.dark .mag-item__num { color: #404040; }
 
-.after-item__content { flex: 1; }
-.after-item__title { font-size: 17px; font-weight: 900; letter-spacing: -0.02em; color: #171717; margin-bottom: 6px; }
-.dark .after-item__title { color: #f0f0f0; }
-.after-item__desc { font-size: 13px; color: #737373; line-height: 1.65; }
-.dark .after-item__desc { color: #57534e; }
+.mag-item__content { flex: 1; }
+.mag-item__title { font-size: 17px; font-weight: 900; letter-spacing: -0.02em; color: #171717; margin-bottom: 6px; }
+.dark .mag-item__title { color: #f0f0f0; }
+.mag-item__desc { font-size: 13px; color: #737373; line-height: 1.65; }
+.dark .mag-item__desc { color: #57534e; }
 
-.after-item__arrow {
+.mag-item__arrow {
   font-size: 18px; color: #d4d4d4; flex-shrink: 0; padding-top: 2px;
   transition: color 0.2s, transform 0.2s;
 }
-.dark .after-item__arrow { color: #262626; }
-.after-item:hover .after-item__arrow { color: #2563eb; transform: translateX(4px); }
-.dark .after-item:hover .after-item__arrow { color: #60a5fa; }
+.dark .mag-item__arrow { color: #262626; }
+.mag-item:hover .mag-item__arrow { color: #2563eb; transform: translateX(4px); }
+.dark .mag-item:hover .mag-item__arrow { color: #60a5fa; }
 </style>

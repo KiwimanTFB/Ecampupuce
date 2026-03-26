@@ -111,7 +111,7 @@
               <img
                 :src="project.image"
                 :alt="project.titre"
-                loading="lazy"
+                :loading="idx < 4 ? 'eager' : 'lazy'"
                 class="w-full h-full object-cover filter grayscale transition-all duration-700 ease-out group-hover:grayscale-0 group-hover:scale-[1.04]"
               />
               <!-- Overlay -->
@@ -343,7 +343,15 @@ const closeProject = () => {
 
 const applyObserver = () => {
   nextTick(() => {
-    // threshold=0 : se déclenche dès que 1px est visible
+    const els = document.querySelectorAll('.project-item:not(.is-visible)');
+    // Révèle immédiatement les éléments déjà dans le viewport
+    els.forEach(el => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight && rect.bottom > 0) {
+        el.classList.add('is-visible');
+      }
+    });
+    // Observer pour les éléments encore hors viewport
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -351,7 +359,7 @@ const applyObserver = () => {
           observer.unobserve(entry.target);
         }
       });
-    }, { threshold: 0, rootMargin: '0px 0px -20px 0px' });
+    }, { threshold: 0 });
     document.querySelectorAll('.project-item:not(.is-visible)').forEach(el => observer.observe(el));
   });
 };
@@ -373,8 +381,8 @@ onMounted(async () => {
     ALL_PROJECTS.value = FALLBACK_PROJECTS;
   } finally {
     loading.value = false;
-    // Délai minimal pour que le DOM soit peint avant l'observer
-    setTimeout(applyObserver, 50);
+    // nextTick garantit que le DOM est peint, puis reveal immédiat
+    nextTick(() => applyObserver());
   }
 });
 
