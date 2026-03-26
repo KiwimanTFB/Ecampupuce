@@ -67,6 +67,9 @@ const addColumn = (colName, colType) => {
 };
 addColumn('id_prof', 'INTEGER');
 addColumn('date_fin', 'DATETIME');
+addColumn('date_limite', 'DATETIME');
+addColumn('type_groupe', 'TEXT');
+addColumn('niveau', 'TEXT');
 
 const addColumnRendus = (colName, colType) => {
     db.run(`ALTER TABLE rendus ADD COLUMN ${colName} ${colType}`, (err) => {
@@ -202,8 +205,17 @@ app.get('/api/saes', authenticateToken, async (req, res) => {
 
         let saes;
         if (role === 'admin' || role === 'teacher') {
-            // Admins et profs voient tout
-            saes = await db.allAsync(`SELECT s.*, u.nom as prof_nom, u.prenom as prof_prenom FROM sae s LEFT JOIN utilisateurs u ON s.id_prof = u.id_user`);
+            // Admins et profs voient tout avec des infos de progression
+            saes = await db.allAsync(`
+                SELECT 
+                    s.*, 
+                    u.nom as prof_nom, 
+                    u.prenom as prof_prenom,
+                    (SELECT COUNT(DISTINCT id_user) FROM rendus r WHERE r.id_sae = s.id_sae) as progress_count,
+                    (SELECT COUNT(*) FROM utilisateurs ut WHERE ut.role = 'student' AND (ut.groupe_td = s.groupe OR s.groupe = '' OR s.groupe IS NULL)) as total_students
+                FROM sae s 
+                LEFT JOIN utilisateurs u ON s.id_prof = u.id_user
+            `);
         } else {
             // Étudiants : filtrage par héritage de groupe
             const visibleGroups = getGroupAncestors(groupe_td);
@@ -379,15 +391,18 @@ app.delete('/api/saes/:id', authenticateToken, requireTeacher, async (req, res) 
 app.get('/api/annonces', authenticateToken, async (req, res) => {
     try {
         const annonces = await db.allAsync(`
-            SELECT a.*, u.name as auteur_nom 
+            SELECT a.*, (u.nom || ' ' || u.prenom) as auteur_nom 
             FROM annonces a 
-            JOIN users u ON a.auteur_id = u.id 
-            ORDER BY a.date_creation DESC
+            JOIN utilisateurs u ON a.auteur_id = u.id_user 
+            ORDER BY a.date_publication DESC
         `);
         res.json(annonces);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Erreur serveur lors de la récupération des annonces' });
+        console.error("ERREUR RÉCUPÉRATION ANNONCES:", error.message);
+        res.status(500).json({ 
+            error: 'Erreur lors de la récupération des annonces.',
+            details: error.message.includes('no such column') ? 'Erreur de schéma de base de données' : 'Erreur interne'
+        });
     }
 });
 
@@ -402,8 +417,8 @@ app.post('/api/annonces', authenticateToken, requireTeacher, async (req, res) =>
         }
 
         await db.runAsync(
-            'INSERT INTO annonces (titre, message, destinataires, auteur_id) VALUES (?, ?, ?, ?)',
-            [titre, message, destinataires || 'Tous', auteur_id]
+            'INSERT INTO annonces (titre, contenu, auteur_id, destinataires) VALUES (?, ?, ?, ?)',
+            [titre, message, auteur_id, destinataires || 'Tous']
         );
 
         res.status(201).json({ message: 'Annonce publiée avec succès' });
@@ -417,13 +432,13 @@ app.post('/api/annonces', authenticateToken, requireTeacher, async (req, res) =>
 app.put('/api/rendus/:id/status', authenticateToken, requireTeacher, async (req, res) => {
     try {
         const renduId = req.params.id;
-        const { is_evaluated } = req.body;
+        const { est_evalue } = req.body;
 
-        if (is_evaluated === undefined) {
-             return res.status(400).json({ error: 'is_evaluated is required' });
+        if (est_evalue === undefined) {
+             return res.status(400).json({ error: 'est_evalue is required' });
         }
 
-        await db.runAsync('UPDATE rendus SET is_evaluated = ? WHERE id = ?', [is_evaluated ? 1 : 0, renduId]);
+        await db.runAsync('UPDATE rendus SET est_evalue = ? WHERE id_rendu = ?', [est_evalue ? 1 : 0, renduId]);
         
         res.json({ message: 'Statut du rendu mis à jour' });
     } catch (error) {
@@ -442,16 +457,37 @@ app.put('/api/rendus/:id/evaluation', authenticateToken, requireTeacher, async (
             return res.status(400).json({ error: 'La note est requise' });
         }
 
-        // 1. Mettre à jour le rendu
         await db.runAsync(
-            'UPDATE rendus SET note = ?, commentaire_prof = ?, is_evaluated = 1, status = ? WHERE id = ?',
-            [note, commentaire || '', 'graded', renduId]
+            'UPDATE rendus SET note_attribuee = ?, commentaire_prof = ?, est_evalue = 1 WHERE id_rendu = ?',
+            [note, commentaire || '', renduId]
         );
 
         res.json({ message: 'Rendu évalué avec succès' });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Erreur serveur lors de l'évaluation" });
+    }
+});
+
+// PUT /api/notes/:id_suivi - Alias pour l'évaluation d'un rendu (Protégé, PROF UNIQUEMENT)
+app.put('/api/notes/:id_suivi', authenticateToken, requireTeacher, async (req, res) => {
+    try {
+        const renduId = req.params.id_suivi;
+        const { note, commentaire } = req.body;
+
+        if (note === undefined) {
+            return res.status(400).json({ error: 'La note est requise' });
+        }
+
+        await db.runAsync(
+            'UPDATE rendus SET note_attribuee = ?, commentaire_prof = ?, est_evalue = 1 WHERE id_rendu = ?',
+            [note, commentaire || '', renduId]
+        );
+
+        res.json({ message: 'Note et commentaire enregistrés avec succès' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Erreur serveur lors de l'enregistrement de la note" });
     }
 });
 
@@ -463,11 +499,11 @@ app.get('/api/mes-notes', authenticateToken, async (req, res) => {
         // On récupère toutes les SAEs où cet étudiant a soumis un rendu
         const rendus = await db.allAsync(`
             SELECT 
-                r.id as rendu_id, r.nom_fichier, r.date_depot, r.note, r.commentaire_prof, r.status as rendu_status,
-                s.id as sae_id, s.title, s.description, s.due_date, s.competences
+                r.id_rendu as rendu_id, r.chemin_fichier as nom_fichier, r.date_depot, r.note_attribuee as note, r.commentaire_prof, r.est_evalue as rendu_status,
+                s.id_sae as sae_id, s.titre as title, s.description, s.date_fin as due_date, s.competences
             FROM rendus r
-            JOIN saes s ON r.sae_id = s.id
-            WHERE r.user_id = ?
+            JOIN sae s ON r.id_sae = s.id_sae
+            WHERE r.id_user = ?
             ORDER BY r.date_depot DESC
         `, [userId]);
 
@@ -475,6 +511,28 @@ app.get('/api/mes-notes', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Erreur serveur lors de la récupération des notes' });
+    }
+});
+
+// GET /api/mes-documents - Liste des rendus de l'étudiant (Espace Documents)
+app.get('/api/mes-documents', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        console.log(`[DEBUG] Récupération des documents pour l'user: ${userId}`);
+        
+        const documents = await db.allAsync(`
+            SELECT r.*, s.titre as sae_titre 
+            FROM rendus r 
+            LEFT JOIN sae s ON r.id_sae = s.id_sae 
+            WHERE r.id_user = ? 
+            ORDER BY r.date_depot DESC
+        `, [userId]);
+
+        console.log(`[DEBUG] ${documents.length} documents trouvés.`);
+        res.json(documents);
+    } catch (error) {
+        console.error("Erreur mes-documents:", error);
+        res.status(500).json({ error: 'Erreur lors de la récupération de vos documents.' });
     }
 });
 
@@ -653,6 +711,18 @@ app.put('/api/admin/users/:id', authenticateToken, requireAdmin, async (req, res
     }
 });
 
+// DELETE /api/admin/users/:id - Supprimer un utilisateur (ADMIN UNIQUEMENT)
+app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const id = req.params.id;
+        await db.runAsync('DELETE FROM utilisateurs WHERE id_user = ?', [id]);
+        res.json({ message: 'Utilisateur supprimé avec succès.' });
+    } catch (e) {
+        console.error("ERREUR SUPPRESSION USER:", e);
+        res.status(500).json({ error: 'Erreur lors de la suppression de l\'utilisateur.' });
+    }
+});
+
 app.put('/api/admin/saes/:id/approve', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const id = req.params.id;
@@ -725,42 +795,84 @@ app.delete('/api/admin/saes/:id', authenticateToken, requireAdmin, async (req, r
 // CYCLE DE VIE DES RENDUS (SAEs)
 // ============================================
 
-// Étudiant: Déposer un rendu
-app.post('/api/rendus', authenticateToken, upload.single('document'), async (req, res) => {
+// Étudiant: Déposer un rendu (Nouveau format demandé)
+app.post('/api/rendu', authenticateToken, upload.single('fichier'), async (req, res) => {
     try {
-        if (req.user.role !== 'student') return res.status(403).json({ error: 'Accès réservé.' });
+        if (req.user.role !== 'student') return res.status(403).json({ error: 'Accès réservé aux étudiants.' });
         
         const saeId = req.body.saeId;
         const userId = req.user.id_user;
         const commentaire = req.body.commentaire || '';
+
+        console.log(`[DEBUG] Dépôt rendu: User=${userId}, SAE=${saeId}`);
         
         if (!saeId) return res.status(400).json({ error: 'ID de SAE manquant.' });
         if (!req.file) return res.status(400).json({ error: 'Fichier manquant.' });
         
-        const sae = await db.getAsync('SELECT date_fin FROM sae WHERE id_sae = ?', [saeId]);
+        const sae = await db.getAsync('SELECT date_fin, date_limite FROM sae WHERE id_sae = ?', [saeId]);
         if (!sae) return res.status(404).json({ error: 'SAE introuvable.' });
         
-        if (sae.date_fin && new Date() > new Date(sae.date_fin)) {
+        const limitDate = sae.date_limite || sae.date_fin;
+        if (limitDate && new Date() > new Date(limitDate)) {
             return res.status(403).json({ error: 'La date limite pour ce rendu est dépassée.' });
         }
         
         const filePath = `/uploads/rendus/${req.file.filename}`;
         
-        const existing = await db.getAsync('SELECT id_rendu FROM rendus WHERE id_user = ? AND id_sae = ?', [userId, saeId]);
-        if (existing) {
+        // Mettre à jour suivi_etudiant_sae
+        const existingSuivi = await db.getAsync('SELECT id_suivi FROM suivi_etudiant_sae WHERE id_user = ? AND id_sae = ?', [userId, saeId]);
+        if (existingSuivi) {
             await db.runAsync(
-                'UPDATE rendus SET file_path = ?, commentaire_etudiant = ?, date_depot = CURRENT_TIMESTAMP WHERE id_rendu = ?', 
-                [filePath, commentaire, existing.id_rendu]
+                'UPDATE suivi_etudiant_sae SET fichier_path = ?, commentaire = ?, date_depot = CURRENT_TIMESTAMP, statut = "Déposé" WHERE id_suivi = ?', 
+                [filePath, commentaire, existingSuivi.id_suivi]
             );
         } else {
             await db.runAsync(
-                'INSERT INTO rendus (id_user, id_sae, file_path, commentaire_etudiant) VALUES (?, ?, ?, ?)', 
+                'INSERT INTO suivi_etudiant_sae (id_user, id_sae, fichier_path, commentaire, date_depot, statut) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, "Déposé")', 
                 [userId, saeId, filePath, commentaire]
             );
         }
+
+        // Garder la compatibilité avec la table rendus (CRITIQUE pour la vue Prof)
+        const existingRendu = await db.getAsync('SELECT id_rendu FROM rendus WHERE id_user = ? AND id_sae = ?', [userId, saeId]);
+        if (existingRendu) {
+            await db.runAsync(
+                'UPDATE rendus SET chemin_fichier = ?, date_depot = CURRENT_TIMESTAMP, est_evalue = 0 WHERE id_rendu = ?', 
+                [filePath, existingRendu.id_rendu]
+            );
+        } else {
+            await db.runAsync(
+                'INSERT INTO rendus (id_user, id_sae, chemin_fichier, date_depot, est_evalue) VALUES (?, ?, ?, CURRENT_TIMESTAMP, 0)', 
+                [userId, saeId, filePath]
+            );
+        }
+
+        res.json({ message: 'Rendu déposé avec succès.', filePath });
+    } catch (e) {
+        console.error("ERREUR DÉPÔT RENDU:", e);
+        res.status(500).json({ error: 'Erreur lors du dépôt du fichier.' });
+    }
+});
+
+// Étudiant: Déposer un rendu (Alias pour l'ancien chemin)
+app.post('/api/rendus', authenticateToken, upload.single('document'), async (req, res) => {
+    // Redirige vers le nouveau format si possible ou traite séparément
+    req.body.fichier = req.file; 
+    // Simplement déléguer ou garder le code existant mais corrigé
+    try {
+        if (req.user.role !== 'student') return res.status(403).json({ error: 'Accès réservé.' });
+        const saeId = req.body.saeId;
+        const userId = req.user.id_user;
+        if (!req.file) return res.status(400).json({ error: 'Fichier manquant.' });
+        const filePath = `/uploads/rendus/${req.file.filename}`;
+        const existing = await db.getAsync('SELECT id_rendu FROM rendus WHERE id_user = ? AND id_sae = ?', [userId, saeId]);
+        if (existing) {
+            await db.runAsync('UPDATE rendus SET chemin_fichier = ?, date_depot = CURRENT_TIMESTAMP WHERE id_rendu = ?', [filePath, existing.id_rendu]);
+        } else {
+            await db.runAsync('INSERT INTO rendus (id_user, id_sae, chemin_fichier) VALUES (?, ?, ?)', [userId, saeId, filePath]);
+        }
         res.json({ message: 'Rendu déposé avec succès.' });
     } catch (e) {
-        console.error(e);
         res.status(500).json({ error: 'Erreur lors du dépôt.' });
     }
 });
@@ -782,17 +894,59 @@ app.get('/api/mes-notes', authenticateToken, async (req, res) => {
     }
 });
 
+// Étudiant: Liste de tous ses documents/rendus
+app.get('/api/mes-documents', authenticateToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'student') return res.status(403).json({ error: 'Accès réservé.' });
+        const docs = await db.allAsync(`
+            SELECT r.*, s.titre 
+            FROM rendus r
+            JOIN sae s ON r.id_sae = s.id_sae
+            WHERE r.id_user = ?
+            ORDER BY r.date_depot DESC
+        `, [req.user.id_user]);
+        res.json(docs);
+    } catch (e) {
+        res.status(500).json({ error: 'Erreur récupération documents.' });
+    }
+});
+
+// Statistiques SAE : Rendus par rapport au total étudiants
+app.get('/api/saes/:id/stats', authenticateToken, async (req, res) => {
+    try {
+        const saeId = req.params.id;
+        const sae = await db.getAsync('SELECT groupe FROM sae WHERE id_sae = ?', [saeId]);
+        if (!sae) return res.status(404).json({ error: 'SAE introuvable' });
+
+        const stats = await db.getAsync(`
+            SELECT 
+                (SELECT COUNT(*) FROM rendus WHERE id_sae = ?) as progress_count,
+                (SELECT COUNT(*) FROM utilisateurs WHERE role = 'student' AND (groupe_td = ? OR ? = '' OR ? IS NULL)) as total_students
+        `, [saeId, sae.groupe, sae.groupe, sae.groupe]);
+
+        res.json(stats);
+    } catch (e) {
+        console.error("Erreur stats:", e);
+        res.status(500).json({ error: 'Erreur lors du calcul des statistiques.' });
+    }
+});
+
 // Professeur/Admin: Récupérer les rendus d'une SAE
 app.get('/api/rendus/:saeId', authenticateToken, async (req, res) => {
     try {
         if (req.user.role === 'student') return res.status(403).json({ error: 'Accès réservé.' });
         const saeId = req.params.saeId;
+        console.log(`[DEBUG] Requête rendus reçue pour SAE: ${saeId}`);
+
         const rendus = await db.allAsync(`
-            SELECT r.*, u.nom, u.prenom, u.groupe_td, u.email
-            FROM rendus r
-            JOIN utilisateurs u ON r.id_user = u.id_user
+            SELECT r.*, u.nom, u.prenom, s.titre as sae_titre 
+            FROM rendus r 
+            LEFT JOIN utilisateurs u ON r.id_user = u.id_user 
+            LEFT JOIN sae s ON r.id_sae = s.id_sae
             WHERE r.id_sae = ?
         `, [saeId]);
+
+        console.log(`[DEBUG] Données envoyées au front (${rendus.length} lignes):`, rendus);
         res.json(rendus);
     } catch (e) {
         res.status(500).json({ error: 'Erreur récupération.' });
@@ -803,15 +957,18 @@ app.get('/api/rendus/:saeId', authenticateToken, async (req, res) => {
 app.put('/api/rendus/:id/note', authenticateToken, async (req, res) => {
     try {
         if (req.user.role === 'student') return res.status(403).json({ error: 'Accès réservé.' });
-        const { note, feedback } = req.body;
+        const { note, commentaire } = req.body;
         const id_rendu = req.params.id;
-        await db.runAsync('UPDATE rendus SET note = ?, feedback = ?, est_evalue = 1 WHERE id_rendu = ?', [note || null, feedback || '', id_rendu]);
+        await db.runAsync(
+            'UPDATE rendus SET note_attribuee = ?, commentaire_prof = ?, est_evalue = 1 WHERE id_rendu = ?', 
+            [note !== undefined ? note : null, commentaire || '', id_rendu]
+        );
         res.json({ message: 'Note enregistrée.' });
     } catch (e) {
         res.status(500).json({ error: 'Erreur de notation.' });
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`Serveur démarré sur http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Serveur démarré sur http://0.0.0.0:${PORT}`);
 });

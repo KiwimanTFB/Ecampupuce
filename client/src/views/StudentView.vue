@@ -77,8 +77,8 @@
                   </div>
               </div>
           </div>
-
-          <!-- SAE DETAIL (New View) -->
+          
+           <!-- SAE DETAIL (New View) -->
           <div v-if="currentView === 'sae-detail'" class="view-section active">
               <button class="btn btn-outline" @click="currentView = 'projects'" style="margin-bottom: 20px;">&larr; Retour aux SAEs</button>
               
@@ -154,6 +154,31 @@
               </div>
           </div>
 
+          <!-- DOCUMENTS -->
+          <div v-if="currentView === 'deliverables'" class="view-section active">
+              <div v-if="mesDocuments.length === 0" style="color: var(--text-secondary); font-size: 14px;">Aucun document déposé pour le moment.</div>
+              
+              <div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+                  <div v-for="doc in mesDocuments" :key="doc.id_rendu" class="card">
+                      <div class="card-body" style="padding: 20px;">
+                          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                              <div style="font-weight: bold; color: var(--text-primary); font-size: 16px;">{{ doc.sae_titre }}</div>
+                              <span class="badge badge-info">Déposé</span>
+                          </div>
+                          <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">
+                              Fichier : {{ doc.chemin_fichier }}
+                          </div>
+                          <div style="font-size: 12px; color: #9ca3af; margin-bottom: 16px;">
+                              Date : {{ formatDate(doc.date_depot) }}
+                          </div>
+                          <a :href="'http://localhost:3000/uploads/' + doc.chemin_fichier" target="_blank" class="btn btn-primary" style="width: 100%; text-align: center; text-decoration: none;">
+                              Télécharger
+                          </a>
+                      </div>
+                  </div>
+              </div>
+          </div>
+
           <!-- GRADES -->
           <div v-if="currentView === 'grades'" class="view-section active">
               <div v-if="mesNotes.length === 0" style="color: var(--text-secondary); font-size: 14px;">Aucune évaluation disponible pour le moment.</div>
@@ -166,7 +191,7 @@
                   <div class="feedback-content">
                       <div class="feedback-title">{{ note.titre }} <span class="badge badge-info" v-if="note.code">{{ note.code }}</span></div>
                       <div class="feedback-comment">
-                          "{{ note.feedback || 'Aucun commentaire du correcteur.' }}"
+                          "{{ note.commentaire_prof || 'Aucun commentaire du correcteur.' }}"
                       </div>
                       <div style="font-size: 11px; color: #9ca3af; margin-top: 8px;">
                           Document rendu déposé le : {{ formatDate(note.date_depot) }}
@@ -197,6 +222,7 @@ watch(() => route.params.view, (newVal) => { if(newVal) currentView.value = newV
 const saes = ref([])
 const annonces = ref([])
 const mesNotes = ref([])
+const mesDocuments = ref([])
 
 const selectedSaeDetails = ref(null)
 const fileInput = ref(null)
@@ -221,6 +247,7 @@ const pageInfo = {
   'dashboard': { title: "Vue d'ensemble", desc: "Suivi de vos situations d'apprentissage et d'évaluation en cours." },
   'projects': { title: "Projets SAE", desc: "Consultez et gérez vos projets du semestre actuel." },
   'sae-detail': { title: "Détail de la SAE", desc: "Consultez le sujet et déposez votre travail." },
+  'deliverables': { title: "Mon Espace Documents", desc: "Consultez et téléchargez l'historique de vos dépôts." },
   'grades': { title: "Notes & Retours", desc: "Consultez vos évaluations et les commentaires de vos enseignants." }
 }
 
@@ -319,9 +346,11 @@ async function submitUpload() {
         if (fileInput.value) fileInput.value.value = ''
         
     } catch (error) {
+        console.error("ERREUR UPLOAD:", error);
         isUploadSuccess.value = false
-        uploadMessage.value = error.response?.data?.error || "Erreur lors de l'envoi du fichier"
-        showToast("Erreur lors de l'envoi", "error")
+        const serverError = error.response?.data?.error || error.response?.data?.details;
+        uploadMessage.value = serverError || "Erreur lors de l'envoi du fichier. Merci de contacter un administrateur.";
+        showToast(uploadMessage.value, "error")
     } finally {
         isUploading.value = false
     }
@@ -332,15 +361,20 @@ const fetchData = async () => {
         const token = localStorage.getItem('jwt_token')
         const opts = { headers: { Authorization: `Bearer ${token}` } }
         
-        const [resSaes, resAnnonces, resNotes] = await Promise.all([
+        const [resSaes, resAnnonces, resNotes, resDocs] = await Promise.all([
             axios.get('/api/saes', opts).catch(() => ({data: []})),
             axios.get('/api/annonces', opts).catch(() => ({data: []})),
-            axios.get('/api/mes-notes', opts).catch(() => ({data: []}))
+            axios.get('/api/mes-notes', opts).catch(() => ({data: []})),
+            axios.get('/api/mes-documents', opts).catch(() => ({data: []}))
         ])
         
         if(resSaes.data.length > 0) saes.value = resSaes.data.filter(s => s.statut === 'Validé');
         if(resAnnonces.data) annonces.value = resAnnonces.data;
         if(resNotes.data) mesNotes.value = resNotes.data;
+        if(resDocs.data) {
+            mesDocuments.value = resDocs.data;
+            console.log("Documents récupérés :", resDocs.data);
+        }
     } catch (e) { console.error("Erreur Sync", e) }
 }
 

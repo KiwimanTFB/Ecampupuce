@@ -26,7 +26,7 @@
                               
                               <div v-if="saes.length === 0" style="color: var(--text-secondary); font-size: 14px;">Aucune donnée disponible.</div>
                               
-                              <div v-for="sae in saes" :key="sae.id" class="list-item" style="margin-bottom: 8px;">
+                              <div v-for="sae in saes" :key="sae.id_sae" class="list-item" style="margin-bottom: 8px;">
                                   <div class="item-info">
                                       <div class="item-title">{{ sae.titre }}</div>
                                       <div class="item-meta">{{ sae.niveau || 'Non spécifié' }} • Début : {{ formatDate(sae.date_debut) }} • {{ sae.semestre || 'S1' }} {{ sae.annee_univ || '' }}</div>
@@ -39,7 +39,7 @@
                                   
                                   <div class="btn-group" style="display: flex; gap: 8px;">
                                       <button class="btn btn-outline" @click="openEditModal(sae)">Éditer</button>
-                                      <button class="btn btn-outline" style="border-color: var(--status-danger-border); color: var(--status-danger-text);" @click="deleteSae(sae.id_sae || sae.id)">Supprimer</button>
+                                      <button class="btn btn-outline" style="border-color: var(--status-danger-border); color: var(--status-danger-text);" @click="deleteSae(sae.id_sae)">Supprimer</button>
                                   </div>
                               </div>
 
@@ -53,15 +53,15 @@
                               </div>
                           </div>
                           <div class="card-body">
-                              <div v-for="sae in saes" :key="'prog-'+sae.id" class="progress-block">
+                              <div v-for="sae in saes" :key="'prog-'+sae.id_sae" class="progress-block">
                                   <div class="progress-header">
                                       <span>{{ sae.titre }}</span>
-                                      <span :style="{ color: sae.statut === 'done' ? 'var(--status-success-text)' : 'var(--text-secondary)' }">
-                                        {{ sae.progress_count }} / {{ sae.total_students }} rendus
+                                      <span :style="{ color: sae.progress_count === sae.total_students && sae.total_students > 0 ? 'var(--status-success-text)' : 'var(--text-secondary)' }">
+                                        {{ sae.progress_count || 0 }} / {{ sae.total_students || 0 }} rendus
                                       </span>
                                   </div>
                                   <div class="progress-track">
-                                      <div class="progress-fill" :style="{ width: (sae.progress_count / sae.total_students * 100) + '%', backgroundColor: sae.progress_count === sae.total_students ? 'var(--status-success-text)' : 'var(--accent-blue)' }"></div>
+                                      <div class="progress-fill" :style="{ width: ((sae.progress_count || 0) / (sae.total_students || 1) * 100) + '%', backgroundColor: (sae.progress_count === sae.total_students && sae.total_students > 0) ? 'var(--status-success-text)' : 'var(--accent-blue)' }"></div>
                                   </div>
                               </div>
                           </div>
@@ -76,11 +76,11 @@
                               </div>
                           </div>
                           <div class="card-body" style="padding: 16px;">
-                              <div v-for="sae in saes.filter(s => s.statut !== 'archived')" :key="'cor-'+sae.id" class="list-item" style="padding: 12px; border-color: var(--status-warning-border);">
+                              <div v-for="sae in saes.filter(s => s.statut !== 'archived')" :key="'cor-'+sae.id_sae" class="list-item" style="padding: 12px; border-color: var(--status-warning-border);">
                                   <div class="item-info">
-                                      <div class="item-title">{{ sae.titre }} : {{ sae.progress_count }} rendu(s) détecté(s)</div>
+                                      <div class="item-title">{{ sae.titre }} : {{ sae.progress_count || 0 }} rendu(s) détecté(s)</div>
                                   </div>
-                                  <button class="btn btn-primary" style="padding: 6px 12px;" @click="switchView('grading', sae.id)">Ouvrir</button>
+                                  <button class="btn btn-primary" style="padding: 6px 12px;" @click="switchView('grading', sae.id_sae)">Ouvrir</button>
                               </div>
                           </div>
                       </div>
@@ -182,62 +182,71 @@
                   {{ gradingStatus }}
               </div>
               
-              <div v-for="sae in saes.filter(s => s.statut !== 'archived')" :key="'grade-'+sae.id" class="accordion">
-                  <div class="accordion-header" :class="{ active: activeAccordion === (sae.id_sae || sae.id) }" @click="toggleAccordion(sae.id_sae || sae.id)">
+              <div v-for="sae in saes.filter(s => s.statut !== 'archived')" :key="'grade-'+sae.id_sae" class="accordion">
+                  <div class="accordion-header" :class="{ active: activeAccordion === sae.id_sae }" @click="toggleAccordion(sae.id_sae)">
                       {{ sae.titre }}
                       <div style="display:flex; align-items:center; gap: 16px;">
-                          <span v-if="sae.progress_count === 0" class="badge badge-success">AUCUN RENDU</span>
+                          <span v-if="!sae.progress_count" class="badge badge-success">AUCUN RENDU</span>
                           <span v-else class="badge badge-warning">{{ sae.progress_count }} RENDU(S) DÉPOSÉ(S)</span>
                           <svg class="icon-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
                       </div>
                   </div>
-                  <div class="accordion-body" :class="{ active: activeAccordion === (sae.id_sae || sae.id) }">
+                  <div class="accordion-body" :class="{ active: activeAccordion === sae.id_sae }">
                       
                       <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">
-                          Date fixée au : {{ formatDate(sae.date_debut) }}.
+                          Date début : {{ formatDate(sae.date_debut) }}.
                       </div>
 
                       <div v-if="isFetchingRendus" style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">Chargement des rendus...</div>
                       
-                      <div v-else-if="saeRendus[sae.id]">
+                      <div v-else-if="saeRendus[sae.id_sae]">
                               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border-light);">
-                                  <span style="font-size: 13px; color: var(--text-secondary);">{{ saeRendus[sae.id].length }} rendus disponibles</span>
+                                  <span style="font-size: 13px; color: var(--text-secondary);">{{ saeRendus[sae.id_sae].length }} rendus disponibles</span>
                                   
                                   <div style="display: flex; gap: 12px;">
-                                      <button class="btn btn-outline" style="color: var(--status-success-text); border-color: var(--status-success-border);" @click="markAllEvaluated(sae.id)">
+                                      <button class="btn btn-outline" style="color: var(--status-success-text); border-color: var(--status-success-border);" @click="markAllEvaluated(sae.id_sae)">
                                           <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; margin-right: 4px;"><polyline points="20 6 9 17 4 12"/></svg>
                                           Tout marquer comme évalué
                                       </button>
-                                      <button class="btn btn-outline" style="color: var(--accent-purple); border-color: var(--accent-purple);">
-                                          <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; margin-right: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                                          Tout télécharger (.zip)
+                                  </div>
+                              </div>
+
+                              <div v-if="saeRendus[sae.id_sae].length === 0" style="color: var(--text-secondary); font-size: 14px;">Aucun rendu déposé pour cette SAE.</div>
+
+                              <div class="rendus-grid-header" style="display: grid; grid-template-columns: 2fr 1fr 1fr 2fr; gap: 16px; padding: 12px; font-weight: 600; color: var(--text-secondary); border-bottom: 2px solid var(--border-light); font-size: 13px; text-transform: uppercase;">
+                                  <div>Étudiant / Fichier</div>
+                                  <div>Date de dépôt</div>
+                                  <div>Statut</div>
+                                  <div style="text-align: right;">Actions / Notation</div>
+                              </div>
+
+                              <div v-for="rendu in saeRendus[sae.id_sae]" :key="rendu.id_rendu" class="list-item" :class="{ evaluated: rendu.est_evalue }" style="display: grid; grid-template-columns: 2fr 1fr 1fr 2fr; gap: 16px; align-items: center; padding: 16px 12px;">
+                                  <div class="item-info">
+                                      <div class="item-title" style="font-weight: 600;">{{ rendu.etudiant_nom }}</div>
+                                      <div class="item-meta" style="font-size: 12px; color: var(--text-secondary);">{{ rendu.nom_fichier || 'Fichier' }}</div>
+                                  </div>
+                                  
+                                  <div style="font-size: 13px; color: var(--text-secondary);">
+                                      {{ formatDate(rendu.date_depot) }}
+                                  </div>
+
+                                  <div>
+                                      <span v-if="rendu.est_evalue === 1" class="badge badge-success" @click="toggleEvaluatedStatus(rendu)" style="font-size: 11px; cursor: pointer;">NOTÉ ({{ rendu.note_attribuee || rendu.note }}/20)</span>
+                                      <span v-else class="badge badge-warning" @click="toggleEvaluatedStatus(rendu)" style="font-size: 11px; cursor: pointer;">À NOTER</span>
+                                  </div>
+                                  
+                                  <div style="display: flex; gap: 8px; align-items: center; justify-content: flex-end;">
+                                      <a :href="'http://localhost:3000' + (rendu.chemin_fichier.startsWith('/') ? '' : '/') + rendu.chemin_fichier" target="_blank" class="btn btn-outline" style="padding: 4px 8px; font-size: 12px; text-decoration: none;">Voir</a>
+                                      
+                                      <input type="number" min="0" max="20" step="0.5" v-model="rendu.inputNote" class="form-control" style="width: 60px; height: 32px; text-align: center; padding: 4px; font-size: 13px;" placeholder="--">
+                                      <input type="text" v-model="rendu.inputComment" class="form-control" style="width: 120px; height: 32px; padding: 4px; font-size: 12px;" placeholder="Commentaire">
+                                      <button class="btn btn-primary" style="padding: 4px 12px; height: 32px; font-size: 12px;" @click="submitInlineGrade(rendu, sae.id_sae)" :disabled="rendu.isSaving">
+                                          {{ rendu.isSaving ? '...' : 'Valider' }}
                                       </button>
                                   </div>
                               </div>
-
-                              <div v-if="saeRendus[sae.id].length === 0" style="color: var(--text-secondary); font-size: 14px;">Aucun rendu déposé pour cette SAE.</div>
-
-                              <div v-for="rendu in saeRendus[sae.id]" :key="rendu.id" class="list-item" :class="{ evaluated: rendu.is_evaluated }">
-                                  <div class="item-info">
-                                      <div class="item-title">Rendu de {{ rendu.etudiant_nom }}</div>
-                                      <div class="item-meta">Déposé le {{ formatDate(rendu.date_depot) }} • {{ rendu.nom_fichier }}</div>
-                                  </div>
-                                  <div style="display: flex; align-items: center; gap: 24px;">
-                                      <span v-if="rendu.status === 'graded'" class="badge badge-success">NOTÉ ({{ rendu.note }}/20)</span>
-                                      <span v-else class="badge badge-warning">À NOTER</span>
-                                      
-                                      <div class="btn-group" style="display: flex; gap: 8px; align-items: center;">
-                                          <a :href="'http://localhost:3000' + rendu.chemin_fichier" target="_blank" class="btn btn-outline" style="text-decoration: none;">Télécharger</a>
-                                          
-                                          <input type="number" min="0" max="20" step="0.5" v-model="rendu.inputNote" class="form-control" style="width: 80px; text-align: center; padding: 6px;" placeholder="-- / 20">
-                                          <input type="text" v-model="rendu.inputComment" class="form-control" style="width: 150px; padding: 6px;" placeholder="Commentaire...">
-                                          <button class="btn btn-primary" @click="submitInlineGrade(rendu, sae.id)" :disabled="rendu.isSaving">
-                                              {{ rendu.isSaving ? '...' : 'Valider' }}
-                                          </button>
-                                      </div>
-                                  </div>
-                              </div>
-                      </div> </div>
+                      </div> 
+                  </div>
               </div>
           </div>
 
@@ -270,22 +279,21 @@
               </div>
           </div>
 
-      </div>
-
-      <!-- ECRAN DE SUCCES -->
-      <div v-if="showSuccessScreen" class="success-screen">
-          <div class="success-content">
-              <div class="checkmark-circle">
-                  <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/><path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/></svg>
-              </div>
-              <h2 style="font-size: 32px; margin-bottom: 16px;">Action réussie !</h2>
-              <p style="font-size: 18px; color: #cbd5e1;">{{ successScreenMessage }}</p>
-              <div style="display:flex; gap:16px; margin-top:32px; justify-content:center; flex-wrap:wrap;">
-                  <button class="btn btn-outline" style="padding: 12px 24px; font-size: 16px; border-color:#60a5fa; color:#60a5fa;" @click="closeSuccessScreen('create-sae')">+ Créer une autre SAE</button>
-                  <button class="btn btn-primary" style="padding: 12px 24px; font-size: 16px;" @click="closeSuccessScreen('dashboard')">Retour au Tableau de bord</button>
+          <div v-if="showSuccessScreen" class="success-screen">
+              <div class="success-content">
+                  <div class="checkmark-circle">
+                      <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/><path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/></svg>
+                  </div>
+                  <h2 style="font-size: 32px; margin-bottom: 16px;">Action réussie !</h2>
+                  <p style="font-size: 18px; color: #cbd5e1;">{{ successScreenMessage }}</p>
+                  <div style="display:flex; gap:16px; margin-top:32px; justify-content:center; flex-wrap:wrap;">
+                      <button class="btn btn-outline" style="padding: 12px 24px; font-size: 16px; border-color:#60a5fa; color:#60a5fa;" @click="closeSuccessScreen('create-sae')">+ Créer une autre SAE</button>
+                      <button class="btn btn-primary" style="padding: 12px 24px; font-size: 16px;" @click="closeSuccessScreen('dashboard')">Retour au Tableau de bord</button>
+                  </div>
               </div>
           </div>
-      </div>
+
+      </div> <!-- Fin workspace -->
   </main>
 
   <div class="modal-overlay" :class="{ active: isEditModalOpen }" @click.self="closeEditModal">
@@ -312,7 +320,7 @@
                   <div v-if="editingSae.existingConsignes && editingSae.existingConsignes.length > 0" style="margin-bottom:12px;">
                       <div style="font-size:12px; color:#64748b; margin-bottom:4px;">Fichiers actuels :</div>
                       <div v-for="(f, i) in editingSae.existingConsignes" :key="'ex-'+i" style="display: flex; justify-content: space-between; align-items:center; font-size: 13px; padding: 6px 10px; background: #f1f5f9; margin-bottom: 4px; border-radius: 4px;">
-                          <a :href="'http://localhost:3000' + f" target="_blank" style="text-decoration:none; color:#334155; display:flex; align-items:center; gap:8px;">
+                          <a :href="'http://localhost:3000/' + f" target="_blank" style="text-decoration:none; color:#334155; display:flex; align-items:center; gap:8px;">
                               <span style="font-size: 16px;" v-html="getFileIcon(f)"></span>
                               {{ getFileName(f) }}
                           </a>
@@ -402,6 +410,10 @@ const router = useRouter()
 const currentView = computed(() => route.params.view || 'dashboard')
 const saes = ref([])
 
+// Success Screen Logic
+const showSuccessScreen = ref(false)
+const successScreenMessage = ref('')
+
 // Toasts Logic
 const toastMsg = ref('')
 const toastType = ref('success')
@@ -473,7 +485,6 @@ const getFileName = (path) => {
     if (!path) return "Fichier";
     const parts = path.split('/');
     let name = parts[parts.length - 1];
-    // Remove the numeric timestamp prefix Multer adds if pattern matches (e.g. 1711234567-filename.ext)
     const match = name.match(/^\d+-(.+)$/);
     if (match) return match[1];
     return name;
@@ -522,14 +533,11 @@ const submitSae = async () => {
         showToast("Veuillez remplir tous les champs obligatoires (Titre, Description, Date de début).", "error");
         return
     }
-
     if (!saeForm.value.vignette) {
         showToast("La vignette de la SAE est obligatoire.", "error");
         return
     }
-    
     isCreatingSae.value = true
-    
     try {
         const formData = new FormData();
         formData.append('titre', saeForm.value.titre);
@@ -540,24 +548,17 @@ const submitSae = async () => {
         formData.append('annee_univ', saeForm.value.annee_univ);
         formData.append('date_debut', saeForm.value.date_debut);
         if (saeForm.value.date_fin) formData.append('date_fin', saeForm.value.date_fin);
-        
         const validCompetences = saeForm.value.competences.filter(c => c.trim() !== '');
         formData.append('competences', JSON.stringify(validCompetences));
-
-        // Files
         formData.append('vignette', saeForm.value.vignette);
         saeForm.value.uploadFiles.forEach((file) => {
             formData.append('consignes', file);
         });
-
         await axios.post('/api/saes', formData, { headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${localStorage.getItem('jwt_token')}` }})
-        
         saeForm.value = { titre: '', description: '', consignes: '', semestre: '', groupe: '', annee_univ: '2023-2024', date_debut: '', date_fin: '', competences: ['', ''], uploadFiles: [], vignette: null }
         if (fileInput.value) fileInput.value.value = '';
-        
         successScreenMessage.value = "La SAE a été soumise à l'administration pour validation.";
         showSuccessScreen.value = true;
-        
     } catch (error) {
         showToast(error.response?.data?.error || "Erreur lors de la création de la SAE.", "error");
     } finally {
@@ -599,12 +600,10 @@ const openEditModal = (sae) => {
         try { comps = typeof sae.competences === 'string' ? JSON.parse(sae.competences) : sae.competences; } catch(e) {}
     }
     if(comps.length === 0) comps = ['', ''];
-    
     let existingConsignes = [];
     if (sae.consignes_paths) {
         try { existingConsignes = JSON.parse(sae.consignes_paths) } catch(e) {}
     }
-    
     editingSae.value = { ...sae, uploadFiles: [], vignette: null, competences: comps, existingConsignes }
     isEditModalOpen.value = true
 }
@@ -632,10 +631,8 @@ const submitEditSae = async () => {
         if (editingSae.value.annee_univ) formData.append('annee_univ', editingSae.value.annee_univ);
         formData.append('date_debut', editingSae.value.date_debut);
         if (editingSae.value.date_fin) formData.append('date_fin', editingSae.value.date_fin);
-        
         const validCompetences = editingSae.value.competences.filter(c => c && c.trim() !== '');
         formData.append('competences', JSON.stringify(validCompetences));
-
         if (editingSae.value.vignette) formData.append('vignette', editingSae.value.vignette);
         if (editingSae.value.uploadFiles) {
             editingSae.value.uploadFiles.forEach(file => formData.append('consignes', file));
@@ -643,7 +640,6 @@ const submitEditSae = async () => {
         if (editingSae.value.existingConsignes) {
             formData.append('existingConsignes', JSON.stringify(editingSae.value.existingConsignes));
         }
-
         await axios.put(`/api/saes/${editingSae.value.id_sae || editingSae.value.id}`, formData, { headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${localStorage.getItem('jwt_token')}` }})
         closeEditModal();
         successScreenMessage.value = "La SAE a correctement été mise à jour.";
@@ -658,16 +654,14 @@ const submitEditSae = async () => {
 const deleteSae = async (id) => {
     if(!confirm("Voulez-vous vraiment supprimer cette SAE ? Tous les rendus associés seront perdus.")) return;
     try {
-        await axios.delete(`/api/saes/${id}`)
+        await axios.delete(`/api/saes/${id}`, { headers: { Authorization: `Bearer ${localStorage.getItem('jwt_token')}` }})
         showToast("SAE supprimée", "success");
-        const resSaes = await axios.get('/api/saes');
-        saes.value = resSaes.data;
+        fetchData();
     } catch (e) {
         showToast(e.response?.data?.error || "Erreur lors de la suppression", "error");
     }
 }
 
-// Fonctionnalité : Annonces
 const annonceForm = ref({ titre: '', message: '', destinataires: 'Tous' })
 const isPosting = ref(false)
 
@@ -676,11 +670,9 @@ const postAnnonce = async () => {
         showToast("Le titre et le message sont requis.", "error");
         return
     }
-    
     isPosting.value = true
-    
     try {
-        await axios.post('/api/annonces', annonceForm.value)
+        await axios.post('/api/annonces', annonceForm.value, { headers: { Authorization: `Bearer ${localStorage.getItem('jwt_token')}` }})
         showToast("Annonce publiée avec succès !", "success");
         annonceForm.value = { titre: '', message: '', destinataires: 'Tous' }
     } catch (error) {
@@ -690,7 +682,6 @@ const postAnnonce = async () => {
     }
 }
 
-// Fonctionnalité : Évaluations
 const activeAccordion = ref(null)
 const saeRendus = ref({})
 const isFetchingRendus = ref(false)
@@ -701,22 +692,26 @@ const toggleAccordion = async (saeId) => {
         return
     }
     activeAccordion.value = saeId
-    
     if (!saeRendus.value[saeId]) {
         isFetchingRendus.value = true
         try {
             const token = localStorage.getItem('jwt_token')
             const res = await axios.get(`/api/rendus/${saeId}`, { headers: { Authorization: `Bearer ${token}` }})
-            saeRendus.value[saeId] = res.data.map(r => ({
-                ...r,
-                etudiant_nom: `${r.prenom} ${r.nom}`,
-                nom_fichier: 'Voir le rendu en PJ',
-                chemin_fichier: r.file_path,
-                status: r.est_evalue ? 'graded' : 'pending',
-                inputNote: r.est_evalue ? r.note : '',
-                inputComment: r.feedback || '',
-                isSaving: false
-            }))
+            saeRendus.value[saeId] = res.data.map(r => {
+                const path = r.chemin_fichier || r.file_path || '';
+                const parts = path.split('/');
+                const fileName = parts[parts.length - 1] || 'rendu';
+                return {
+                    ...r,
+                    etudiant_nom: `${r.prenom} ${r.nom}`,
+                    nom_fichier: fileName,
+                    chemin_fichier: path,
+                    est_evalue: r.est_evalue === 1 ? 1 : 0,
+                    inputNote: r.est_evalue === 1 ? (r.note_attribuee || r.note) : '',
+                    inputComment: r.commentaire_prof || r.feedback || '',
+                    isSaving: false
+                };
+            })
         } catch (error) {
             console.error("Erreur récupération rendus:", error)
         } finally {
@@ -726,24 +721,25 @@ const toggleAccordion = async (saeId) => {
 }
 
 const toggleEvaluatedStatus = async (rendu) => {
-    const newStatus = !rendu.is_evaluated
-    rendu.is_evaluated = newStatus // mise à jour optimiste OR juste visuelle
+    const newStatus = rendu.est_evalue === 1 ? 0 : 1;
+    rendu.est_evalue = newStatus;
     try {
-        await axios.put(`/api/rendus/${rendu.id}/status`, { is_evaluated: newStatus })
-    } catch (error) {
-        console.error("Erreur statut:", error)
-        rendu.is_evaluated = !newStatus // rollback en cas d'erreur
+        const token = localStorage.getItem('jwt_token')
+        await axios.put(`/api/rendus/${rendu.id_rendu}/status`, { est_evalue: newStatus }, { headers: { Authorization: `Bearer ${token}` }})
+    } catch (err) {
+        console.error("Erreur statut:", err)
+        rendu.est_evalue = newStatus === 1 ? 0 : 1;
     }
 }
 
 const markAllEvaluated = async (saeId) => {
     const rendus = saeRendus.value[saeId]
     if (!rendus) return
-    
     for (const r of rendus) {
-        if (!r.is_evaluated) {
-            r.is_evaluated = true
-            await axios.put(`/api/rendus/${r.id}/status`, { is_evaluated: true }).catch(console.error)
+        if (r.est_evalue !== 1) {
+            r.est_evalue = 1
+            const token = localStorage.getItem('jwt_token')
+            await axios.put(`/api/rendus/${r.id_rendu}/status`, { est_evalue: 1 }, { headers: { Authorization: `Bearer ${token}` }}).catch(console.error)
         }
     }
 }
@@ -764,20 +760,15 @@ const submitInlineGrade = async (rendu, saeId) => {
         setTimeout(() => { gradingStatus.value = '' }, 3000)
         return
     }
-    
     rendu.isSaving = true
-    
     try {
-            const payload = { note: rendu.inputNote, feedback: rendu.inputComment }
+        const payload = { note: rendu.inputNote, commentaire: rendu.inputComment }
         const token = localStorage.getItem('jwt_token')
-        await axios.put(`/api/rendus/${rendu.id_rendu}/note`, payload, { headers: { Authorization: `Bearer ${token}` }})
-        
+        await axios.put(`/api/rendus/${rendu.id_rendu}/evaluation`, payload, { headers: { Authorization: `Bearer ${token}` }})
         gradingStatus.value = `Note enregistrée pour ${rendu.etudiant_nom} !`
         isGradingError.value = false
-        
-        rendu.note = rendu.inputNote
-        rendu.feedback = rendu.inputComment
-        rendu.status = 'graded'
+        rendu.note_attribuee = rendu.inputNote
+        rendu.commentaire_prof = rendu.inputComment
         rendu.est_evalue = 1
     } catch (error) {
         console.error("Erreur évaluation:", error)
@@ -789,12 +780,11 @@ const submitInlineGrade = async (rendu, saeId) => {
     }
 }
 
-
 let pollingInterval = null;
-
 const fetchData = async () => {
     try {
         const token = localStorage.getItem('jwt_token')
+        if (!token) return;
         const opts = { headers: { Authorization: `Bearer ${token}` }}
         const [resSaes, resAnnonces] = await Promise.all([
             axios.get('/api/saes', opts).catch(() => ({data:[]})),
@@ -807,16 +797,11 @@ const fetchData = async () => {
 const closeSuccessScreen = (destination = 'dashboard') => {
     showSuccessScreen.value = false;
     successScreenMessage.value = '';
-    if (destination === 'create-sae') {
-        currentView.value = 'create-sae';
-    } else {
-        currentView.value = 'dashboard';
-    }
+    switchView(destination);
 }
 
 onMounted(() => {
     fetchData()
-    // MISSION 4: ZERO REFRESH POLLING
     pollingInterval = setInterval(fetchData, 5000);
 })
 </script>
@@ -848,4 +833,8 @@ onMounted(() => {
     background-color: var(--status-success-bg);
     border: 1px solid var(--status-success-border);
 }
+
+.toast { position: fixed; top: 24px; right: 24px; padding: 16px 24px; border-radius: 12px; background: #10b981; color: white; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); z-index: 99999; animation: slideIn 0.3s ease-out; display: flex; align-items: center; gap: 12px; border-left: 4px solid #059669; }
+.toast.error { background: #ef4444; border-left-color: #dc2626; }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 </style>
