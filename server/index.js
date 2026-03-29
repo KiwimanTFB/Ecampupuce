@@ -969,20 +969,26 @@ app.put('/api/rendus/:id/note', authenticateToken, async (req, res) => {
     }
 });
 
-// On utilise app.use sans chemin : ça intercepte tout ce qui arrive ici
+// --- CONFIGURATION FRONT-END (VUE.JS) ---
+
+// 1. On indique le chemin vers le build de la vitrine
+const distPath = path.join(__dirname, '..', 'client', 'dist');
+
+// 2. On sert les fichiers statiques (JS, CSS, images)
+app.use(express.static(distPath));
+
+// 3. Le fameux "Catch-all" version Express 5 (sans astérisque)
 app.use((req, res, next) => {
-    // Si c'est une requête qui commence par /api, on ne veut PAS envoyer le HTML
-    // On laisse Express répondre 404 normalement pour l'API
+    // Si c'est un appel vers l'API, on ne s'en occupe pas ici
     if (req.path.startsWith('/api')) {
         return next();
     }
-
-    // Pour tout le reste, on envoie la vitrine (Vue.js)
-    const indexPath = path.join(__dirname, '..', 'client', 'dist', 'index.html');
-    res.sendFile(indexPath, (err) => {
+    
+    // Pour toutes les autres URL (navigation sur le site), on envoie index.html
+    res.sendFile(path.join(distPath, 'index.html'), (err) => {
         if (err) {
-            // Si le fichier n'existe pas encore (build pas fait), on affiche une erreur claire
-            res.status(404).send("Erreur : Le front-end n'est pas encore compilé (dossier dist introuvable).");
+            console.error("Erreur d'envoi du fichier HTML :", err);
+            res.status(500).send("Le frontend n'est pas encore compilé (dossier dist introuvable).");
         }
     });
 });
