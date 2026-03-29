@@ -969,6 +969,14 @@ app.put('/api/rendus/:id/note', authenticateToken, async (req, res) => {
     }
 });
 
+// Servir le frontend compilé en production
+app.use(express.static(path.join(__dirname, '../client/dist')));
+
+// Toutes les requêtes non capturées par l'API sont redirigées vers Vue.js (SPA fallback)
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+});
+
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Serveur démarré sur http://0.0.0.0:${PORT}`);
 });
