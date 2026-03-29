@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');
+const AdmZip = require('adm-zip');
 const db = require('./db');
 const initDB = require('./init-db');
 
@@ -50,6 +51,7 @@ mkdirSyncSafe(path.join(__dirname, 'uploads'));
 mkdirSyncSafe(path.join(__dirname, 'uploads', 'vignettes'));
 mkdirSyncSafe(path.join(__dirname, 'uploads', 'consignes'));
 mkdirSyncSafe(path.join(__dirname, 'uploads', 'rendus'));
+mkdirSyncSafe(path.join(__dirname, 'uploads', 'saes'));
 
 // Ensure table has new columns
 const addColumnUsers = (colName, colType) => {
@@ -110,6 +112,14 @@ const requireTeacher = (req, res, next) => {
         next();
     } else {
         res.status(403).json({ error: 'Accès refusé. Réservé aux professeurs.' });
+    }
+};
+
+const requireTeacherOrAdmin = (req, res, next) => {
+    if (req.user && (req.user.role === 'teacher' || req.user.role === 'admin')) {
+        next();
+    } else {
+        res.status(403).json({ error: 'Accès refusé. Réservé aux professeurs ou administrateurs.' });
     }
 };
 
@@ -301,12 +311,12 @@ app.post('/api/saes', authenticateToken, requireTeacher, upload.fields([{ name: 
             return res.status(400).json({ error: 'Titre, description, semestre, année universitaire et date de début sont requis.' });
         }
 
-        const vignette = req.files && req.files['vignette'] ? `/uploads/vignettes/${req.files['vignette'][0].filename}` : null;
+        const vignette = req.files && req.files['vignette'] ? `vignettes/${req.files['vignette'][0].filename}` : null;
         if (!vignette) {
             return res.status(400).json({ error: 'La vignette est obligatoire.' });
         }
 
-        const consignesFiles = req.files && req.files['consignes'] ? req.files['consignes'].map(f => `/uploads/consignes/${f.filename}`) : [];
+        const consignesFiles = req.files && req.files['consignes'] ? req.files['consignes'].map(f => `consignes/${f.filename}`) : [];
 
         let parsedCompetences = competences;
         if (typeof competences === 'string') {
@@ -344,7 +354,7 @@ app.put('/api/saes/:id', authenticateToken, requireTeacher, upload.fields([{ nam
         }
         const competencesJSON = JSON.stringify(parsedCompetences || []);
 
-        const vignette = req.files && req.files['vignette'] ? `/uploads/vignettes/${req.files['vignette'][0].filename}` : sae.vignette_path;
+        const vignette = req.files && req.files['vignette'] ? `vignettes/${req.files['vignette'][0].filename}` : sae.vignette_path;
 
         let existingConsignes = sae.consignes_paths ? JSON.parse(sae.consignes_paths) : [];
         if (req.body.existingConsignes) {
@@ -353,7 +363,7 @@ app.put('/api/saes/:id', authenticateToken, requireTeacher, upload.fields([{ nam
 
         let consignesJSON = JSON.stringify(existingConsignes);
         if (req.files && req.files['consignes']) {
-            const consignesFiles = req.files['consignes'].map(f => `/uploads/consignes/${f.filename}`);
+            const consignesFiles = req.files['consignes'].map(f => `consignes/${f.filename}`);
             consignesJSON = JSON.stringify([...existingConsignes, ...consignesFiles]);
         }
 
@@ -406,8 +416,8 @@ app.get('/api/annonces', authenticateToken, async (req, res) => {
     }
 });
 
-// POST /api/annonces - Créer une annonce (Protégé, PROF UNIQUEMENT)
-app.post('/api/annonces', authenticateToken, requireTeacher, async (req, res) => {
+// POST /api/annonces - Créer une annonce (Protégé, Prof ou Admin)
+app.post('/api/annonces', authenticateToken, requireTeacherOrAdmin, async (req, res) => {
     try {
         const { titre, message, destinataires } = req.body;
         const auteur_id = req.user.id;
@@ -466,6 +476,65 @@ app.put('/api/rendus/:id/evaluation', authenticateToken, requireTeacher, async (
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Erreur serveur lors de l'évaluation" });
+    }
+});
+
+// GET /api/rendus/zip/:saeId - Télécharger tous les rendus d'une SAE en ZIP
+app.get('/api/rendus/zip/:saeId', authenticateToken, requireTeacherOrAdmin, async (req, res) => {
+    try {
+        const saeId = req.params.saeId;
+        
+        const sae = await db.getAsync('SELECT titre FROM sae WHERE id_sae = ?', [saeId]);
+        if (!sae) return res.status(404).json({ error: 'SAE introuvable' });
+
+        const rendus = await db.allAsync(`
+            SELECT r.chemin_fichier, u.nom, u.prenom
+            FROM rendus r
+            JOIN utilisateurs u ON r.id_user = u.id_user
+            WHERE r.id_sae = ?
+        `, [saeId]);
+
+        if (!rendus || rendus.length === 0) {
+            return res.status(404).json({ error: 'Aucun rendu disponible pour cette SAE' });
+        }
+
+        const zip = new AdmZip();
+        let filesAdded = 0;
+
+        rendus.forEach(rendu => {
+            if (rendu.chemin_fichier) {
+                // Determine full local path
+                let filePath = rendu.chemin_fichier;
+                if (filePath.startsWith('/uploads/')) filePath = filePath.substring(9);
+                if (filePath.startsWith('uploads/')) filePath = filePath.substring(8);
+                
+                const fullPath = path.join(__dirname, 'uploads', filePath);
+                
+                if (fs.existsSync(fullPath)) {
+                    const ext = path.extname(fullPath);
+                    // Safe filename: Nom_Prenom_Rendu.ext
+                    const studentName = `${rendu.nom}_${rendu.prenom}`.replace(/[^a-zA-Z0-9]/g, '_');
+                    const newFileName = `${studentName}_Rendu${ext}`;
+                    zip.addLocalFile(fullPath, '', newFileName);
+                    filesAdded++;
+                }
+            }
+        });
+
+        if (filesAdded === 0) {
+            return res.status(404).json({ error: 'Fichiers introuvables physiquement sur le serveur' });
+        }
+
+        const safeTitle = sae.titre.replace(/[^a-zA-Z0-9]/g, '_');
+        const buffer = zip.toBuffer();
+        
+        res.set('Content-Disposition', `attachment; filename=Rendus_${safeTitle}.zip`);
+        res.set('Content-Type', 'application/zip');
+        res.send(buffer);
+
+    } catch (error) {
+        console.error("Erreur génération ZIP:", error);
+        res.status(500).json({ error: 'Erreur lors de la génération du fichier ZIP' });
     }
 });
 
@@ -680,9 +749,17 @@ app.get('/api/admin/saes/all', authenticateToken, requireAdmin, async (req, res)
 
 app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const users = await db.allAsync('SELECT id_user, nom, prenom, email, role, numero_etudiant, groupe_td, annee_promo FROM utilisateurs ORDER BY nom ASC');
-        res.json(users);
+        // Récupérer les utilisateurs validés
+        const users = await db.allAsync('SELECT id_user, nom, prenom, email, role, numero_etudiant, groupe_td, annee_promo, "Validé" as statut FROM utilisateurs');
+        
+        // Récupérer les demandes en attente
+        const demandes = await db.allAsync('SELECT id_demande as id_user, nom, prenom, email, role, numero_etudiant, "" as groupe_td, "" as annee_promo, "En attente de validation" as statut FROM demandes_comptes WHERE statut = "En attente"');
+        
+        // Fusionner et trier
+        const allUsers = [...users, ...demandes].sort((a,b) => a.nom.localeCompare(b.nom));
+        res.json(allUsers);
     } catch (e) {
+        console.error("ERREUR GET USERS ADMIN:", e);
         res.status(500).json({ error: 'Erreur lors de la récupération des utilisateurs.' });
     }
 });
@@ -755,7 +832,7 @@ app.put('/api/admin/saes/:id', authenticateToken, requireAdmin, upload.fields([{
         }
         const competencesJSON = JSON.stringify(parsedCompetences || []);
 
-        const vignette = req.files && req.files['vignette'] ? `/uploads/vignettes/${req.files['vignette'][0].filename}` : sae.vignette_path;
+        const vignette = req.files && req.files['vignette'] ? `vignettes/${req.files['vignette'][0].filename}` : sae.vignette_path;
 
         let existingConsignes = sae.consignes_paths ? JSON.parse(sae.consignes_paths) : [];
         if (req.body.existingConsignes) {
@@ -764,7 +841,7 @@ app.put('/api/admin/saes/:id', authenticateToken, requireAdmin, upload.fields([{
 
         let consignesJSON = JSON.stringify(existingConsignes);
         if (req.files && req.files['consignes']) {
-            const consignesFiles = req.files['consignes'].map(f => `/uploads/consignes/${f.filename}`);
+            const consignesFiles = req.files['consignes'].map(f => `consignes/${f.filename}`);
             consignesJSON = JSON.stringify([...existingConsignes, ...consignesFiles]);
         }
 
@@ -817,11 +894,20 @@ app.post('/api/rendu', authenticateToken, upload.single('fichier'), async (req, 
             return res.status(403).json({ error: 'La date limite pour ce rendu est dépassée.' });
         }
 
-        const filePath = `/uploads/rendus/${req.file.filename}`;
+        const filePath = `rendus/${req.file.filename}`;
 
         // Mettre à jour suivi_etudiant_sae
-        const existingSuivi = await db.getAsync('SELECT id_suivi FROM suivi_etudiant_sae WHERE id_user = ? AND id_sae = ?', [userId, saeId]);
+        const existingSuivi = await db.getAsync('SELECT id_suivi, fichier_path FROM suivi_etudiant_sae WHERE id_user = ? AND id_sae = ?', [userId, saeId]);
         if (existingSuivi) {
+            // Delete old file physcially
+            if (existingSuivi.fichier_path) {
+                let oldPath = existingSuivi.fichier_path;
+                if (oldPath.startsWith('/uploads/')) oldPath = oldPath.substring(9);
+                if (oldPath.startsWith('uploads/')) oldPath = oldPath.substring(8);
+                const fullOldPath = path.join(__dirname, 'uploads', oldPath);
+                if (fs.existsSync(fullOldPath)) fs.unlinkSync(fullOldPath);
+            }
+            
             await db.runAsync(
                 'UPDATE suivi_etudiant_sae SET fichier_path = ?, commentaire = ?, date_depot = CURRENT_TIMESTAMP, statut = "Déposé" WHERE id_suivi = ?',
                 [filePath, commentaire, existingSuivi.id_suivi]
@@ -864,7 +950,7 @@ app.post('/api/rendus', authenticateToken, upload.single('document'), async (req
         const saeId = req.body.saeId;
         const userId = req.user.id_user;
         if (!req.file) return res.status(400).json({ error: 'Fichier manquant.' });
-        const filePath = `/uploads/rendus/${req.file.filename}`;
+        const filePath = `rendus/${req.file.filename}`;
         const existing = await db.getAsync('SELECT id_rendu FROM rendus WHERE id_user = ? AND id_sae = ?', [userId, saeId]);
         if (existing) {
             await db.runAsync('UPDATE rendus SET chemin_fichier = ?, date_depot = CURRENT_TIMESTAMP WHERE id_rendu = ?', [filePath, existing.id_rendu]);

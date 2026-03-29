@@ -36,12 +36,7 @@
                 </router-link>
             </nav>
         </div>
-        
-        <div class="nav-group" style="margin-top: auto; padding-bottom: 24px;">
-            <router-link to="/teacher" style="color: var(--status-info-text)">
-                Basculer vers Prof
-            </router-link>
-        </div>
+
     </aside>
 </template>
 

@@ -2,7 +2,7 @@
   <aside>
       <div class="sidebar-header">
           <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-          SaeTrack <span style="font-size: 10px; background: var(--accent-purple); padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-weight: 600;">PRO</span>
+          SaeTrack <span style="font-size: 10px; background: #8b5cf6; padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-weight: 600;">PRO</span>
       </div>
       
       <div class="nav-group">
@@ -31,15 +31,86 @@
                   Publier une annonce
               </router-link>
           </nav>
-      </div>
-      
-      <div class="nav-group" style="margin-top: auto; padding-bottom: 24px;">
-          <router-link to="/student" style="color: var(--status-info-text)">
-              Basculer vers Étudiant
-          </router-link>
-      </div>
-  </aside>
+      </div> </aside>
 </template>
 
 <script setup>
+// Pas besoin de logique supplémentaire ici pour l'instant
 </script>
+
+<style scoped>
+/* Ton CSS dark mode s'appliquera ici via style.css global */
+aside {
+  height: 100vh;
+  background: #18181b; /* --bg-surface */
+  border-right: 1px solid #27272a;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fafafa;
+  margin-bottom: 2.5rem;
+}
+
+.sidebar-header svg {
+  width: 24px;
+  height: 24px;
+  fill: #8b5cf6;
+}
+
+.nav-group {
+  margin-bottom: 2rem;
+}
+
+.nav-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #a1a1aa;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+a {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: #a1a1aa;
+  text-decoration: none;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+a svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+}
+
+a:hover {
+  background: #27272a;
+  color: #fafafa;
+}
+
+a.active {
+  background: #8b5cf6;
+  color: white;
+}
+</style>
