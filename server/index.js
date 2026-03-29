@@ -94,7 +94,7 @@ addColumn('code', 'TEXT');
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
-    
+
     if (token == null) return res.status(401).json({ error: 'Token manquant' });
 
     jwt.verify(token, JWT_SECRET, (err, user) => {
@@ -161,11 +161,11 @@ app.post('/api/register', async (req, res) => {
 // POST /api/login - Authentification et génération du JWT
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
-    
+
     if (!email || !password) {
         return res.status(400).json({ error: 'Email et mot de passe requis' });
     }
-    
+
     try {
         const user = await db.getAsync('SELECT * FROM utilisateurs WHERE email = ?', [email]);
 
@@ -258,13 +258,13 @@ app.get('/api/public/saes', async (req, res) => {
         query += " AND statut = 'Validé'";
 
         const saes = await db.allAsync(query, queryParams);
-        
+
         const formattedSaes = saes.map(sae => ({
             ...sae,
             isEvaluated: !!sae.isEvaluated,
             is_public: !!sae.is_public
         }));
-        
+
         res.json(formattedSaes);
     } catch (error) {
         console.error(error);
@@ -277,7 +277,7 @@ app.get('/api/saes/:id', authenticateToken, async (req, res) => {
     const saeId = req.params.id;
     try {
         const sae = await db.getAsync('SELECT * FROM sae WHERE id_sae = ?', [saeId]);
-        
+
         if (sae) {
             sae.isEvaluated = !!sae.isEvaluated;
             res.json(sae);
@@ -296,21 +296,21 @@ app.post('/api/saes', authenticateToken, requireTeacher, upload.fields([{ name: 
         if (!req.body) return res.status(400).json({ error: "Données manquantes" });
         const { titre, description, semestre, annee_univ, date_debut, date_fin, groupe, competences, consignes } = req.body;
         const teacher_id = req.user.id;
-        
+
         if (!titre || !description || !date_debut || !semestre || !annee_univ) {
             return res.status(400).json({ error: 'Titre, description, semestre, année universitaire et date de début sont requis.' });
         }
 
         const vignette = req.files && req.files['vignette'] ? `/uploads/vignettes/${req.files['vignette'][0].filename}` : null;
         if (!vignette) {
-             return res.status(400).json({ error: 'La vignette est obligatoire.' });
+            return res.status(400).json({ error: 'La vignette est obligatoire.' });
         }
 
         const consignesFiles = req.files && req.files['consignes'] ? req.files['consignes'].map(f => `/uploads/consignes/${f.filename}`) : [];
 
         let parsedCompetences = competences;
         if (typeof competences === 'string') {
-             try { parsedCompetences = JSON.parse(competences); } catch(e) { parsedCompetences = []; }
+            try { parsedCompetences = JSON.parse(competences); } catch (e) { parsedCompetences = []; }
         }
 
         const competencesJSON = JSON.stringify(parsedCompetences || []);
@@ -340,17 +340,17 @@ app.put('/api/saes/:id', authenticateToken, requireTeacher, upload.fields([{ nam
 
         let parsedCompetences = competences;
         if (typeof competences === 'string') {
-             try { parsedCompetences = JSON.parse(competences); } catch(e) { parsedCompetences = []; }
+            try { parsedCompetences = JSON.parse(competences); } catch (e) { parsedCompetences = []; }
         }
         const competencesJSON = JSON.stringify(parsedCompetences || []);
 
         const vignette = req.files && req.files['vignette'] ? `/uploads/vignettes/${req.files['vignette'][0].filename}` : sae.vignette_path;
-        
+
         let existingConsignes = sae.consignes_paths ? JSON.parse(sae.consignes_paths) : [];
         if (req.body.existingConsignes) {
-            try { existingConsignes = JSON.parse(req.body.existingConsignes); } catch(e) {}
+            try { existingConsignes = JSON.parse(req.body.existingConsignes); } catch (e) { }
         }
-        
+
         let consignesJSON = JSON.stringify(existingConsignes);
         if (req.files && req.files['consignes']) {
             const consignesFiles = req.files['consignes'].map(f => `/uploads/consignes/${f.filename}`);
@@ -399,7 +399,7 @@ app.get('/api/annonces', authenticateToken, async (req, res) => {
         res.json(annonces);
     } catch (error) {
         console.error("ERREUR RÉCUPÉRATION ANNONCES:", error.message);
-        res.status(500).json({ 
+        res.status(500).json({
             error: 'Erreur lors de la récupération des annonces.',
             details: error.message.includes('no such column') ? 'Erreur de schéma de base de données' : 'Erreur interne'
         });
@@ -435,11 +435,11 @@ app.put('/api/rendus/:id/status', authenticateToken, requireTeacher, async (req,
         const { est_evalue } = req.body;
 
         if (est_evalue === undefined) {
-             return res.status(400).json({ error: 'est_evalue is required' });
+            return res.status(400).json({ error: 'est_evalue is required' });
         }
 
         await db.runAsync('UPDATE rendus SET est_evalue = ? WHERE id_rendu = ?', [est_evalue ? 1 : 0, renduId]);
-        
+
         res.json({ message: 'Statut du rendu mis à jour' });
     } catch (error) {
         console.error(error);
@@ -495,7 +495,7 @@ app.put('/api/notes/:id_suivi', authenticateToken, requireTeacher, async (req, r
 app.get('/api/mes-notes', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
-        
+
         // On récupère toutes les SAEs où cet étudiant a soumis un rendu
         const rendus = await db.allAsync(`
             SELECT 
@@ -519,7 +519,7 @@ app.get('/api/mes-documents', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
         console.log(`[DEBUG] Récupération des documents pour l'user: ${userId}`);
-        
+
         const documents = await db.allAsync(`
             SELECT r.*, s.titre as sae_titre 
             FROM rendus r 
@@ -548,13 +548,13 @@ const requireAdmin = (req, res, next) => {
 // Chaque clé est un parent, ses valeurs sont ses enfants directs.
 // Un étudiant en MMI1A1 verra les SAE de: MMI1A1 + MMI1A + MMI1
 const GROUP_TREE = {
-    'MMI1':  ['MMI1A', 'MMI1B'],
+    'MMI1': ['MMI1A', 'MMI1B'],
     'MMI1A': ['MMI1A1', 'MMI1A2'],
     'MMI1B': ['MMI1B1', 'MMI1B2'],
-    'MMI2':  ['MMI2A', 'MMI2B'],
+    'MMI2': ['MMI2A', 'MMI2B'],
     'MMI2A': ['MMI2A1', 'MMI2A2'],
     'MMI2B': ['MMI2B1', 'MMI2B2'],
-    'MMI3':  ['MMI3_GR1', 'MMI3_GR2', 'MMI3-FI', 'MMI3-FA'],
+    'MMI3': ['MMI3_GR1', 'MMI3_GR2', 'MMI3-FI', 'MMI3-FA'],
     'MMI3-FA': ['MMI3-FA-CN', 'MMI3-FA-DW'],
     'MMI3-FA-CN': ['MMI3-FA-CN-A1', 'MMI3-FA-CN-A2'],
     'MMI3-FA-DW': ['MMI3-FA-DW-A1', 'MMI3-FA-DW-A2'],
@@ -576,10 +576,10 @@ function getGroupAncestors(groupe) {
         }
     }
     return [...new Set(result)];
-}    
+}
 app.post('/api/login/admin', async (req, res) => {
     const { email, password } = req.body;
-    
+
     if (!email || !password) {
         return res.status(400).json({ error: 'Email et mot de passe requis' });
     }
@@ -598,9 +598,9 @@ app.post('/api/login/admin', async (req, res) => {
             // Ignorer l'erreur si le hash est invalide (ex: texte brut)
             console.warn("Bcrypt compare error (possibly plain text password):", bcryptErr.message);
         }
-        
+
         const validPassword = isMatch || (password === admin.mot_de_passe);
-        
+
         if (!validPassword) return res.status(401).json({ error: 'Mot de passe incorrect' });
 
         const token = jwt.sign({ id: admin.id_user, role: admin.role, nom: admin.nom, email: admin.email }, JWT_SECRET, { expiresIn: '24h' });
@@ -632,7 +632,7 @@ app.post('/api/admin/demandes/:id/valider', authenticateToken, requireAdmin, asy
             [demande.nom, demande.prenom, demande.email, demande.mot_de_passe, demande.role, groupe || null, '']
         );
         await db.runAsync('UPDATE demandes_comptes SET statut = "Approuvée" WHERE id_demande = ?', [id]);
-        
+
         res.json({ message: 'Compte validé et créé avec succès.' });
     } catch (error) {
         res.status(500).json({ error: 'Erreur lors de la validation.' });
@@ -691,19 +691,19 @@ app.put('/api/admin/users/:id', authenticateToken, requireAdmin, async (req, res
     try {
         const id = req.params.id;
         const { nom, prenom, email, role, groupe_td, numero_etudiant, mot_de_passe } = req.body;
-        
+
         let query = 'UPDATE utilisateurs SET nom = ?, prenom = ?, email = ?, role = ?, groupe_td = ?, numero_etudiant = ?';
         let params = [nom, prenom, email, role, groupe_td || null, numero_etudiant || null];
-        
+
         if (mot_de_passe && mot_de_passe.trim() !== '') {
             const hashedPassword = await bcrypt.hash(mot_de_passe, 10);
             query += ', mot_de_passe = ?';
             params.push(hashedPassword);
         }
-        
+
         query += ' WHERE id_user = ?';
         params.push(id);
-        
+
         await db.runAsync(query, params);
         res.json({ message: 'Utilisateur mis à jour avec succès.' });
     } catch (e) {
@@ -751,17 +751,17 @@ app.put('/api/admin/saes/:id', authenticateToken, requireAdmin, upload.fields([{
 
         let parsedCompetences = competences;
         if (typeof competences === 'string') {
-             try { parsedCompetences = JSON.parse(competences); } catch(e) { parsedCompetences = []; }
+            try { parsedCompetences = JSON.parse(competences); } catch (e) { parsedCompetences = []; }
         }
         const competencesJSON = JSON.stringify(parsedCompetences || []);
 
         const vignette = req.files && req.files['vignette'] ? `/uploads/vignettes/${req.files['vignette'][0].filename}` : sae.vignette_path;
-        
+
         let existingConsignes = sae.consignes_paths ? JSON.parse(sae.consignes_paths) : [];
         if (req.body.existingConsignes) {
-            try { existingConsignes = JSON.parse(req.body.existingConsignes); } catch(e) {}
+            try { existingConsignes = JSON.parse(req.body.existingConsignes); } catch (e) { }
         }
-        
+
         let consignesJSON = JSON.stringify(existingConsignes);
         if (req.files && req.files['consignes']) {
             const consignesFiles = req.files['consignes'].map(f => `/uploads/consignes/${f.filename}`);
@@ -799,36 +799,36 @@ app.delete('/api/admin/saes/:id', authenticateToken, requireAdmin, async (req, r
 app.post('/api/rendu', authenticateToken, upload.single('fichier'), async (req, res) => {
     try {
         if (req.user.role !== 'student') return res.status(403).json({ error: 'Accès réservé aux étudiants.' });
-        
+
         const saeId = req.body.saeId;
         const userId = req.user.id_user;
         const commentaire = req.body.commentaire || '';
 
         console.log(`[DEBUG] Dépôt rendu: User=${userId}, SAE=${saeId}`);
-        
+
         if (!saeId) return res.status(400).json({ error: 'ID de SAE manquant.' });
         if (!req.file) return res.status(400).json({ error: 'Fichier manquant.' });
-        
+
         const sae = await db.getAsync('SELECT date_fin, date_limite FROM sae WHERE id_sae = ?', [saeId]);
         if (!sae) return res.status(404).json({ error: 'SAE introuvable.' });
-        
+
         const limitDate = sae.date_limite || sae.date_fin;
         if (limitDate && new Date() > new Date(limitDate)) {
             return res.status(403).json({ error: 'La date limite pour ce rendu est dépassée.' });
         }
-        
+
         const filePath = `/uploads/rendus/${req.file.filename}`;
-        
+
         // Mettre à jour suivi_etudiant_sae
         const existingSuivi = await db.getAsync('SELECT id_suivi FROM suivi_etudiant_sae WHERE id_user = ? AND id_sae = ?', [userId, saeId]);
         if (existingSuivi) {
             await db.runAsync(
-                'UPDATE suivi_etudiant_sae SET fichier_path = ?, commentaire = ?, date_depot = CURRENT_TIMESTAMP, statut = "Déposé" WHERE id_suivi = ?', 
+                'UPDATE suivi_etudiant_sae SET fichier_path = ?, commentaire = ?, date_depot = CURRENT_TIMESTAMP, statut = "Déposé" WHERE id_suivi = ?',
                 [filePath, commentaire, existingSuivi.id_suivi]
             );
         } else {
             await db.runAsync(
-                'INSERT INTO suivi_etudiant_sae (id_user, id_sae, fichier_path, commentaire, date_depot, statut) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, "Déposé")', 
+                'INSERT INTO suivi_etudiant_sae (id_user, id_sae, fichier_path, commentaire, date_depot, statut) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, "Déposé")',
                 [userId, saeId, filePath, commentaire]
             );
         }
@@ -837,12 +837,12 @@ app.post('/api/rendu', authenticateToken, upload.single('fichier'), async (req, 
         const existingRendu = await db.getAsync('SELECT id_rendu FROM rendus WHERE id_user = ? AND id_sae = ?', [userId, saeId]);
         if (existingRendu) {
             await db.runAsync(
-                'UPDATE rendus SET chemin_fichier = ?, date_depot = CURRENT_TIMESTAMP, est_evalue = 0 WHERE id_rendu = ?', 
+                'UPDATE rendus SET chemin_fichier = ?, date_depot = CURRENT_TIMESTAMP, est_evalue = 0 WHERE id_rendu = ?',
                 [filePath, existingRendu.id_rendu]
             );
         } else {
             await db.runAsync(
-                'INSERT INTO rendus (id_user, id_sae, chemin_fichier, date_depot, est_evalue) VALUES (?, ?, ?, CURRENT_TIMESTAMP, 0)', 
+                'INSERT INTO rendus (id_user, id_sae, chemin_fichier, date_depot, est_evalue) VALUES (?, ?, ?, CURRENT_TIMESTAMP, 0)',
                 [userId, saeId, filePath]
             );
         }
@@ -857,7 +857,7 @@ app.post('/api/rendu', authenticateToken, upload.single('fichier'), async (req, 
 // Étudiant: Déposer un rendu (Alias pour l'ancien chemin)
 app.post('/api/rendus', authenticateToken, upload.single('document'), async (req, res) => {
     // Redirige vers le nouveau format si possible ou traite séparément
-    req.body.fichier = req.file; 
+    req.body.fichier = req.file;
     // Simplement déléguer ou garder le code existant mais corrigé
     try {
         if (req.user.role !== 'student') return res.status(403).json({ error: 'Accès réservé.' });
@@ -960,7 +960,7 @@ app.put('/api/rendus/:id/note', authenticateToken, async (req, res) => {
         const { note, commentaire } = req.body;
         const id_rendu = req.params.id;
         await db.runAsync(
-            'UPDATE rendus SET note_attribuee = ?, commentaire_prof = ?, est_evalue = 1 WHERE id_rendu = ?', 
+            'UPDATE rendus SET note_attribuee = ?, commentaire_prof = ?, est_evalue = 1 WHERE id_rendu = ?',
             [note !== undefined ? note : null, commentaire || '', id_rendu]
         );
         res.json({ message: 'Note enregistrée.' });
@@ -969,12 +969,22 @@ app.put('/api/rendus/:id/note', authenticateToken, async (req, res) => {
     }
 });
 
-// Servir le frontend compilé en production
-app.use(express.static(path.join(__dirname, '../client/dist')));
+// On utilise app.use sans chemin : ça intercepte tout ce qui arrive ici
+app.use((req, res, next) => {
+    // Si c'est une requête qui commence par /api, on ne veut PAS envoyer le HTML
+    // On laisse Express répondre 404 normalement pour l'API
+    if (req.path.startsWith('/api')) {
+        return next();
+    }
 
-// Toutes les requêtes non capturées par l'API sont redirigées vers Vue.js (SPA fallback)
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+    // Pour tout le reste, on envoie la vitrine (Vue.js)
+    const indexPath = path.join(__dirname, '..', 'client', 'dist', 'index.html');
+    res.sendFile(indexPath, (err) => {
+        if (err) {
+            // Si le fichier n'existe pas encore (build pas fait), on affiche une erreur claire
+            res.status(404).send("Erreur : Le front-end n'est pas encore compilé (dossier dist introuvable).");
+        }
+    });
 });
 
 app.listen(PORT, '0.0.0.0', () => {
