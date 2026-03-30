@@ -839,34 +839,20 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.success-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #0f172a; display: flex; align-items: center; justify-content: center; z-index: 10000; color: white; text-align: center; }
+.success-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--bg-surface); display: flex; align-items: center; justify-content: center; z-index: 10000; color: var(--text-primary); text-align: center; }
 .checkmark-circle { width: 80px; height: 80px; margin: 0 auto 24px; }
-.checkmark { width: 80px; height: 80px; border-radius: 50%; display: block; stroke-width: 2; stroke: #10b981; stroke-miterlimit: 10; margin: 10% auto; box-shadow: inset 0px 0px 0px #10b981; animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both; }
-.checkmark__circle { stroke-dasharray: 166; stroke-dashoffset: 166; stroke-width: 2; stroke-miterlimit: 10; stroke: #10b981; fill: none; animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards; }
+.checkmark { width: 80px; height: 80px; border-radius: 50%; display: block; stroke-width: 2; stroke: var(--status-success-text); stroke-miterlimit: 10; margin: 10% auto; box-shadow: inset 0px 0px 0px var(--status-success-text); animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both; }
+.checkmark__circle { stroke-dasharray: 166; stroke-dashoffset: 166; stroke-width: 2; stroke-miterlimit: 10; stroke: var(--status-success-text); fill: none; animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards; }
 .checkmark__check { transform-origin: 50% 50%; stroke-dasharray: 48; stroke-dashoffset: 48; animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards; }
 @keyframes stroke { 100% { stroke-dashoffset: 0; } }
 @keyframes scale { 0%, 100% { transform: none; } 50% { transform: scale3d(1.1, 1.1, 1); } }
-@keyframes fill { 100% { box-shadow: inset 0px 0px 0px 80px rgba(16, 185, 129, 0.1); } }
+@keyframes fill { 100% { box-shadow: inset 0px 0px 0px 80px var(--status-success-bg); } }
 
-.status-msg {
-    padding: 12px;
-    border-radius: var(--radius-sm);
-    margin-bottom: 20px;
-    font-size: 14px;
-    font-weight: 500;
-}
-.error-message {
-    color: var(--status-danger-text);
-    background-color: var(--status-danger-bg);
-    border: 1px solid var(--status-danger-border);
-}
-.success-message {
-    color: var(--status-success-text);
-    background-color: var(--status-success-bg);
-    border: 1px solid var(--status-success-border);
-}
+.status-msg { padding: 12px; border-radius: var(--radius-sm); margin-bottom: 20px; font-size: 14px; font-weight: 500; }
+.error-message { color: var(--status-danger-text); background-color: var(--status-danger-bg); border: 1px solid var(--status-danger-border); }
+.success-message { color: var(--status-success-text); background-color: var(--status-success-bg); border: 1px solid var(--status-success-border); }
 
-.toast { position: fixed; top: 24px; right: 24px; padding: 16px 24px; border-radius: 12px; background: #10b981; color: white; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); z-index: 99999; animation: slideIn 0.3s ease-out; display: flex; align-items: center; gap: 12px; border-left: 4px solid #059669; }
-.toast.error { background: #ef4444; border-left-color: #dc2626; }
+.toast { position: fixed; top: 24px; right: 24px; padding: 16px 24px; border-radius: var(--radius-sm); background: var(--bg-surface); color: var(--text-primary); font-weight: 600; box-shadow: var(--shadow-hover); z-index: 99999; animation: slideIn 0.3s ease-out; display: flex; align-items: center; gap: 12px; border-left: 4px solid var(--status-success-text); }
+.toast.error { border-left-color: var(--status-danger-text); }
 @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 </style>

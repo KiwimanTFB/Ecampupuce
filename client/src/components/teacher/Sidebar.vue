@@ -41,7 +41,7 @@
 <style scoped>
 /* Ton CSS dark mode s'appliquera ici via style.css global */
 aside {
-  height: 100vh;
+  min-height: 100vh;
   background: #18181b; /* --bg-surface */
   border-right: 1px solid #27272a;
   padding: 1.5rem;

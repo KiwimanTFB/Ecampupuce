@@ -151,7 +151,7 @@
         <div class="header-small" style="margin-top: 40px;">
             <h3>Publier une Annonce Globale</h3>
         </div>
-        <div class="card" style="padding: 24px; margin-bottom: 40px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 8px; border: 1px solid #e5e7eb;">
+        <div class="card" style="padding: 24px; margin-bottom: 40px;">
             <div class="form-group">
                 <label class="form-label">Titre de l'annonce</label>
                 <input type="text" v-model="newAnnouncement.titre" class="form-control" placeholder="Ex: Maintenance prévue ce soir">
@@ -298,14 +298,14 @@
               <div>
                   <label class="form-label">Documents joints (Ajouts) :</label>
                   
-                  <div v-if="editingSae.existingConsignes && editingSae.existingConsignes.length > 0" style="margin-bottom:12px;">
-                      <div style="font-size:12px; color:#64748b; margin-bottom:4px;">Fichiers existants :</div>
-                      <div v-for="(f, i) in editingSae.existingConsignes" :key="'ex-'+i" style="display: flex; justify-content: space-between; align-items:center; font-size: 13px; padding: 6px 10px; background: #f1f5f9; margin-bottom: 4px; border-radius: 4px;">
-                          <a :href="getFileUrl(f)" target="_blank" style="text-decoration:none; color:#3b82f6; display:flex; align-items:center; gap:8px;">
+                      <div v-if="editingSae.existingConsignes && editingSae.existingConsignes.length > 0" style="margin-bottom:12px;">
+                      <div style="font-size:12px; color:var(--text-secondary); margin-bottom:4px;">Fichiers existants :</div>
+                      <div v-for="(f, i) in editingSae.existingConsignes" :key="'ex-'+i" style="display: flex; justify-content: space-between; align-items:center; font-size: 13px; padding: 6px 10px; background: var(--bg-app); margin-bottom: 4px; border-radius: var(--radius-sm);">
+                          <a :href="getFileUrl(f)" target="_blank" style="text-decoration:none; color:var(--text-primary); display:flex; align-items:center; gap:8px;">
                               <span style="font-size: 16px;" v-html="getFileIcon(f)"></span>
                               {{ getFileName(f) }}
                           </a>
-                          <span @click.stop="removeExistingConsigne(i)" style="color: #ef4444; cursor: pointer; font-weight: bold;">✕</span>
+                          <span @click.stop="removeExistingConsigne(i)" style="color: var(--status-danger-text); cursor: pointer; font-weight: bold;">✕</span>
                       </div>
                   </div>
 
@@ -775,42 +775,33 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.admin-dashboard { padding: 40px; max-width: 1200px; margin: 0 auto; font-family: sans-serif; background: white; min-height: 100vh; }
-.header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 20px; margin-bottom: 20px; }
-.header-small { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; margin-bottom: 16px; border-bottom: 1px solid #f3f4f6; }
-.header-small h3 { font-size: 1.25rem; color: #1f2937; margin: 0; }
-.empty-state { padding: 40px; text-align: center; color: #666; background: #f9fafb; border-radius: 8px; }
-.demandes-table { width: 100%; border-collapse: collapse; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
-.demandes-table th { background: #f3f4f6; color: #374151; font-weight: 600; text-align: left; padding: 16px; border-bottom: 2px solid #e5e7eb; transition: background 0.2s;}
-.demandes-table th:hover { background: #e5e7eb; }
-.demandes-table td { padding: 16px; border-bottom: 1px solid #e5e7eb; color: #4b5563; }
-.btn { padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
+.admin-dashboard { padding: 40px; max-width: 1200px; margin: 0 auto; min-height: 100vh; }
+.header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-light); padding-bottom: 20px; margin-bottom: 20px; }
+.header-small { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; margin-bottom: 16px; border-bottom: 1px solid var(--border-light); }
+.header-small h3 { font-size: 1.25rem; color: var(--text-primary); margin: 0; }
+.empty-state { padding: 40px; text-align: center; color: var(--text-secondary); background: var(--bg-surface); border-radius: var(--radius-sm); border: 1px solid var(--border-light); }
+.demandes-table { width: 100%; border-collapse: collapse; background: var(--bg-surface); box-shadow: var(--shadow-sm); border-radius: var(--radius-md); overflow: hidden; margin-bottom: 20px; border: 1px solid var(--border-light); }
+.demandes-table th { background: var(--bg-app); color: var(--text-primary); font-weight: 600; text-align: left; padding: 16px; border-bottom: 1px solid var(--border-light); transition: background 0.2s;}
+.demandes-table th:hover { background: var(--bg-surface); }
+.demandes-table td { padding: 16px; border-bottom: 1px solid var(--border-light); color: var(--text-secondary); }
 .btn-sm { padding: 6px 12px; font-size: 13px; }
-.btn-primary { background: #3b82f6; color: white; }
-.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-primary:hover:not(:disabled) { background: #2563eb; }
-.btn-outline { background: transparent; color: #374151; border-color: #d1d5db; }
-.btn-outline:hover { background: #f3f4f6; }
-.btn-danger { background-color: #ef4444; color: white; border: none; }
-.btn-danger:hover { background-color: #dc2626; }
 .badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
-.badge.student { background: #e0f2fe; color: #0284c7; text-transform: capitalize; }
-.badge.teacher { background: #fef3c7; color: #d97706; text-transform: capitalize; }
-.badge.admin { background: #fce7f3; color: #db2777; text-transform: capitalize; }
-.form-control { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
+.badge.student { background: var(--status-info-bg); color: var(--status-info-text); text-transform: capitalize; border: 1px solid var(--status-info-border); }
+.badge.teacher { background: var(--status-warning-bg); color: var(--status-warning-text); text-transform: capitalize; border: 1px solid var(--status-warning-border); }
+.badge.admin { background: var(--status-danger-bg); color: var(--status-danger-text); text-transform: capitalize; border: 1px solid var(--status-danger-border); }
 
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 9999; }
 .modal-overlay.active { opacity: 1; pointer-events: auto; }
-.modal-content { background: white; padding: 32px; border-radius: 16px; width: 90%; max-width: 500px; transform: translateY(20px); transition: transform 0.3s ease; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+.modal-content { background: var(--bg-surface); padding: 32px; border-radius: 16px; width: 90%; max-width: 500px; transform: translateY(20px); transition: transform 0.3s ease; box-shadow: var(--shadow-card); border: 1px solid var(--border-light); }
 .modal-overlay.active .modal-content { transform: translateY(0); }
-.modal-title { margin-top: 0; margin-bottom: 24px; color: #1e293b; font-size: 20px; }
+.modal-title { margin-top: 0; margin-bottom: 24px; color: var(--text-primary); font-size: 20px; }
 .form-group { margin-bottom: 16px; }
-.form-label { display: block; margin-bottom: 6px; color: #475569; font-size: 13px; font-weight: 500; }
+.form-label { display: block; margin-bottom: 6px; color: var(--text-secondary); font-size: 13px; font-weight: 500; }
 .grid { display: grid; }
-.sort-icon { display:inline-block; margin-left:8px; font-size:10px; color:#9ca3af; }
+.sort-icon { display:inline-block; margin-left:8px; font-size:10px; color: var(--text-secondary); }
 
-.toast { position: fixed; top: 20px; right: 20px; padding: 16px 24px; background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: bold; animation: slideIn 0.3s ease-out forwards; color: white; }
-.toast.success { background: #10b981; }
-.toast.error { background: #ef4444; }
+.toast { position: fixed; top: 20px; right: 20px; padding: 16px 24px; background: var(--bg-surface); border-radius: var(--radius-sm); border: 1px solid var(--border-light); box-shadow: var(--shadow-card); z-index: 10000; font-weight: bold; animation: slideIn 0.3s ease-out forwards; color: var(--text-primary); }
+.toast.success { border-left: 4px solid var(--status-success-text); }
+.toast.error { border-left: 4px solid var(--status-danger-text); }
 @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 </style>

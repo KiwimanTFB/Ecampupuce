@@ -411,22 +411,16 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.sae-item { border: 1px solid #e5e7eb; padding: 16px; border-radius: 8px; margin-bottom: 12px; transition: transform 0.2s, box-shadow 0.2s; background: white; }
-.sae-item:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-.toast { position: fixed; top: 20px; right: 20px; padding: 16px 24px; background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: bold; animation: slideIn 0.3s ease-out forwards; color: white; }
-.toast.success { background: #10b981; }
-.toast.error { background: #ef4444; }
+.sae-item { border: 1px solid var(--border-light); padding: 16px; border-radius: var(--radius-md); margin-bottom: 12px; transition: transform 0.2s, box-shadow 0.2s; background: var(--bg-surface); }
+.sae-item:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+.toast { position: fixed; top: 20px; right: 20px; padding: 16px 24px; background: var(--bg-surface); border-radius: var(--radius-sm); border: 1px solid var(--border-light); box-shadow: var(--shadow-card); z-index: 10000; font-weight: bold; animation: slideIn 0.3s ease-out forwards; color: var(--text-primary); }
+.toast.success { border-left: 4px solid var(--status-success-text); }
+.toast.error { border-left: 4px solid var(--status-danger-text); }
 @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 .badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
-.badge-danger { background: #fee2e2; color: #ef4444; }
-.badge-info { background: #e0f2fe; color: #0ea5e9; }
-.btn { padding: 8px 16px; border-radius: 6px; font-weight: 500; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; }
-.btn-primary { background: #3b82f6; color: white; }
-.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-outline { background: white; border-color: #d1d5db; color: #374151; }
-.btn-outline:hover { background: #f3f4f6; }
-.form-control { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
-.alert { border: 1px solid transparent; }
-.alert-success { background: #d1fae5; color: #065f46; border-color: #34d399; }
-.alert-danger { background: #fee2e2; color: #991b1b; border-color: #f87171; }
+.badge-danger { background: var(--status-danger-bg); color: var(--status-danger-text); border: 1px solid var(--status-danger-border); }
+.badge-info { background: var(--status-info-bg); color: var(--status-info-text); border: 1px solid var(--status-info-border); }
+.alert { border: 1px solid transparent; padding: 12px; border-radius: var(--radius-sm); margin-bottom: 12px; }
+.alert-success { background: var(--status-success-bg); color: var(--status-success-text); border-color: var(--status-success-border); }
+.alert-danger { background: var(--status-danger-bg); color: var(--status-danger-text); border-color: var(--status-danger-border); }
 </style>
