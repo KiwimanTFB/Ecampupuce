@@ -33,7 +33,7 @@ const handleLogin = async () => {
 }
 </script>
 <style scoped>
-.login-container { display:flex; align-items:center; justify-content:center; min-height:100vh; background:var(--bg-app); font-family: sans-serif; }
+.login-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; width: 100%; background: var(--bg-app); font-family: sans-serif; }
 .login-card { background:white; padding:40px; border-radius:8px; width:400px; box-shadow:0 4px 6px rgba(0,0,0,0.1); text-align:center; border: 1px solid var(--border-light); }
 .login-form { display:flex; flex-direction:column; gap:15px; margin-top:20px; text-align: left; }
 .form-control { padding: 12px; border-radius: 6px; border: 1px solid #ccc; width: 100%; box-sizing: border-box; }

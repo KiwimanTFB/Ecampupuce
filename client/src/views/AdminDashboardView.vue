@@ -1,11 +1,11 @@
 <template>
   <div class="admin-dashboard">
-    <div class="header">
-        <h2>Espace Administrateur</h2>
-        <div style="display:flex; gap: 16px;">
-            <button @click="currentTab = 'validation'" :class="['btn', currentTab === 'validation' ? 'btn-primary' : 'btn-outline']">Validation des Demandes</button>
-            <button @click="currentTab = 'gestion'" :class="['btn', currentTab === 'gestion' ? 'btn-primary' : 'btn-outline']">Gestion de la Plateforme</button>
-            <button @click="logout" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444;">Se déconnecter</button>
+    <div class="header" style="display: flex; gap: 1rem; align-items: center; justify-content: space-between;">
+        <h2 style="margin: 0; white-space: nowrap;">Espace Administrateur</h2>
+        <div style="display: flex; gap: 1rem; align-items: center; flex: 1;">
+            <button @click="currentTab = 'validation'" :class="['btn', currentTab === 'validation' ? 'btn-primary' : 'btn-outline']" style="min-width: 220px; padding: 10px 16px; font-size: 14px; justify-content: center;">Validation des Demandes</button>
+            <button @click="currentTab = 'gestion'" :class="['btn', currentTab === 'gestion' ? 'btn-primary' : 'btn-outline']" style="min-width: 220px; padding: 10px 16px; font-size: 14px; justify-content: center;">Gestion de la Plateforme</button>
+            <button @click="logout" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444; margin-left: auto; padding: 10px 16px; font-size: 14px;">Se déconnecter</button>
         </div>
     </div>
 
