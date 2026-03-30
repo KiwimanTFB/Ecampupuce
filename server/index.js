@@ -19,19 +19,23 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Accès public aux fichiers uploadés
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+const fs = require('fs');
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) { fs.mkdirSync(uploadDir, { recursive: true }); }
+
+app.use('/uploads', express.static(uploadDir));
 
 // Configuration Multer
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         if (file.fieldname === 'vignette') {
-            cb(null, 'uploads/vignettes/');
+            cb(null, path.join(uploadDir, 'vignettes'));
         } else if (file.fieldname === 'consignes') {
-            cb(null, 'uploads/consignes/');
+            cb(null, path.join(uploadDir, 'consignes'));
         } else if (file.fieldname === 'document') {
-            cb(null, 'uploads/rendus/');
+            cb(null, path.join(uploadDir, 'rendus'));
         } else {
-            cb(null, 'uploads/');
+            cb(null, uploadDir);
         }
     },
     filename: (req, file, cb) => {
@@ -44,14 +48,12 @@ const saeUpload = upload.fields([
     { name: 'consignes', maxCount: 10 }
 ]);
 
-// S'assurer que les dossiers uploads existent
-const fs = require('fs');
+// S'assurer que les sous-dossiers existent
 const mkdirSyncSafe = (dir) => { if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true }); };
-mkdirSyncSafe(path.join(__dirname, 'uploads'));
-mkdirSyncSafe(path.join(__dirname, 'uploads', 'vignettes'));
-mkdirSyncSafe(path.join(__dirname, 'uploads', 'consignes'));
-mkdirSyncSafe(path.join(__dirname, 'uploads', 'rendus'));
-mkdirSyncSafe(path.join(__dirname, 'uploads', 'saes'));
+mkdirSyncSafe(path.join(uploadDir, 'vignettes'));
+mkdirSyncSafe(path.join(uploadDir, 'consignes'));
+mkdirSyncSafe(path.join(uploadDir, 'rendus'));
+mkdirSyncSafe(path.join(uploadDir, 'saes'));
 
 // Ensure table has new columns
 const addColumnUsers = (colName, colType) => {
