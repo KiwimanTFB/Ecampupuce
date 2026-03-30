@@ -4,7 +4,28 @@
           <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input type="text" placeholder="Rechercher un étudiant, un groupe, un rendu...">
       </div>
-      <div class="header-actions">
+      <div class="header-actions" style="display: flex; gap: 20px; align-items: center;">
+          
+          <!-- Cloche de notification -->
+          <div class="notif-wrapper" @click="toggleNotifMenu" ref="notifRef" style="position: relative; cursor: pointer; display: flex; align-items: center;">
+              <svg viewBox="0 0 24 24" width="22" height="22" style="stroke: var(--text-secondary); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+              <span v-if="unreadNotifs.length > 0" class="notif-badge">{{ unreadNotifs.length }}</span>
+              
+              <div v-show="isNotifMenuOpen" class="notif-dropdown" @click.stop="">
+                  <div class="dropdown-header">
+                      <div class="dropdown-name">Notifications</div>
+                  </div>
+                  <div class="dropdown-divider"></div>
+                  <div v-if="unreadNotifs.length === 0" style="padding: 12px 20px; font-size: 13px; color: var(--text-secondary); text-align: center;">Aucune nouvelle notification</div>
+                  <div v-else class="notif-list">
+                      <div v-for="notif in unreadNotifs" :key="notif.id" class="notif-item">
+                          <div class="notif-text">{{ notif.message }}</div>
+                          <button class="notif-close" @click.stop="markAsRead(notif.id)" title="Marquer comme lu">✕</button>
+                      </div>
+                  </div>
+              </div>
+          </div>
+
           <div class="user-profile" @click="toggleMenu" ref="profileRef">
               <span>{{ user.nom }} (Enseignant)</span>
               <div class="avatar purple">{{ userInitials }}</div>
@@ -28,12 +49,28 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 
 const router = useRouter()
 const isMenuOpen = ref(false)
 const profileRef = ref(null)
 
+const isNotifMenuOpen = ref(false)
+const notifRef = ref(null)
+const unreadNotifs = ref([])
+
 const user = ref({ nom: 'Enseignant', email: '' })
+
+let notifInterval = null
+
+const fetchNotifs = async () => {
+    try {
+        const token = localStorage.getItem('jwt_token')
+        if(!token) return
+        const res = await axios.get('/api/notifications', { headers: { Authorization: `Bearer ${token}` } })
+        unreadNotifs.value = res.data
+    } catch(e) { console.error('Erreur notifs', e) }
+}
 
 onMounted(() => {
     const savedUser = localStorage.getItem('user_info')
@@ -45,10 +82,14 @@ onMounted(() => {
         }
     }
     document.addEventListener('click', closeMenuOnOutsideClick)
+    
+    fetchNotifs()
+    notifInterval = setInterval(fetchNotifs, 10000)
 })
 
 onUnmounted(() => {
     document.removeEventListener('click', closeMenuOnOutsideClick)
+    clearInterval(notifInterval)
 })
 
 const userInitials = computed(() => {
@@ -60,12 +101,25 @@ const userInitials = computed(() => {
 
 const toggleMenu = () => {
     isMenuOpen.value = !isMenuOpen.value
+    if(isMenuOpen.value) isNotifMenuOpen.value = false
+}
+
+const toggleNotifMenu = () => {
+    isNotifMenuOpen.value = !isNotifMenuOpen.value
+    if(isNotifMenuOpen.value) isMenuOpen.value = false
 }
 
 const closeMenuOnOutsideClick = (e) => {
-    if (profileRef.value && !profileRef.value.contains(e.target)) {
-        isMenuOpen.value = false
-    }
+    if (profileRef.value && !profileRef.value.contains(e.target)) isMenuOpen.value = false
+    if (notifRef.value && !notifRef.value.contains(e.target)) isNotifMenuOpen.value = false
+}
+
+const markAsRead = async (id) => {
+    try {
+        const token = localStorage.getItem('jwt_token')
+        await axios.put(`/api/notifications/${id}/read`, {}, { headers: { Authorization: `Bearer ${token}` } })
+        unreadNotifs.value = unreadNotifs.value.filter(n => n.id !== id)
+    } catch(e) { console.error(e) }
 }
 
 const handleLogout = () => {
@@ -90,7 +144,7 @@ const handleLogout = () => {
     width: 240px;
     background: var(--bg-surface);
     border: 1px solid var(--border-light);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     box-shadow: var(--shadow-card);
     padding: 8px 0;
     z-index: 100;
@@ -143,7 +197,7 @@ const handleLogout = () => {
 }
 
 .dropdown-item:hover {
-    background-color: var(--bg-app);
+    background: var(--bg-app);
 }
 
 .text-danger {
@@ -157,4 +211,14 @@ const handleLogout = () => {
     stroke-linecap: round;
     stroke-linejoin: round;
 }
+
+.notif-badge { position: absolute; top: -4px; right: -4px; background: var(--status-danger-text); color: white; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; border: 2px solid var(--bg-surface); }
+.notif-dropdown { position: absolute; top: calc(100% + 16px); right: -10px; width: 320px; background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: var(--radius-md); box-shadow: var(--shadow-card); padding: 8px 0; z-index: 100; animation: fadeIn 0.2s ease-out; cursor: default; }
+.notif-list { max-height: 300px; overflow-y: auto; }
+.notif-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 20px; transition: background-color 0.2s; border-bottom: 1px solid var(--border-light); }
+.notif-item:last-child { border-bottom: none; }
+.notif-item:hover { background-color: var(--bg-app); }
+.notif-text { font-size: 13px; color: var(--text-primary); line-height: 1.4; padding-right: 12px; }
+.notif-close { background: transparent; border: none; font-size: 12px; color: var(--text-secondary); cursor: pointer; padding: 4px; display:flex; align-items:center; justify-content:center; border-radius:4px; }
+.notif-close:hover { color: var(--status-danger-text); background: var(--status-danger-bg); }
 </style>

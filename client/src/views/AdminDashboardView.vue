@@ -142,6 +142,7 @@
               </td>
               <td>
                 <button v-if="user.statut === 'Validé'" class="btn btn-outline btn-sm" @click="openEditUserModal(user)">Éditer</button>
+                <button v-if="user.statut === 'Validé'" class="btn btn-danger btn-sm" @click="deleteUser(user.id_user)" style="margin-left:8px;">Supprimer</button>
                 <button v-else class="btn btn-primary btn-sm" @click="currentTab = 'validation'">Voir Demande</button>
               </td>
             </tr>
@@ -174,6 +175,84 @@
                 </button>
             </div>
         </div>
+
+        <div class="header-small" style="margin-top: 40px;">
+            <h3>Annonces Actives</h3>
+        </div>
+        <div v-if="activeAnnonces.length === 0" class="empty-state" style="margin-bottom: 40px;">Aucune annonce active.</div>
+        <table v-else class="demandes-table" style="margin-bottom: 40px;">
+          <thead>
+            <tr>
+              <th>Titre</th>
+              <th>Message</th>
+              <th>Destinataires</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="annonce in activeAnnonces" :key="annonce.id">
+              <td><strong>{{ annonce.titre }}</strong></td>
+              <td>{{ annonce.contenu }}</td>
+              <td>{{ annonce.destinataires }}</td>
+              <td>{{ new Date(annonce.date_publication).toLocaleDateString() }}</td>
+              <td>
+                <button class="btn btn-danger btn-sm" @click="deleteAnnonce(annonce.id)">Supprimer</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- GESTION DES NOTIFICATIONS -->
+        <div class="header-small" style="margin-top: 40px;">
+            <h3>Envoyer une Notification (Cloche)</h3>
+        </div>
+        <div class="card" style="padding: 24px; margin-bottom: 40px;">
+            <div class="form-group">
+                <label class="form-label">Destinataire</label>
+                <select v-model="newNotification.user_id" class="form-control">
+                    <option value="all">Tous les utilisateurs</option>
+                    <option v-for="u in usersList" :key="u.id_user" :value="u.id_user">{{ u.nom }} {{ u.prenom }} ({{ u.role }})</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Message</label>
+                <textarea v-model="newNotification.message" class="form-control" rows="2" placeholder="Ex: N'oubliez pas de rendre votre projet SAE..."></textarea>
+            </div>
+            <div style="display: flex; justify-content: flex-end;">
+                <button class="btn btn-primary" @click="sendNotification" :disabled="isSendingNotif">
+                    {{ isSendingNotif ? 'Envoi...' : 'Envoyer la notification' }}
+                </button>
+            </div>
+        </div>
+
+        <div class="header-small" style="margin-top: 40px;">
+            <h3>Notifications en cours</h3>
+        </div>
+        <div v-if="activeNotifs.length === 0" class="empty-state" style="margin-bottom: 40px;">Aucune notification.</div>
+        <table v-else class="demandes-table" style="margin-bottom: 40px;">
+          <thead>
+            <tr>
+              <th>Destinataire</th>
+              <th>Message</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="notif in activeNotifs" :key="notif.id">
+              <td>
+                  <span v-if="notif.user_id">{{ notif.nom }} {{ notif.prenom }}</span>
+                  <span v-else>Tous (Broadcast)</span>
+              </td>
+              <td>{{ notif.message }}</td>
+              <td>{{ new Date(notif.created_at).toLocaleDateString() }}</td>
+              <td>
+                <button class="btn btn-danger btn-sm" @click="deleteNotif(notif.id)">Supprimer</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
         <div class="header-small" style="margin-top: 40px;">
             <h3>Toutes les SAEs Validées</h3>
@@ -410,6 +489,11 @@ const toastType = ref('success')
 const newAnnouncement = ref({ titre: '', destinataires: 'Tous', message: '' })
 const isPublishingAnnouncement = ref(false)
 
+const activeAnnonces = ref([])
+const activeNotifs = ref([])
+const newNotification = ref({ user_id: 'all', message: '' })
+const isSendingNotif = ref(false)
+
 const publishAnnouncement = async () => {
     if (!newAnnouncement.value.titre || !newAnnouncement.value.message) {
         showToast("Le titre et le message sont requis.", "error");
@@ -494,6 +578,65 @@ const fetchAllSaes = async () => {
         const { data } = await axios.get('/api/admin/saes/all', { headers: { Authorization: `Bearer ${token}` }})
         allSaesList.value = data.filter(s => s.statut === 'Validé')
     } catch(e) { console.error(e) }
+}
+
+const deleteUser = async (id) => {
+    if(!window.confirm("Voulez-vous vraiment supprimer cet utilisateur ? Cette action est irréversible.")) return;
+    try {
+        const token = localStorage.getItem('jwt_token')
+        await axios.delete(`/api/admin/users/${id}`, { headers: { Authorization: `Bearer ${token}` }})
+        showToast("Utilisateur supprimé.", "success")
+        fetchUsers()
+    } catch(e) { showToast("Erreur suppression utilisateur", "error") }
+}
+
+const fetchAnnonces = async () => {
+    try {
+        const token = localStorage.getItem('jwt_token')
+        const { data } = await axios.get('/api/annonces', { headers: { Authorization: `Bearer ${token}` }})
+        activeAnnonces.value = data
+    } catch(e) { console.error(e) }
+}
+
+const deleteAnnonce = async (id) => {
+    if(!window.confirm("Supprimer cette annonce ?")) return;
+    try {
+        const token = localStorage.getItem('jwt_token')
+        await axios.delete(`/api/admin/annonces/${id}`, { headers: { Authorization: `Bearer ${token}` }})
+        showToast("Annonce supprimée.", "success")
+        fetchAnnonces()
+    } catch(e) { showToast("Erreur suppression annonce", "error") }
+}
+
+const fetchAdminNotifs = async () => {
+    try {
+        const token = localStorage.getItem('jwt_token')
+        const { data } = await axios.get('/api/admin/notifications', { headers: { Authorization: `Bearer ${token}` }})
+        activeNotifs.value = data
+    } catch(e) { console.error(e) }
+}
+
+const sendNotification = async () => {
+    if(!newNotification.value.message) { showToast("Message requis.", "error"); return; }
+    isSendingNotif.value = true
+    try {
+        const token = localStorage.getItem('jwt_token')
+        await axios.post('/api/admin/notifications', newNotification.value, { headers: { Authorization: `Bearer ${token}` }})
+        showToast("Notification envoyée !", "success")
+        newNotification.value.message = ''
+        fetchAdminNotifs()
+    } catch(e) { showToast("Erreur envoi notification.", "error") }
+    isSendingNotif.value = false
+}
+
+const deleteNotif = async (id) => {
+    if(!window.confirm("Supprimer la notification ?")) return;
+    try {
+        const token = localStorage.getItem('jwt_token')
+        await axios.delete(`/api/admin/notifications/${id}`, { headers: { Authorization: `Bearer ${token}` }})
+        fetchAdminNotifs()
+        showToast("Notification supprimée.", "success")
+    } catch(e) { showToast("Erreur suppression notif.", "error") }
 }
 
 // ---------------- USER SORTING & FILTERING
@@ -763,6 +906,8 @@ onMounted(() => {
     fetchSAEsEnAttente()
     fetchUsers()
     fetchAllSaes()
+    fetchAnnonces()
+    fetchAdminNotifs()
 
     // MISSION 4: ZERO REFRESH POLLING
     pollingInterval = setInterval(() => {
@@ -770,6 +915,8 @@ onMounted(() => {
         fetchSAEsEnAttente()
         fetchUsers()
         fetchAllSaes()
+        fetchAnnonces()
+        fetchAdminNotifs()
     }, 5000);
 })
 </script>

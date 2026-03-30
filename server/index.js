@@ -92,6 +92,17 @@ addColumn('code', 'TEXT');
 // Initialiser les tables au démarrage
 // initDB(); // <-- DISABLED for persistence
 
+// Ensure notifications table exists
+db.run(`CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    message TEXT,
+    is_read INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)`, (err) => {
+    if (err) console.error('Erreur création table notifications:', err.message);
+});
+
 // Middleware d'authentification JWT
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -560,6 +571,26 @@ app.put('/api/notes/:id_suivi', authenticateToken, requireTeacher, async (req, r
     }
 });
 
+// GET /api/notifications - Notifs de l'utilisateur
+app.get('/api/notifications', authenticateToken, async (req, res) => {
+    try {
+        const notifs = await db.allAsync('SELECT * FROM notifications WHERE user_id = ? AND is_read = 0 ORDER BY created_at DESC', [req.user.id]);
+        res.json(notifs);
+    } catch (e) {
+        res.status(500).json({ error: 'Erreur notifications' });
+    }
+});
+
+// PUT /api/notifications/:id/read - Marquer comme lue
+app.put('/api/notifications/:id/read', authenticateToken, async (req, res) => {
+    try {
+        await db.runAsync('UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?', [req.params.id, req.user.id]);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: 'Erreur update notification' });
+    }
+});
+
 // GET /api/mes-notes - Récupérer les retours (Étudiant)
 app.get('/api/mes-notes', authenticateToken, async (req, res) => {
     try {
@@ -797,6 +828,62 @@ app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, async (req, 
     } catch (e) {
         console.error("ERREUR SUPPRESSION USER:", e);
         res.status(500).json({ error: 'Erreur lors de la suppression de l\'utilisateur.' });
+    }
+});
+
+// DELETE /api/admin/annonces/:id - Supprimer une annonce
+app.delete('/api/admin/annonces/:id', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        await db.runAsync('DELETE FROM annonces WHERE id = ?', [req.params.id]);
+        res.json({ message: 'Annonce supprimée avec succès.' });
+    } catch (e) {
+        console.error("ERREUR SUPPRESSION ANNONCE:", e);
+        res.status(500).json({ error: 'Erreur lors de la suppression de l\'annonce.' });
+    }
+});
+
+// GET /api/admin/notifications - Voir les notifs (Admin)
+app.get('/api/admin/notifications', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const notifs = await db.allAsync(`
+            SELECT n.*, u.nom, u.prenom 
+            FROM notifications n 
+            LEFT JOIN utilisateurs u ON n.user_id = u.id_user 
+            ORDER BY n.created_at DESC LIMIT 50
+        `);
+        res.json(notifs);
+    } catch (e) {
+        res.status(500).json({ error: 'Erreur admin notifs' });
+    }
+});
+
+// POST /api/admin/notifications - Créer une notif
+app.post('/api/admin/notifications', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { user_id, message } = req.body;
+        if (!message) return res.status(400).json({ error: 'Message requis' });
+        
+        if (user_id && user_id !== 'all') {
+            await db.runAsync('INSERT INTO notifications (user_id, message) VALUES (?, ?)', [user_id, message]);
+        } else {
+            const users = await db.allAsync('SELECT id_user FROM utilisateurs');
+            const stmt = db.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)');
+            users.forEach(u => stmt.run(u.id_user, message));
+            stmt.finalize();
+        }
+        res.json({ success: true });
+    } catch(e) {
+        res.status(500).json({ error: 'Erreur création notification' });
+    }
+});
+
+// DELETE /api/admin/notifications/:id - Supprimer une notif
+app.delete('/api/admin/notifications/:id', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        await db.runAsync('DELETE FROM notifications WHERE id = ?', [req.params.id]);
+        res.json({ success: true });
+    } catch(e) {
+        res.status(500).json({ error: 'Erreur suppression notification' });
     }
 });
 
