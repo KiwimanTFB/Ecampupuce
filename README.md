@@ -15,7 +15,7 @@ Le système offre :
 - **Une interface d'administration** pour la validation des inscriptions manuelles ou automatiques.
 - **Une Vitrine Publique** valorisant les meilleures réalisations de la formation.
 
-![Aperçu de la Vitrine Ecampupuce](placeholder_screenshot.png) *(Placeholder - Insérez ici la capture d'écran principale)*
+![Aperçu de la Vitrine Ecampupuce]([placeholder_screenshot.png](https://media.discordapp.net/attachments/1284244544325419029/1488849124705960047/image.png?ex=69ce464c&is=69ccf4cc&hm=40a3cf047cfa38b51b12e0d802f01e5af6e427139e159cc5066b599ad614621f&=&format=webp&quality=lossless&width=1544&height=743))
 
 ---
 
@@ -59,7 +59,7 @@ Ecampupuce/
 ### 2. Cloner le Dépôt
 Commencez par récupérer le code source sur votre machine locale :
 ```bash
-git clone https://github.com/votre-depot/Ecampupuce.git
+git clone https://github.com/KiwimanTFB/Ecampupuce.git
 cd Ecampupuce
 ```
 
@@ -82,9 +82,9 @@ Dans le dossier `/server`, créez un fichier `.env` basé sur les clés requises
 ```env
 PORT=3000
 JWT_SECRET=votre_clef_secrete_ultra_robuste
-SMTP_HOST=smtp.hostinger.com
-SMTP_PORT=465
-SMTP_USER=votre_email@hostinger.com
+SMTP_HOST=votre_serveur_smtp
+SMTP_PORT=votre_port_smtp
+SMTP_USER=votre@email.com
 SMTP_PASS=votre_mot_de_passe_email
 ```
 
@@ -135,4 +135,4 @@ Sur le serveur de production, le backend Express certifie les routes et offre é
 > Contrairement à Windows, les serveurs de production sur des distributions GNU/Linux requièrent une stricte exactitude sur la casse des fichiers. Assurez-vous que vos imports (`import MonComposant from './MonComposant.vue'`) correspondent parfaitement au nom du fichier réel sur disque pour prévenir d'une erreur 404 (Module not found).
 
 ---
-*Ce projet est une production académique - Maintenue par l'Équipe MMI.*
+*Ce projet est un devoir universitaire.*
