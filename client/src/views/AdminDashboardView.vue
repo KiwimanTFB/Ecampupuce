@@ -534,6 +534,10 @@
               <label class="form-label">URL de l'image / Chemin upload</label>
               <input type="text" v-model="newVitrineEntry.image_url" class="form-control" placeholder="Ex: https://... ou uploads/vignettes/...">
           </div>
+          <div class="form-group">
+              <label class="form-label">Lien du projet (Optionnel, ex: URL du site web)</label>
+              <input type="text" v-model="newVitrineEntry.lien_externe" class="form-control" placeholder="Ex: https://mon-super-site.com">
+          </div>
           
           <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px;">
               <button class="btn btn-outline" @click="closeVitrineModal">Annuler</button>
@@ -615,7 +619,8 @@ const openVitrineModal = (rendu) => {
         description: '',
         eleve_nom: rendu.etudiant,
         domaine_activite: 'Général',
-        image_url: 'https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=800'
+        image_url: rendu.vignette_path || rendu.image_url || '',
+        lien_externe: ''
     }
     isVitrineModalOpen.value = true
 }
@@ -684,6 +689,7 @@ const showToast = (msg, type = 'success') => {
 
 function getFileUrl(path) {
     if (!path) return '';
+    path = path.replace('http://localhost:3000', '');
     if (path.startsWith('http')) return path;
     const baseUrl = import.meta.env.VITE_API_URL || '';
     if (path.startsWith('/uploads/')) return baseUrl + path;

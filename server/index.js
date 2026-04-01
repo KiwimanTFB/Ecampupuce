@@ -114,9 +114,16 @@ db.run(`CREATE TABLE IF NOT EXISTS vitrine_projects (
     image_url TEXT,
     eleve_nom TEXT,
     domaine_activite TEXT,
+    lien_externe TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )`, (err) => {
     if (err) console.error('Erreur création table vitrine_projects:', err.message);
+    else {
+        // Safe alteration to add lien_externe if the table already existed before
+        db.run('ALTER TABLE vitrine_projects ADD COLUMN lien_externe TEXT;', (altErr) => {
+            // we ignore the error because it just means the column already exists
+        });
+    }
 });
 
 // Middleware d'authentification JWT
@@ -320,6 +327,7 @@ app.get('/api/vitrine', async (req, res) => {
                 v.image_url as image, 
                 v.eleve_nom as etudiant,
                 v.domaine_activite,
+                v.lien_externe,
                 v.rendu_id,
                 s.titre as sae_titre, 
                 s.semestre, 
@@ -897,7 +905,8 @@ app.get('/api/admin/rendus-eligibles', authenticateToken, requireAdmin, async (r
                 (u.nom || ' ' || u.prenom) as etudiant,
                 s.titre as sae_titre,
                 s.semestre,
-                s.niveau
+                s.niveau,
+                s.vignette_path
             FROM rendus r
             JOIN utilisateurs u ON r.id_user = u.id_user
             JOIN sae s ON r.id_sae = s.id_sae
@@ -914,7 +923,7 @@ app.get('/api/admin/rendus-eligibles', authenticateToken, requireAdmin, async (r
 // POST /api/admin/vitrine - Ajouter un rendu à la vitrine
 app.post('/api/admin/vitrine', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const { rendu_id, titre, description, image_url, eleve_nom, domaine_activite } = req.body;
+        const { rendu_id, titre, description, image_url, eleve_nom, domaine_activite, lien_externe } = req.body;
         
         if (!rendu_id || !titre || !image_url) {
             return res.status(400).json({ error: 'champs requis manquants: rendu_id, titre, ou image_url' });
@@ -926,8 +935,8 @@ app.post('/api/admin/vitrine', authenticateToken, requireAdmin, async (req, res)
         }
 
         await db.runAsync(
-            'INSERT INTO vitrine_projects (rendu_id, titre, description, image_url, eleve_nom, domaine_activite) VALUES (?, ?, ?, ?, ?, ?)',
-            [rendu_id, titre, description || '', image_url, eleve_nom || 'Anonyme', domaine_activite || 'Autre']
+            'INSERT INTO vitrine_projects (rendu_id, titre, description, image_url, eleve_nom, domaine_activite, lien_externe) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [rendu_id, titre, description || '', image_url, eleve_nom || 'Anonyme', domaine_activite || 'Autre', lien_externe || null]
         );
         res.status(201).json({ message: 'Projet ajouté à la vitrine avec succès.' });
     } catch (e) {

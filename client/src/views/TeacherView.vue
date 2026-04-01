@@ -776,6 +776,7 @@ const formatDate = (dateString) => {
 
 function getFileUrl(path) {
     if (!path) return '';
+    path = path.replace('http://localhost:3000', '');
     if (path.startsWith('http')) return path;
     const baseUrl = import.meta.env.VITE_API_URL || '';
     if (path.startsWith('/uploads/')) return baseUrl + path;

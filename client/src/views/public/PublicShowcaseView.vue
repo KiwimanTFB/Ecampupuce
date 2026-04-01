@@ -126,6 +126,7 @@
                   <span class="text-stone-300 font-bold truncate max-w-[60%]">{{ project.etudiant }}</span>
                   <span class="semestre-badge">{{ formatSemestreLabel(project) }}</span>
                 </div>
+                <a v-if="project.lien_externe" :href="project.lien_externe" target="_blank" @click.stop class="block mt-4 px-3 py-2 text-center bg-blue-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-md hover:bg-blue-500 transition-colors w-full">Visiter le projet</a>
               </div>
             </div>
           </article>
@@ -370,7 +371,7 @@ const applyObserver = () => {
 
 onMounted(async () => {
   try {
-    const res = await fetch('/api/public/projets');
+    const res = await fetch('/api/vitrine');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     ALL_PROJECTS.value = (data.length > 0 ? data : FALLBACK_PROJECTS).map((p, i) => ({
