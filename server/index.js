@@ -25,6 +25,26 @@ const fs = require('fs');
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) { fs.mkdirSync(uploadDir, { recursive: true }); }
 
+// Accès strictement protégé pour les rendus des étudiants
+app.use('/uploads/rendus', authenticateToken, async (req, res, next) => {
+    if (req.user.role === 'teacher' || req.user.role === 'admin') {
+        return next();
+    }
+    if (req.user.role === 'student') {
+        const filename = decodeURIComponent(req.path.replace(/^\//, ''));
+        if (!filename) return res.status(403).json({ error: 'Accès au dossier interdit' });
+        try {
+            const rendu = await db.getAsync('SELECT id_rendu FROM rendus WHERE chemin_fichier LIKE ? AND id_user = ?', [`%${filename}`, req.user.id]);
+            if (rendu) return next();
+            return res.status(403).json({ error: 'Accès interdit : Ce rendu appartient à un autre étudiant.' });
+        } catch(e) {
+            return res.status(500).json({ error: 'Erreur SQL lors de la vérification.' });
+        }
+    }
+    return res.status(403).json({ error: 'Accès refusé.' });
+}, express.static(path.join(uploadDir, 'rendus')));
+
+// Accès public aux autres dossiers (vignettes, consignes) avec protection anti-traversal
 app.use('/uploads', (req, res, next) => {
     try {
         const decodedPath = decodeURIComponent(req.path);
@@ -154,7 +174,7 @@ db.run(`CREATE TABLE IF NOT EXISTS vitrine_projects (
 // Middleware d'authentification JWT
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    const token = (authHeader && authHeader.split(' ')[1]) || req.query.token;
 
     if (token == null) return res.status(401).json({ error: 'Token manquant' });
 

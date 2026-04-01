@@ -708,6 +708,12 @@ function getFileUrl(path) {
     path = path.replace('http://localhost:3000', '');
     if (path.startsWith('http')) return path;
     const baseUrl = import.meta.env.VITE_API_URL || '';
+    if (path.includes('/rendus/')) {
+        const tempPath = path.replace(/^\/?uploads\//, '');
+        const filename = tempPath.split('/').pop();
+        const token = localStorage.getItem('jwt_token') || '';
+        return `${baseUrl}/uploads/rendus/${filename}?token=${token}`;
+    }
     if (path.startsWith('/uploads/')) return baseUrl + path;
     if (path.startsWith('uploads/')) return baseUrl + '/' + path;
     return baseUrl + '/uploads/' + path;
