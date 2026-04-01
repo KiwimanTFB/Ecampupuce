@@ -774,22 +774,6 @@ const formatDate = (dateString) => {
     return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-function getFileUrl(path) {
-    if (!path) return '';
-    path = path.replace('http://localhost:3000', '');
-    if (path.startsWith('http')) return path;
-    const baseUrl = import.meta.env.VITE_API_URL || '';
-    const token = localStorage.getItem('token') || '';
-    
-    if (path.includes('/rendus/')) {
-        const cleanPath = path.startsWith('/') ? path : '/' + path;
-        return `${baseUrl}${cleanPath}?token=${token}`;
-    }
-    
-    if (path.startsWith('/uploads/')) return baseUrl + path;
-    if (path.startsWith('uploads/')) return baseUrl + '/' + path;
-    return baseUrl + '/uploads/' + path;
-}
 
 const gradingStatus = ref('')
 const isGradingError = ref(false)

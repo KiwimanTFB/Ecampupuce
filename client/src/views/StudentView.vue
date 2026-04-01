@@ -257,22 +257,6 @@ const pageInfo = {
 const pageTitle = computed(() => pageInfo[currentView.value]?.title || "Espace Étudiant")
 const pageDesc = computed(() => pageInfo[currentView.value]?.desc || "")
 
-function getFileUrl(path) {
-    if (!path) return '';
-    path = path.replace('http://localhost:3000', '');
-    if (path.startsWith('http')) return path;
-    const baseUrl = import.meta.env.VITE_API_URL || '';
-    const token = localStorage.getItem('token') || '';
-    
-    if (path.includes('/rendus/')) {
-        const cleanPath = path.startsWith('/') ? path : '/' + path;
-        return `${baseUrl}${cleanPath}?token=${token}`;
-    }
-    
-    if (path.startsWith('/uploads/')) return baseUrl + path;
-    if (path.startsWith('uploads/')) return baseUrl + '/' + path;
-    return baseUrl + '/uploads/' + path;
-}
 
 function getFileName(path) {
     if (!path) return "Fichier";

@@ -703,22 +703,6 @@ const showToast = (msg, type = 'success') => {
     setTimeout(() => { toastMsg.value = '' }, 4000)
 }
 
-function getFileUrl(path) {
-    if (!path) return '';
-    path = path.replace('http://localhost:3000', '');
-    if (path.startsWith('http')) return path;
-    const baseUrl = import.meta.env.VITE_API_URL || '';
-    const token = localStorage.getItem('token') || '';
-    
-    if (path.includes('/rendus/')) {
-        const cleanPath = path.startsWith('/') ? path : '/' + path;
-        return `${baseUrl}${cleanPath}?token=${token}`;
-    }
-    
-    if (path.startsWith('/uploads/')) return baseUrl + path;
-    if (path.startsWith('uploads/')) return baseUrl + '/' + path;
-    return baseUrl + '/uploads/' + path;
-}
 
 const groupList = [
     "MMI1A1", "MMI1A2", "MMI1B1", "MMI1B2",
