@@ -15,7 +15,7 @@ Le système offre :
 - **Une interface d'administration** pour la validation des inscriptions manuelles ou automatiques.
 - **Une Vitrine Publique** valorisant les meilleures réalisations de la formation.
 
-![Aperçu de la Vitrine Ecampupuce]([placeholder_screenshot.png](https://media.discordapp.net/attachments/1284244544325419029/1488849124705960047/image.png?ex=69ce464c&is=69ccf4cc&hm=40a3cf047cfa38b51b12e0d802f01e5af6e427139e159cc5066b599ad614621f&=&format=webp&quality=lossless&width=1544&height=743))
+![Aperçu de la Vitrine Ecampupuce]([placeholder_screenshot.png](https://raw.githubusercontent.com/KiwimanTFB/Ecampupuce/refs/heads/main/vitrine.png))
 
 ---
 
