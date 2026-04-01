@@ -33,12 +33,14 @@ const router = createRouter({
     {
       path: '/',
       name: 'accueil',
-      component: AccueilView
+      component: AccueilView,
+      meta: { title: 'Accueil', description: 'Découvrez les talents et développeurs du département MMI Vélizy.' }
     },
     {
       path: '/projets',
       name: 'nos-projets',
-      component: PublicShowcaseView
+      component: PublicShowcaseView,
+      meta: { title: 'Nos Projets', description: 'Explorez la vitrine des projets MMI : Web, Design, 3D, Audiovisuel.' }
     },
     {
       // Rétrocompatibilité — /vitrine redirige vers /projets
@@ -48,12 +50,14 @@ const router = createRouter({
     {
       path: '/but',
       name: 'notre-but',
-      component: NotreButView
+      component: NotreButView,
+      meta: { title: 'Le BUT MMI', description: 'Tout savoir sur le programme du Bachelor Universitaire de Technologie MMI.' }
     },
     {
       path: '/le-campus',
       name: 'le-campus',
-      component: CampusView
+      component: CampusView,
+      meta: { title: 'Le Campus', description: 'Découvrir la vie étudiante et les infrastructures du campus.' }
     },
     {
       // Rétrocompatibilité — /campus redirige vers /le-campus
@@ -63,7 +67,8 @@ const router = createRouter({
     {
       path: '/contact',
       name: 'contact',
-      component: ContactView
+      component: ContactView,
+      meta: { title: 'Nous contacter', description: 'Posez vos questions sur la formation MMI.' }
     },
 
     // ─── Routes Inscription ───────────────────────────────
@@ -146,6 +151,26 @@ router.beforeEach((to, from) => {
     return false
   }
   return true
+})
+
+// ─── SEO Guard ──────────────────────────────────────────
+router.afterEach((to) => {
+  const defaultTitle = "IUT MMI Vélizy"
+  const defaultDesc = "Une formation hybride alliant design, développement web et communication numérique. Nous formons les talents qui façonnent le web de demain."
+  
+  if (to.meta.title) {
+    document.title = `${to.meta.title} — ${defaultTitle}`
+  } else {
+    document.title = defaultTitle
+  }
+  
+  let metaDesc = document.querySelector('meta[name="description"]')
+  if (!metaDesc) {
+    metaDesc = document.createElement('meta')
+    metaDesc.name = "description"
+    document.head.appendChild(metaDesc)
+  }
+  metaDesc.content = to.meta.description || defaultDesc
 })
 
 export default router

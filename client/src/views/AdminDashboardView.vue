@@ -439,7 +439,7 @@
                       <div style="font-size:12px; color:var(--text-secondary); margin-bottom:4px;">Fichiers existants :</div>
                       <div v-for="(f, i) in editingSae.existingConsignes" :key="'ex-'+i" style="display: flex; justify-content: space-between; align-items:center; font-size: 13px; padding: 6px 10px; background: var(--bg-app); margin-bottom: 4px; border-radius: var(--radius-sm);">
                           <a :href="getFileUrl(f)" target="_blank" style="text-decoration:none; color:var(--text-primary); display:flex; align-items:center; gap:8px;">
-                              <span style="font-size: 16px;" v-html="getFileIcon(f)"></span>
+                              <span style="font-size: 16px;">{{ getFileIcon(f) }}</span>
                               {{ getFileName(f) }}
                           </a>
                           <span @click.stop="removeExistingConsigne(i)" style="color: var(--status-danger-text); cursor: pointer; font-weight: bold;">✕</span>
@@ -534,9 +534,15 @@
               <label class="form-label">URL de l'image / Chemin upload</label>
               <input type="text" v-model="newVitrineEntry.image_url" class="form-control" placeholder="Ex: https://... ou uploads/vignettes/...">
           </div>
-          <div class="form-group">
-              <label class="form-label">Lien du projet (Optionnel, ex: URL du site web)</label>
-              <input type="text" v-model="newVitrineEntry.lien_externe" class="form-control" placeholder="Ex: https://mon-super-site.com">
+          <div class="form-group" style="display:flex; gap:12px;">
+              <div style="flex:1;">
+                  <label class="form-label">Lien du projet (Optionnel)</label>
+                  <input type="text" v-model="newVitrineEntry.lien_externe" class="form-control" placeholder="Ex: https://mon-super-site.com">
+              </div>
+              <div style="width: 120px;">
+                  <label class="form-label">Année</label>
+                  <input type="text" v-model="newVitrineEntry.annee" class="form-control" placeholder="2024">
+              </div>
           </div>
           
           <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px;">
@@ -620,7 +626,8 @@ const openVitrineModal = (rendu) => {
         eleve_nom: rendu.etudiant,
         domaine_activite: 'Général',
         image_url: rendu.vignette_path || rendu.image_url || '',
-        lien_externe: ''
+        lien_externe: '',
+        annee: new Date().getFullYear().toString()
     }
     isVitrineModalOpen.value = true
 }

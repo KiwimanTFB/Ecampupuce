@@ -323,7 +323,7 @@
                       <div style="font-size:12px; color:#64748b; margin-bottom:4px;">Fichiers actuels :</div>
                       <div v-for="(f, i) in editingSae.existingConsignes" :key="'ex-'+i" style="display: flex; justify-content: space-between; align-items:center; font-size: 13px; padding: 6px 10px; background: #f1f5f9; margin-bottom: 4px; border-radius: 4px;">
                           <a :href="getFileUrl(f)" target="_blank" style="text-decoration:none; color:#334155; display:flex; align-items:center; gap:8px;">
-                              <span style="font-size: 16px;" v-html="getFileIcon(f)"></span>
+                              <span style="font-size: 16px;">{{ getFileIcon(f) }}</span>
                               {{ getFileName(f) }}
                           </a>
                           <span @click.stop="removeExistingConsigne(i)" style="color: #ef4444; cursor: pointer; font-weight: bold;" title="Supprimer">✕</span>

@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');
 const AdmZip = require('adm-zip');
+const helmet = require('helmet');
 const db = require('./db');
 const initDB = require('./init-db');
 
@@ -14,6 +15,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'default_super_secret_key_123!';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -23,7 +25,18 @@ const fs = require('fs');
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) { fs.mkdirSync(uploadDir, { recursive: true }); }
 
-app.use('/uploads', express.static(uploadDir));
+app.use('/uploads', (req, res, next) => {
+    try {
+        const decodedPath = decodeURIComponent(req.path);
+        const resolvedPath = path.resolve(uploadDir, decodedPath.replace(/^\//, ''));
+        if (!resolvedPath.startsWith(uploadDir)) {
+            return res.status(403).json({ error: 'Accès interdit (Directory Traversal)' });
+        }
+        next();
+    } catch(err) {
+        return res.status(400).json({ error: 'Requête mal formée' });
+    }
+}, express.static(uploadDir));
 
 // Configuration Multer
 const storage = multer.diskStorage({
@@ -115,14 +128,14 @@ db.run(`CREATE TABLE IF NOT EXISTS vitrine_projects (
     eleve_nom TEXT,
     domaine_activite TEXT,
     lien_externe TEXT,
+    annee TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )`, (err) => {
     if (err) console.error('Erreur création table vitrine_projects:', err.message);
     else {
         // Safe alteration to add lien_externe if the table already existed before
-        db.run('ALTER TABLE vitrine_projects ADD COLUMN lien_externe TEXT;', (altErr) => {
-            // we ignore the error because it just means the column already exists
-        });
+        db.run('ALTER TABLE vitrine_projects ADD COLUMN lien_externe TEXT;', () => {});
+        db.run('ALTER TABLE vitrine_projects ADD COLUMN annee TEXT;', () => {});
     }
 });
 
@@ -328,6 +341,7 @@ app.get('/api/vitrine', async (req, res) => {
                 v.eleve_nom as etudiant,
                 v.domaine_activite,
                 v.lien_externe,
+                v.annee as stored_annee,
                 v.rendu_id,
                 s.titre as sae_titre, 
                 s.semestre, 
@@ -346,7 +360,7 @@ app.get('/api/vitrine', async (req, res) => {
             // Fallbacks in case they are missing from DB
             semestre: p.semestre || 'S1',
             niveau: p.niveau || 'BUT 1',
-            annee: p.annee || new Date().getFullYear().toString()
+            annee: p.stored_annee || p.annee || new Date().getFullYear().toString()
         }));
         res.json(formattedProjects);
     } catch (error) {
@@ -923,7 +937,7 @@ app.get('/api/admin/rendus-eligibles', authenticateToken, requireAdmin, async (r
 // POST /api/admin/vitrine - Ajouter un rendu à la vitrine
 app.post('/api/admin/vitrine', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const { rendu_id, titre, description, image_url, eleve_nom, domaine_activite, lien_externe } = req.body;
+        const { rendu_id, titre, description, image_url, eleve_nom, domaine_activite, lien_externe, annee } = req.body;
         
         if (!rendu_id || !titre || !image_url) {
             return res.status(400).json({ error: 'champs requis manquants: rendu_id, titre, ou image_url' });
@@ -935,8 +949,8 @@ app.post('/api/admin/vitrine', authenticateToken, requireAdmin, async (req, res)
         }
 
         await db.runAsync(
-            'INSERT INTO vitrine_projects (rendu_id, titre, description, image_url, eleve_nom, domaine_activite, lien_externe) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [rendu_id, titre, description || '', image_url, eleve_nom || 'Anonyme', domaine_activite || 'Autre', lien_externe || null]
+            'INSERT INTO vitrine_projects (rendu_id, titre, description, image_url, eleve_nom, domaine_activite, lien_externe, annee) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [rendu_id, titre, description || '', image_url, eleve_nom || 'Anonyme', domaine_activite || 'Autre', lien_externe || null, annee || new Date().getFullYear().toString()]
         );
         res.status(201).json({ message: 'Projet ajouté à la vitrine avec succès.' });
     } catch (e) {

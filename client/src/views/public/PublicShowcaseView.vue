@@ -110,7 +110,7 @@
             <div class="relative overflow-hidden bg-neutral-100 dark:bg-[#0f0f0f] w-full rounded-xl" :class="project.aspectClass">
               <img
                 :src="project.image"
-                :alt="project.titre"
+                :alt="'Vignette du projet ' + project.titre + ' par ' + project.etudiant"
                 :loading="idx < 4 ? 'eager' : 'lazy'"
                 class="w-full h-full object-cover filter grayscale transition-all duration-700 ease-out group-hover:grayscale-0 group-hover:scale-[1.04]"
               />
@@ -120,7 +120,7 @@
                           translate-y-0 lg:translate-y-[102%] group-hover:translate-y-0
                           transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] z-10">
                 <p class="text-[9px] text-blue-400 uppercase tracking-widest font-bold mb-1">{{ project.sae_titre }}</p>
-                <h3 class="text-base font-black text-white leading-tight mb-3">{{ project.titre }}</h3>
+                <h2 class="text-base font-black text-white leading-tight mb-3">{{ project.titre }}</h2>
                 <div class="h-px w-full bg-white/15 mb-3"></div>
                 <div class="flex justify-between items-center text-[9px] uppercase tracking-widest">
                   <span class="text-stone-300 font-bold truncate max-w-[60%]">{{ project.etudiant }}</span>
@@ -343,26 +343,11 @@ const closeProject = () => {
 // ══════════════════════════════════════════════════════════════
 
 const applyObserver = () => {
-  nextTick(() => {
-    const els = document.querySelectorAll('.project-item:not(.is-visible)');
-    // Révèle immédiatement les éléments déjà dans le viewport
-    els.forEach(el => {
-      const rect = el.getBoundingClientRect();
-      if (rect.top < window.innerHeight && rect.bottom > 0) {
-        el.classList.add('is-visible');
-      }
+  setTimeout(() => {
+    document.querySelectorAll('.project-item:not(.is-visible)').forEach((el) => {
+      el.classList.add('is-visible');
     });
-    // Observer pour les éléments encore hors viewport
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('is-visible');
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0 });
-    document.querySelectorAll('.project-item:not(.is-visible)').forEach(el => observer.observe(el));
-  });
+  }, 150);
 };
 
 // ══════════════════════════════════════════════════════════════

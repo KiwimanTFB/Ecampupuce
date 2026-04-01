@@ -88,11 +88,11 @@
               @keyup.enter="openModal(project)"
             >
               <div class="relative overflow-hidden rounded-2xl bg-neutral-100 dark:bg-[#111]" :class="['aspect-[4/5]', 'aspect-[3/4]', 'aspect-[1/1]'][i % 3]">
-                <img :src="project.image" :alt="project.titre"
+                <img :src="project.image" :alt="'Vignette du projet ' + project.titre + ' par ' + project.etudiant"
                      class="w-full h-full object-cover transition-all duration-700 group-hover:scale-105 filter grayscale group-hover:grayscale-0" />
                 <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
                   <span class="text-[10px] text-blue-400 uppercase tracking-widest font-bold mb-1">{{ project.sae_titre }}</span>
-                  <h3 class="text-white text-xl font-black tracking-tight">{{ project.titre }}</h3>
+                  <h2 class="text-white text-xl font-black tracking-tight">{{ project.titre }}</h2>
                   <p class="text-stone-400 text-xs mt-1">{{ formatSemestre(project) }}</p>
 
                   <a v-if="project.lien_externe" :href="project.lien_externe" target="_blank" @click.stop class="inline-block mt-4 px-4 py-2 bg-blue-600 text-white text-[10px] uppercase tracking-widest font-bold rounded hover:bg-blue-500 transition-colors w-max">Visiter le projet</a>
