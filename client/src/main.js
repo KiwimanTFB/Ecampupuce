@@ -22,8 +22,11 @@ app.config.globalProperties.getFileUrl = (path) => {
     const baseUrl = import.meta.env.VITE_API_URL || '';
     const token = localStorage.getItem('token') || '';
     
-    if (path.includes('/rendus/')) {
-        const cleanPath = path.startsWith('/') ? path : '/' + path;
+    if (path.includes('rendus/')) {
+        let cleanPath = path.startsWith('/') ? path : '/' + path;
+        if (!cleanPath.startsWith('/uploads/')) {
+            cleanPath = '/uploads' + cleanPath;
+        }
         return `${baseUrl}${cleanPath}?token=${token}`;
     }
     
