@@ -24,7 +24,7 @@ const router = useRouter()
 const handleLogin = async () => {
     try {
         const { data } = await axios.post('/api/login/admin', { email: email.value, password: password.value })
-        localStorage.setItem('jwt_token', data.token)
+        localStorage.setItem('token', data.token)
         localStorage.setItem('user_role', data.user.role)
         router.push('/admin/dashboard')
     } catch(err) {

@@ -556,7 +556,7 @@ const submitSae = async () => {
         saeForm.value.uploadFiles.forEach((file) => {
             formData.append('consignes', file);
         });
-        await axios.post('/api/saes', formData, { headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${localStorage.getItem('jwt_token')}` }})
+        await axios.post('/api/saes', formData, { headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${localStorage.getItem('token')}` }})
         saeForm.value = { titre: '', description: '', consignes: '', semestre: '', groupe: '', annee_univ: '2023-2024', date_debut: '', date_fin: '', competences: ['', ''], uploadFiles: [], vignette: null }
         if (fileInput.value) fileInput.value.value = '';
         successScreenMessage.value = "La SAE a été soumise à l'administration pour validation.";
@@ -642,7 +642,7 @@ const submitEditSae = async () => {
         if (editingSae.value.existingConsignes) {
             formData.append('existingConsignes', JSON.stringify(editingSae.value.existingConsignes));
         }
-        await axios.put(`/api/saes/${editingSae.value.id_sae || editingSae.value.id}`, formData, { headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${localStorage.getItem('jwt_token')}` }})
+        await axios.put(`/api/saes/${editingSae.value.id_sae || editingSae.value.id}`, formData, { headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${localStorage.getItem('token')}` }})
         closeEditModal();
         successScreenMessage.value = "La SAE a correctement été mise à jour.";
         showSuccessScreen.value = true;
@@ -656,7 +656,7 @@ const submitEditSae = async () => {
 const deleteSae = async (id) => {
     if(!confirm("Voulez-vous vraiment supprimer cette SAE ? Tous les rendus associés seront perdus.")) return;
     try {
-        await axios.delete(`/api/saes/${id}`, { headers: { Authorization: `Bearer ${localStorage.getItem('jwt_token')}` }})
+        await axios.delete(`/api/saes/${id}`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }})
         showToast("SAE supprimée", "success");
         fetchData();
     } catch (e) {
@@ -674,7 +674,7 @@ const postAnnonce = async () => {
     }
     isPosting.value = true
     try {
-        await axios.post('/api/annonces', annonceForm.value, { headers: { Authorization: `Bearer ${localStorage.getItem('jwt_token')}` }})
+        await axios.post('/api/annonces', annonceForm.value, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }})
         showToast("Annonce publiée avec succès !", "success");
         annonceForm.value = { titre: '', message: '', destinataires: 'Tous' }
     } catch (error) {
@@ -697,7 +697,7 @@ const toggleAccordion = async (saeId) => {
     if (!saeRendus.value[saeId]) {
         isFetchingRendus.value = true
         try {
-            const token = localStorage.getItem('jwt_token')
+            const token = localStorage.getItem('token')
             const res = await axios.get(`/api/rendus/${saeId}`, { headers: { Authorization: `Bearer ${token}` }})
             saeRendus.value[saeId] = res.data.map(r => {
                 const path = r.chemin_fichier || r.file_path || '';
@@ -726,7 +726,7 @@ const toggleEvaluatedStatus = async (rendu) => {
     const newStatus = rendu.est_evalue === 1 ? 0 : 1;
     rendu.est_evalue = newStatus;
     try {
-        const token = localStorage.getItem('jwt_token')
+        const token = localStorage.getItem('token')
         await axios.put(`/api/rendus/${rendu.id_rendu}/status`, { est_evalue: newStatus }, { headers: { Authorization: `Bearer ${token}` }})
     } catch (err) {
         console.error("Erreur statut:", err)
@@ -740,7 +740,7 @@ const markAllEvaluated = async (saeId) => {
     for (const r of rendus) {
         if (r.est_evalue !== 1) {
             r.est_evalue = 1
-            const token = localStorage.getItem('jwt_token')
+            const token = localStorage.getItem('token')
             await axios.put(`/api/rendus/${r.id_rendu}/status`, { est_evalue: 1 }, { headers: { Authorization: `Bearer ${token}` }}).catch(console.error)
         }
     }
@@ -748,7 +748,7 @@ const markAllEvaluated = async (saeId) => {
 
 const downloadAll = async (saeId) => {
     try {
-        const token = localStorage.getItem('jwt_token');
+        const token = localStorage.getItem('token');
         showToast("Préparation du téléchargement...", "info");
         const response = await axios.get(`/api/rendus/zip/${saeId}`, {
             headers: { Authorization: `Bearer ${token}` },
@@ -779,12 +779,13 @@ function getFileUrl(path) {
     path = path.replace('http://localhost:3000', '');
     if (path.startsWith('http')) return path;
     const baseUrl = import.meta.env.VITE_API_URL || '';
+    const token = localStorage.getItem('token') || '';
+    
     if (path.includes('/rendus/')) {
-        const tempPath = path.replace(/^\/?uploads\//, '');
-        const filename = tempPath.split('/').pop();
-        const token = localStorage.getItem('jwt_token') || '';
-        return `${baseUrl}/uploads/rendus/${filename}?token=${token}`;
+        const cleanPath = path.startsWith('/') ? path : '/' + path;
+        return `${baseUrl}${cleanPath}?token=${token}`;
     }
+    
     if (path.startsWith('/uploads/')) return baseUrl + path;
     if (path.startsWith('uploads/')) return baseUrl + '/' + path;
     return baseUrl + '/uploads/' + path;
@@ -803,7 +804,7 @@ const submitInlineGrade = async (rendu, saeId) => {
     rendu.isSaving = true
     try {
         const payload = { note: rendu.inputNote, commentaire: rendu.inputComment }
-        const token = localStorage.getItem('jwt_token')
+        const token = localStorage.getItem('token')
         await axios.put(`/api/rendus/${rendu.id_rendu}/evaluation`, payload, { headers: { Authorization: `Bearer ${token}` }})
         gradingStatus.value = `Note enregistrée pour ${rendu.etudiant_nom} !`
         isGradingError.value = false
@@ -823,7 +824,7 @@ const submitInlineGrade = async (rendu, saeId) => {
 let pollingInterval = null;
 const fetchData = async () => {
     try {
-        const token = localStorage.getItem('jwt_token')
+        const token = localStorage.getItem('token')
         if (!token) return;
         const opts = { headers: { Authorization: `Bearer ${token}` }}
         const [resSaes, resAnnonces] = await Promise.all([

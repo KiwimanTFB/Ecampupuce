@@ -262,12 +262,13 @@ function getFileUrl(path) {
     path = path.replace('http://localhost:3000', '');
     if (path.startsWith('http')) return path;
     const baseUrl = import.meta.env.VITE_API_URL || '';
+    const token = localStorage.getItem('token') || '';
+    
     if (path.includes('/rendus/')) {
-        const tempPath = path.replace(/^\/?uploads\//, '');
-        const filename = tempPath.split('/').pop();
-        const token = localStorage.getItem('jwt_token') || '';
-        return `${baseUrl}/uploads/rendus/${filename}?token=${token}`;
+        const cleanPath = path.startsWith('/') ? path : '/' + path;
+        return `${baseUrl}${cleanPath}?token=${token}`;
     }
+    
     if (path.startsWith('/uploads/')) return baseUrl + path;
     if (path.startsWith('uploads/')) return baseUrl + '/' + path;
     return baseUrl + '/uploads/' + path;
@@ -365,7 +366,7 @@ async function submitUpload() {
     if (commentaireRendu.value) formData.append('commentaire', commentaireRendu.value)
 
     try {
-        const token = localStorage.getItem('jwt_token')
+        const token = localStorage.getItem('token')
         await axios.post('/api/rendus', formData, {
             headers: { Authorization: `Bearer ${token}` }
         })
@@ -391,7 +392,7 @@ async function submitUpload() {
 
 const fetchData = async () => {
     try {
-        const token = localStorage.getItem('jwt_token')
+        const token = localStorage.getItem('token')
         const opts = { headers: { Authorization: `Bearer ${token}` } }
         
         const [resSaes, resAnnonces, resNotes, resDocs] = await Promise.all([

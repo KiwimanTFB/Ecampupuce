@@ -132,7 +132,7 @@ const router = createRouter({
 
 // ─── Navigation Guard ──────────────────────────────────────────
 router.beforeEach((to, from) => {
-  const token = localStorage.getItem('jwt_token')
+  const token = localStorage.getItem('token')
   const userRole = localStorage.getItem('user_role')
 
   if (to.meta.requiresAuth && !token) {

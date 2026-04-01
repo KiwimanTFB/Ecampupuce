@@ -116,14 +116,14 @@ const closeMenuOnOutsideClick = (e) => {
 
 const markAsRead = async (id) => {
     try {
-        const token = localStorage.getItem('jwt_token')
+        const token = localStorage.getItem('token')
         await axios.put(`/api/notifications/${id}/read`, {}, { headers: { Authorization: `Bearer ${token}` } })
         unreadNotifs.value = unreadNotifs.value.filter(n => n.id !== id)
     } catch(e) { console.error(e) }
 }
 
 const handleLogout = () => {
-    localStorage.removeItem('jwt_token')
+    localStorage.removeItem('token')
     localStorage.removeItem('user_role')
     localStorage.removeItem('user_info')
     router.push('/login')

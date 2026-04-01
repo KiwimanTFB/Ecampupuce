@@ -6,7 +6,7 @@ import axios from 'axios'
 
 // Configurer Axios pour inclure le JWT HTTP dans toutes les requêtes 
 axios.interceptors.request.use(config => {
-  const token = localStorage.getItem('jwt_token')
+  const token = localStorage.getItem('token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }

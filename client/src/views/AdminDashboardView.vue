@@ -620,7 +620,7 @@ const fetchVitrineProjects = async () => {
 
 const fetchRendusEligibles = async () => {
     try {
-        const token = localStorage.getItem('jwt_token')
+        const token = localStorage.getItem('token')
         const { data } = await axios.get('/api/admin/rendus-eligibles', { headers: { Authorization: `Bearer ${token}` }})
         rendusEligibles.value = data
     } catch(e) { console.error(e) }
@@ -653,7 +653,7 @@ const submitToVitrine = async () => {
     }
     isSubmittingVitrine.value = true
     try {
-        const token = localStorage.getItem('jwt_token')
+        const token = localStorage.getItem('token')
         await axios.post('/api/admin/vitrine', newVitrineEntry.value, { headers: { Authorization: `Bearer ${token}` }})
         showToast("Projet ajouté à la vitrine publique !", "success")
         fetchVitrineProjects()
@@ -668,7 +668,7 @@ const submitToVitrine = async () => {
 const retirerDeVitrine = async (id) => {
     if(!confirm("Retirer ce projet de la vitrine publique ?")) return;
     try {
-        const token = localStorage.getItem('jwt_token')
+        const token = localStorage.getItem('token')
         await axios.delete(`/api/admin/vitrine/${id}`, { headers: { Authorization: `Bearer ${token}` }})
         showToast("Projet retiré avec succès.", "success")
         fetchVitrineProjects()
@@ -682,7 +682,7 @@ const publishAnnouncement = async () => {
     }
     isPublishingAnnouncement.value = true;
     try {
-        const token = localStorage.getItem('jwt_token');
+        const token = localStorage.getItem('token');
         await axios.post('/api/annonces', newAnnouncement.value, {
             headers: { Authorization: `Bearer ${token}` }
         });
@@ -708,12 +708,13 @@ function getFileUrl(path) {
     path = path.replace('http://localhost:3000', '');
     if (path.startsWith('http')) return path;
     const baseUrl = import.meta.env.VITE_API_URL || '';
+    const token = localStorage.getItem('token') || '';
+    
     if (path.includes('/rendus/')) {
-        const tempPath = path.replace(/^\/?uploads\//, '');
-        const filename = tempPath.split('/').pop();
-        const token = localStorage.getItem('jwt_token') || '';
-        return `${baseUrl}/uploads/rendus/${filename}?token=${token}`;
+        const cleanPath = path.startsWith('/') ? path : '/' + path;
+        return `${baseUrl}${cleanPath}?token=${token}`;
     }
+    
     if (path.startsWith('/uploads/')) return baseUrl + path;
     if (path.startsWith('uploads/')) return baseUrl + '/' + path;
     return baseUrl + '/uploads/' + path;
@@ -727,7 +728,7 @@ const groupList = [
 
 const fetchDemandes = async () => {
     try {
-        const token = localStorage.getItem('jwt_token')
+        const token = localStorage.getItem('token')
         const { data } = await axios.get('/api/admin/demandes', { headers: { Authorization: `Bearer ${token}` }})
         demandes.value = data.map(d => {
             // retain selection local state if already there
@@ -744,7 +745,7 @@ const fetchDemandes = async () => {
 
 const fetchSAEsEnAttente = async () => {
     try {
-        const token = localStorage.getItem('jwt_token')
+        const token = localStorage.getItem('token')
         const { data } = await axios.get('/api/admin/saes/pending', { headers: { Authorization: `Bearer ${token}` }})
         saesEnAttente.value = data.map(sae => {
             const existing = saesEnAttente.value.find(e => e.id_sae === sae.id_sae)
@@ -755,7 +756,7 @@ const fetchSAEsEnAttente = async () => {
 
 const fetchUsers = async () => {
     try {
-        const token = localStorage.getItem('jwt_token')
+        const token = localStorage.getItem('token')
         const { data } = await axios.get('/api/admin/users', { headers: { Authorization: `Bearer ${token}` }})
         usersList.value = data
     } catch(e) { console.error(e) }
@@ -763,7 +764,7 @@ const fetchUsers = async () => {
 
 const fetchAllSaes = async () => {
     try {
-        const token = localStorage.getItem('jwt_token')
+        const token = localStorage.getItem('token')
         const { data } = await axios.get('/api/admin/saes/all', { headers: { Authorization: `Bearer ${token}` }})
         allSaesList.value = data.filter(s => s.statut === 'Validé')
     } catch(e) { console.error(e) }
@@ -772,7 +773,7 @@ const fetchAllSaes = async () => {
 const deleteUser = async (id) => {
     if(!window.confirm("Voulez-vous vraiment supprimer cet utilisateur ? Cette action est irréversible.")) return;
     try {
-        const token = localStorage.getItem('jwt_token')
+        const token = localStorage.getItem('token')
         await axios.delete(`/api/admin/users/${id}`, { headers: { Authorization: `Bearer ${token}` }})
         showToast("Utilisateur supprimé.", "success")
         fetchUsers()
@@ -781,7 +782,7 @@ const deleteUser = async (id) => {
 
 const fetchAnnonces = async () => {
     try {
-        const token = localStorage.getItem('jwt_token')
+        const token = localStorage.getItem('token')
         const { data } = await axios.get('/api/annonces', { headers: { Authorization: `Bearer ${token}` }})
         activeAnnonces.value = data
     } catch(e) { console.error(e) }
@@ -790,7 +791,7 @@ const fetchAnnonces = async () => {
 const deleteAnnonce = async (id) => {
     if(!window.confirm("Supprimer cette annonce ?")) return;
     try {
-        const token = localStorage.getItem('jwt_token')
+        const token = localStorage.getItem('token')
         await axios.delete(`/api/admin/annonces/${id}`, { headers: { Authorization: `Bearer ${token}` }})
         showToast("Annonce supprimée.", "success")
         fetchAnnonces()
@@ -799,7 +800,7 @@ const deleteAnnonce = async (id) => {
 
 const fetchAdminNotifs = async () => {
     try {
-        const token = localStorage.getItem('jwt_token')
+        const token = localStorage.getItem('token')
         const { data } = await axios.get('/api/admin/notifications', { headers: { Authorization: `Bearer ${token}` }})
         activeNotifs.value = data
     } catch(e) { console.error(e) }
@@ -809,7 +810,7 @@ const sendNotification = async () => {
     if(!newNotification.value.message) { showToast("Message requis.", "error"); return; }
     isSendingNotif.value = true
     try {
-        const token = localStorage.getItem('jwt_token')
+        const token = localStorage.getItem('token')
         await axios.post('/api/admin/notifications', newNotification.value, { headers: { Authorization: `Bearer ${token}` }})
         showToast("Notification envoyée !", "success")
         newNotification.value.message = ''
@@ -821,7 +822,7 @@ const sendNotification = async () => {
 const deleteNotif = async (id) => {
     if(!window.confirm("Supprimer la notification ?")) return;
     try {
-        const token = localStorage.getItem('jwt_token')
+        const token = localStorage.getItem('token')
         await axios.delete(`/api/admin/notifications/${id}`, { headers: { Authorization: `Bearer ${token}` }})
         fetchAdminNotifs()
         showToast("Notification supprimée.", "success")
@@ -877,7 +878,7 @@ const valider = async (d) => {
 
     if(!confirm("Valider ce compte avec le groupe terminal " + (finalGroup || 'Aucun') + " ?")) return;
     try {
-        const token = localStorage.getItem('jwt_token')
+        const token = localStorage.getItem('token')
         await axios.post(`/api/admin/demandes/${d.id_demande}/valider`, { groupe: finalGroup }, { headers: { Authorization: `Bearer ${token}` }})
         showToast("Compte validé !", "success")
         fetchDemandes()
@@ -888,7 +889,7 @@ const valider = async (d) => {
 const rejeter = async (id) => {
     if(!confirm("Rejeter définitivement cette demande ?")) return;
     try {
-        const token = localStorage.getItem('jwt_token')
+        const token = localStorage.getItem('token')
         await axios.post(`/api/admin/demandes/${id}/rejeter`, {}, { headers: { Authorization: `Bearer ${token}` }})
         showToast("Compte rejeté.", "success")
         fetchDemandes()
@@ -899,7 +900,7 @@ const approuverSAE = async (sae) => {
     if(!sae.adminCode || sae.adminCode.trim() === '') return;
     if(!confirm(`Approuver cette SAE avec le code ${sae.adminCode} ?`)) return;
     try {
-        const token = localStorage.getItem('jwt_token')
+        const token = localStorage.getItem('token')
         await axios.put(`/api/admin/saes/${sae.id_sae}/approve`, { code: sae.adminCode }, { headers: { Authorization: `Bearer ${token}` }})
         showToast("SAE validée avec succès !", "success")
         fetchSAEsEnAttente()
@@ -916,7 +917,7 @@ const approuverSAE = async (sae) => {
 const refuserSAE = async (id) => {
     if(!confirm("Supprimer cette demande de SAE ?")) return;
     try {
-        const token = localStorage.getItem('jwt_token')
+        const token = localStorage.getItem('token')
         await axios.delete(`/api/admin/saes/${id}`, { headers: { Authorization: `Bearer ${token}` }})
         showToast("SAE supprimée", "success")
         fetchSAEsEnAttente()
@@ -945,7 +946,7 @@ const submitEditUser = async () => {
     }
     isEditingUser.value = true;
     try {
-        const token = localStorage.getItem('jwt_token')
+        const token = localStorage.getItem('token')
         await axios.put(`/api/admin/users/${editingUser.value.id_user}`, editingUser.value, { 
             headers: { Authorization: `Bearer ${token}` }
         })
@@ -1067,7 +1068,7 @@ const submitEditSae = async () => {
             editingSae.value.uploadFiles.forEach(file => formData.append('consignes', file));
         }
 
-        const token = localStorage.getItem('jwt_token')
+        const token = localStorage.getItem('token')
         await axios.put(`/api/admin/saes/${editingSae.value.id_sae || editingSae.value.id}`, formData, { 
             headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
         })
@@ -1085,7 +1086,7 @@ const submitEditSae = async () => {
 
 const logout = () => {
     clearInterval(pollingInterval);
-    localStorage.removeItem('jwt_token')
+    localStorage.removeItem('token')
     localStorage.removeItem('user_role')
     router.push('/login/admin')
 }
