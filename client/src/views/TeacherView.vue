@@ -1,8 +1,9 @@
 <template>
-  <Sidebar />
+  <div class="sidebar-overlay" :class="{ 'active': isSidebarOpen }" @click="isSidebarOpen = false"></div>
+  <Sidebar :is-open="isSidebarOpen" @close="isSidebarOpen = false" />
   
   <main>
-      <Header />
+      <Header @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
 
       <div class="workspace">
           <div class="page-title">
@@ -406,6 +407,8 @@ import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import Sidebar from '../components/teacher/Sidebar.vue'
 import Header from '../components/teacher/Header.vue'
+
+const isSidebarOpen = ref(false)
 
 const route = useRoute()
 const router = useRouter()

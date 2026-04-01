@@ -1,8 +1,13 @@
 <template>
-  <aside>
-      <div class="sidebar-header">
-          <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-          SaeTrack <span style="font-size: 10px; background: #8b5cf6; padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-weight: 600;">PRO</span>
+  <aside :class="{ 'mobile-open': isOpen }">
+      <div class="sidebar-header" style="justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+              <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+              SaeTrack <span style="font-size: 10px; background: #8b5cf6; padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-weight: 600;">PRO</span>
+          </div>
+          <button class="menu-close" @click="$emit('close')" aria-label="Fermer le menu" style="background:none; border:none; color:inherit; cursor:pointer;">
+              <svg viewBox="0 0 24 24" style="width:24px;height:24px; stroke: currentColor; fill: none; stroke-width: 2;"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
       </div>
       
       <div class="nav-group">
@@ -35,7 +40,13 @@
 </template>
 
 <script setup>
-// Pas besoin de logique supplémentaire ici pour l'instant
+defineProps({
+  isOpen: {
+    type: Boolean,
+    default: false
+  }
+})
+defineEmits(['close'])
 </script>
 
 <style scoped>
@@ -112,5 +123,11 @@ a:hover {
 a.active {
   background: #8b5cf6;
   color: white;
+}
+
+@media (min-width: 769px) {
+    .menu-close {
+        display: none !important;
+    }
 }
 </style>

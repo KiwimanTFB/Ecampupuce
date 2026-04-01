@@ -1,8 +1,13 @@
 <template>
   <header>
-      <div class="search-wrapper">
-          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" placeholder="Rechercher un étudiant, un groupe, un rendu...">
+      <div style="display: flex; align-items: center; gap: 16px;">
+          <button class="burger-menu-btn" @click="$emit('toggle-sidebar')" aria-label="Ouvrir le menu">
+              <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
+          <div class="search-wrapper">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" placeholder="Rechercher un étudiant, un groupe, un rendu...">
+          </div>
       </div>
       <div class="header-actions" style="display: flex; gap: 20px; align-items: center;">
           
@@ -47,9 +52,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, defineEmits } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+
+const emit = defineEmits(['toggle-sidebar'])
 
 const router = useRouter()
 const isMenuOpen = ref(false)
@@ -131,6 +138,24 @@ const handleLogout = () => {
 </script>
 
 <style scoped>
+.burger-menu-btn {
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    margin-left: -8px; 
+}
+
+@media (min-width: 769px) {
+    .burger-menu-btn {
+        display: none;
+    }
+}
+
 .user-profile {
     position: relative;
     cursor: pointer;

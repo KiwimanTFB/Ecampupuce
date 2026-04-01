@@ -1127,4 +1127,44 @@ onMounted(() => {
 .toast.success { border-left: 4px solid var(--status-success-text); }
 .toast.error { border-left: 4px solid var(--status-danger-text); }
 @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+@media (max-width: 768px) {
+    .admin-dashboard { padding: 20px 16px; }
+    .header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 16px !important;
+    }
+    .header > div {
+        flex-wrap: wrap;
+        width: 100%;
+    }
+    .header .btn {
+        flex: 1 1 100%;
+        margin-left: 0 !important;
+    }
+    .demandes-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    .header-small {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .header-small > div {
+        flex-wrap: wrap;
+        width: 100%;
+    }
+    .header-small select, .header-small input {
+        width: 100% !important;
+        flex: 1 1 100%;
+    }
+    .modal-content {
+        padding: 24px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+}
 </style>

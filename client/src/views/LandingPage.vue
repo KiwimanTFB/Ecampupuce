@@ -1106,4 +1106,18 @@ onMounted(() => {
   color: var(--text-gray);
   font-size: 14px;
 }
+
+/* RESPONSIVE MOBILE */
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .register-nav-btn { display: none !important; }
+  .nav-brand { font-size: 18px; }
+  .login-btn span { display: none; }
+  .login-btn { padding: 10px 14px !important; }
+  .hero-actions { flex-direction: column; padding: 0 20px; }
+  .cta-card { padding: 40px 20px; }
+  .footer-content { flex-direction: column; gap: 30px; }
+  .footer-links { flex-direction: column; gap: 30px; }
+  .filters-container { flex-direction: column; align-items: stretch; border-radius: 20px; }
+}
 </style>

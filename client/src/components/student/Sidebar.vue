@@ -1,8 +1,13 @@
 <template>
-  <aside>
-        <div class="sidebar-header">
-            <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-            SaeTrack
+  <aside :class="{ 'mobile-open': isOpen }">
+        <div class="sidebar-header" style="justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                SaeTrack
+            </div>
+            <button class="menu-close md:hidden" @click="$emit('close')" aria-label="Fermer le menu" style="background:none; border:none; color:inherit; cursor:pointer;">
+                <svg viewBox="0 0 24 24" style="width:24px;height:24px;"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
         </div>
         
         <div class="nav-group">
@@ -41,4 +46,19 @@
 </template>
 
 <script setup>
+defineProps({
+  isOpen: {
+    type: Boolean,
+    default: false
+  }
+})
+defineEmits(['close'])
 </script>
+
+<style scoped>
+@media (min-width: 769px) {
+    .menu-close {
+        display: none !important;
+    }
+}
+</style>

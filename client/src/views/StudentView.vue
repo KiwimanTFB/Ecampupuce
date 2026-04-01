@@ -1,8 +1,9 @@
 <template>
-  <Sidebar />
+  <div class="sidebar-overlay" :class="{ 'active': isSidebarOpen }" @click="isSidebarOpen = false"></div>
+  <Sidebar :is-open="isSidebarOpen" @close="isSidebarOpen = false" />
   
   <main>
-      <Header />
+      <Header @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
 
       <div class="workspace">
           <div class="page-title">
@@ -217,6 +218,8 @@ import { useRoute } from 'vue-router'
 import axios from 'axios'
 import Sidebar from '../components/student/Sidebar.vue'
 import Header from '../components/student/Header.vue'
+
+const isSidebarOpen = ref(false)
 
 const route = useRoute()
 const currentView = ref(route.params.view || 'dashboard')
