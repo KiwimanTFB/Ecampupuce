@@ -15,6 +15,20 @@ const JWT_SECRET = process.env.JWT_SECRET || 'default_super_secret_key_123!';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Middleware d'authentification JWT
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = (authHeader && authHeader.split(' ')[1]) || req.query.token;
+
+    if (token == null) return res.status(401).json({ error: 'Token manquant' });
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) return res.status(403).json({ error: 'Token invalide' });
+        req.user = user;
+        next();
+    });
+};
+
 app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(cors());
 app.use(express.json());
@@ -171,19 +185,7 @@ db.run(`CREATE TABLE IF NOT EXISTS vitrine_projects (
     }
 });
 
-// Middleware d'authentification JWT
-const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = (authHeader && authHeader.split(' ')[1]) || req.query.token;
-
-    if (token == null) return res.status(401).json({ error: 'Token manquant' });
-
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) return res.status(403).json({ error: 'Token invalide' });
-        req.user = user;
-        next();
-    });
-};
+// Middleware d'authentification JWT déplacé vers le haut du fichier
 
 // Middleware vérifiant que l'utilisateur est un professeur
 const requireTeacher = (req, res, next) => {
