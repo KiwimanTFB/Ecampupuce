@@ -96,7 +96,7 @@
         </div>
 
         <!-- Grille projets -->
-        <div v-else key="grid" class="columns-1 sm:columns-2 lg:columns-3 gap-6 w-full">
+        <section v-else key="grid" class="columns-1 sm:columns-2 lg:columns-3 gap-6 w-full" aria-label="Liste des projets réalisés">
           <article
             v-for="(project, idx) in displayedProjects"
             :key="project.id"
@@ -110,7 +110,7 @@
             <div class="relative overflow-hidden bg-neutral-100 dark:bg-[#0f0f0f] w-full rounded-xl" :class="project.aspectClass">
               <img
                 :src="project.image"
-                :alt="'Vignette du projet ' + project.titre + ' par ' + project.etudiant"
+                :alt="`Aperçu du projet ${project.titre} du domaine ${project.domaine_activite} réalisé par ${project.etudiant}`"
                 :loading="idx < 4 ? 'eager' : 'lazy'"
                 class="w-full h-full object-cover filter grayscale transition-all duration-700 ease-out group-hover:grayscale-0 group-hover:scale-[1.04]"
               />
@@ -137,7 +137,7 @@
             <p class="text-neutral-500 dark:text-stone-500 font-semibold mb-4">Aucun projet ne correspond à ces filtres.</p>
             <button @click="resetFilters" class="text-sm text-blue-600 dark:text-blue-400 font-bold hover:underline">Afficher tous les projets</button>
           </div>
-        </div>
+        </section>
 
       </transition>
     </main>

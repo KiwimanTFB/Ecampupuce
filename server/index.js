@@ -15,7 +15,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'default_super_secret_key_123!';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -38,7 +38,6 @@ app.use('/uploads', (req, res, next) => {
     }
 }, express.static(uploadDir));
 
-// Configuration Multer
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         if (file.fieldname === 'vignette') {
@@ -55,7 +54,18 @@ const storage = multer.diskStorage({
         cb(null, Date.now() + '-' + file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_'));
     }
 });
-const upload = multer({ storage });
+
+const fileFilter = (req, file, cb) => {
+    const allowed = ['.pdf', '.zip', '.png', '.jpg', '.jpeg'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.includes(ext)) {
+        cb(null, true);
+    } else {
+        cb(new Error(`Extension non autorisée. Seules PDF, ZIP, PNG, JPG sont tolérées.`));
+    }
+};
+
+const upload = multer({ storage, fileFilter });
 const saeUpload = upload.fields([
     { name: 'vignette', maxCount: 1 },
     { name: 'consignes', maxCount: 10 }

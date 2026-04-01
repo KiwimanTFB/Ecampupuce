@@ -548,8 +548,8 @@
                   <input type="text" v-model="newVitrineEntry.lien_externe" class="form-control" placeholder="Ex: https://mon-super-site.com">
               </div>
               <div style="width: 120px;">
-                  <label class="form-label">Année</label>
-                  <input type="text" v-model="newVitrineEntry.annee" class="form-control" placeholder="2024">
+                  <label class="form-label">Année *</label>
+                  <input type="number" v-model="newVitrineEntry.annee" class="form-control" placeholder="2024" required>
               </div>
           </div>
           
@@ -647,8 +647,8 @@ const closeVitrineModal = () => {
 }
 
 const submitToVitrine = async () => {
-    if(!newVitrineEntry.value.titre || !newVitrineEntry.value.image_url || !newVitrineEntry.value.formation) {
-        showToast("Titre, Image et Formation sont obligatoires.", "error")
+    if(!newVitrineEntry.value.titre || !newVitrineEntry.value.image_url || !newVitrineEntry.value.formation || !newVitrineEntry.value.annee) {
+        showToast("Titre, Image, Formation et Année sont obligatoires.", "error")
         return
     }
     isSubmittingVitrine.value = true
