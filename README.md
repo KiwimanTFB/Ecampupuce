@@ -15,7 +15,7 @@ Le système offre :
 - **Une interface d'administration** pour la validation des inscriptions manuelles ou automatiques.
 - **Une Vitrine Publique** valorisant les meilleures réalisations de la formation.
 
-![Aperçu de la Vitrine Ecampupuce]([placeholder_screenshot.png](https://raw.githubusercontent.com/KiwimanTFB/Ecampupuce/refs/heads/main/vitrine.png))
+[![Aperçu de la Vitrine Ecampupuce]([placeholder_screenshot.png]())](https://cv.gmocellin.com/vitrine.png)
 
 ---
 
