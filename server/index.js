@@ -129,6 +129,7 @@ db.run(`CREATE TABLE IF NOT EXISTS vitrine_projects (
     domaine_activite TEXT,
     lien_externe TEXT,
     annee TEXT,
+    formation TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )`, (err) => {
     if (err) console.error('Erreur création table vitrine_projects:', err.message);
@@ -136,6 +137,7 @@ db.run(`CREATE TABLE IF NOT EXISTS vitrine_projects (
         // Safe alteration to add lien_externe if the table already existed before
         db.run('ALTER TABLE vitrine_projects ADD COLUMN lien_externe TEXT;', () => {});
         db.run('ALTER TABLE vitrine_projects ADD COLUMN annee TEXT;', () => {});
+        db.run('ALTER TABLE vitrine_projects ADD COLUMN formation TEXT;', () => {});
     }
 });
 
@@ -342,6 +344,7 @@ app.get('/api/vitrine', async (req, res) => {
                 v.domaine_activite,
                 v.lien_externe,
                 v.annee as stored_annee,
+                v.formation,
                 v.rendu_id,
                 s.titre as sae_titre, 
                 s.semestre, 
@@ -359,7 +362,7 @@ app.get('/api/vitrine', async (req, res) => {
             id: p.vitrine_id,
             // Fallbacks in case they are missing from DB
             semestre: p.semestre || 'S1',
-            niveau: p.niveau || 'BUT 1',
+            niveau: p.formation || p.niveau || 'MMI1',
             annee: p.stored_annee || p.annee || new Date().getFullYear().toString()
         }));
         res.json(formattedProjects);
@@ -937,10 +940,10 @@ app.get('/api/admin/rendus-eligibles', authenticateToken, requireAdmin, async (r
 // POST /api/admin/vitrine - Ajouter un rendu à la vitrine
 app.post('/api/admin/vitrine', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const { rendu_id, titre, description, image_url, eleve_nom, domaine_activite, lien_externe, annee } = req.body;
+        const { rendu_id, titre, description, image_url, eleve_nom, domaine_activite, lien_externe, annee, formation } = req.body;
         
-        if (!rendu_id || !titre || !image_url) {
-            return res.status(400).json({ error: 'champs requis manquants: rendu_id, titre, ou image_url' });
+        if (!rendu_id || !titre || !image_url || !formation) {
+            return res.status(400).json({ error: 'champs requis manquants: rendu_id, titre, formation ou image_url' });
         }
 
         const existing = await db.getAsync('SELECT id FROM vitrine_projects WHERE rendu_id = ?', [rendu_id]);
@@ -949,8 +952,8 @@ app.post('/api/admin/vitrine', authenticateToken, requireAdmin, async (req, res)
         }
 
         await db.runAsync(
-            'INSERT INTO vitrine_projects (rendu_id, titre, description, image_url, eleve_nom, domaine_activite, lien_externe, annee) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            [rendu_id, titre, description || '', image_url, eleve_nom || 'Anonyme', domaine_activite || 'Autre', lien_externe || null, annee || new Date().getFullYear().toString()]
+            'INSERT INTO vitrine_projects (rendu_id, titre, description, image_url, eleve_nom, domaine_activite, lien_externe, annee, formation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [rendu_id, titre, description || '', image_url, eleve_nom || 'Anonyme', domaine_activite || 'Autre', lien_externe || null, annee || new Date().getFullYear().toString(), formation]
         );
         res.status(201).json({ message: 'Projet ajouté à la vitrine avec succès.' });
     } catch (e) {

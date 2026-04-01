@@ -536,6 +536,14 @@
           </div>
           <div class="form-group" style="display:flex; gap:12px;">
               <div style="flex:1;">
+                  <label class="form-label">Formation *</label>
+                  <select v-model="newVitrineEntry.formation" class="form-control" required>
+                      <option value="MMI1">MMI 1</option>
+                      <option value="MMI2">MMI 2</option>
+                      <option value="MMI3">MMI 3</option>
+                  </select>
+              </div>
+              <div style="flex:1;">
                   <label class="form-label">Lien du projet (Optionnel)</label>
                   <input type="text" v-model="newVitrineEntry.lien_externe" class="form-control" placeholder="Ex: https://mon-super-site.com">
               </div>
@@ -627,7 +635,8 @@ const openVitrineModal = (rendu) => {
         domaine_activite: 'Général',
         image_url: rendu.vignette_path || rendu.image_url || '',
         lien_externe: '',
-        annee: new Date().getFullYear().toString()
+        annee: new Date().getFullYear().toString(),
+        formation: 'MMI1'
     }
     isVitrineModalOpen.value = true
 }
@@ -638,8 +647,8 @@ const closeVitrineModal = () => {
 }
 
 const submitToVitrine = async () => {
-    if(!newVitrineEntry.value.titre || !newVitrineEntry.value.image_url) {
-        showToast("Titre et Image URL sont obligatoires.", "error")
+    if(!newVitrineEntry.value.titre || !newVitrineEntry.value.image_url || !newVitrineEntry.value.formation) {
+        showToast("Titre, Image et Formation sont obligatoires.", "error")
         return
     }
     isSubmittingVitrine.value = true
