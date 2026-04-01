@@ -105,6 +105,20 @@ db.run(`CREATE TABLE IF NOT EXISTS notifications (
     if (err) console.error('Erreur création table notifications:', err.message);
 });
 
+// Ensure vitrine_projects table exists
+db.run(`CREATE TABLE IF NOT EXISTS vitrine_projects (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    rendu_id INTEGER,
+    titre TEXT,
+    description TEXT,
+    image_url TEXT,
+    eleve_nom TEXT,
+    domaine_activite TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)`, (err) => {
+    if (err) console.error('Erreur création table vitrine_projects:', err.message);
+});
+
 // Middleware d'authentification JWT
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -292,6 +306,44 @@ app.get('/api/public/saes', async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Erreur serveur lors de la récupération des SAEs publiques' });
+    }
+});
+
+// GET /api/vitrine - Route publique pour récupérer les projets vitrine
+app.get('/api/vitrine', async (req, res) => {
+    try {
+        const query = `
+            SELECT 
+                v.id as vitrine_id, 
+                v.titre, 
+                v.description, 
+                v.image_url as image, 
+                v.eleve_nom as etudiant,
+                v.domaine_activite,
+                v.rendu_id,
+                s.titre as sae_titre, 
+                s.semestre, 
+                s.niveau, 
+                s.annee_univ as annee
+            FROM vitrine_projects v
+            JOIN rendus r ON v.rendu_id = r.id_rendu
+            JOIN sae s ON r.id_sae = s.id_sae
+            ORDER BY v.created_at DESC
+        `;
+        const vitrineProjects = await db.allAsync(query);
+        // Map the IDs to format expected by public view
+        const formattedProjects = vitrineProjects.map(p => ({
+            ...p,
+            id: p.vitrine_id,
+            // Fallbacks in case they are missing from DB
+            semestre: p.semestre || 'S1',
+            niveau: p.niveau || 'BUT 1',
+            annee: p.annee || new Date().getFullYear().toString()
+        }));
+        res.json(formattedProjects);
+    } catch (error) {
+        console.error("Erreur récupération vitrine:", error);
+        res.status(500).json({ error: 'Erreur serveur lors de la récupération des projets vitrine' });
     }
 });
 
@@ -830,6 +882,69 @@ app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, async (req, 
     } catch (e) {
         console.error("ERREUR SUPPRESSION USER:", e);
         res.status(500).json({ error: 'Erreur lors de la suppression de l\'utilisateur.' });
+    }
+});
+
+// GET /api/admin/rendus-eligibles - Récupérer les rendus pour les mettre en vitrine
+app.get('/api/admin/rendus-eligibles', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const rendus = await db.allAsync(`
+            SELECT 
+                r.id_rendu, 
+                r.chemin_fichier,
+                r.note_attribuee as note,
+                r.date_depot,
+                (u.nom || ' ' || u.prenom) as etudiant,
+                s.titre as sae_titre,
+                s.semestre,
+                s.niveau
+            FROM rendus r
+            JOIN utilisateurs u ON r.id_user = u.id_user
+            JOIN sae s ON r.id_sae = s.id_sae
+            WHERE r.est_evalue = 1 OR r.note_attribuee IS NOT NULL
+            ORDER BY r.date_depot DESC
+        `);
+        res.json(rendus);
+    } catch (e) {
+        console.error("ERREUR GET RENDUS ELIGIBLES:", e);
+        res.status(500).json({ error: 'Erreur lors de la récupération des rendus éligibles.' });
+    }
+});
+
+// POST /api/admin/vitrine - Ajouter un rendu à la vitrine
+app.post('/api/admin/vitrine', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { rendu_id, titre, description, image_url, eleve_nom, domaine_activite } = req.body;
+        
+        if (!rendu_id || !titre || !image_url) {
+            return res.status(400).json({ error: 'champs requis manquants: rendu_id, titre, ou image_url' });
+        }
+
+        const existing = await db.getAsync('SELECT id FROM vitrine_projects WHERE rendu_id = ?', [rendu_id]);
+        if (existing) {
+            return res.status(409).json({ error: 'Ce rendu est déjà dans la vitrine' });
+        }
+
+        await db.runAsync(
+            'INSERT INTO vitrine_projects (rendu_id, titre, description, image_url, eleve_nom, domaine_activite) VALUES (?, ?, ?, ?, ?, ?)',
+            [rendu_id, titre, description || '', image_url, eleve_nom || 'Anonyme', domaine_activite || 'Autre']
+        );
+        res.status(201).json({ message: 'Projet ajouté à la vitrine avec succès.' });
+    } catch (e) {
+        console.error("ERREUR AJOUT VITRINE:", e);
+        res.status(500).json({ error: 'Erreur lors de l’ajout du projet à la vitrine.' });
+    }
+});
+
+// DELETE /api/admin/vitrine/:id - Retirer un projet de la vitrine
+app.delete('/api/admin/vitrine/:id', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        await db.runAsync('DELETE FROM vitrine_projects WHERE id = ?', [id]);
+        res.json({ message: 'Projet retiré de la vitrine avec succès.' });
+    } catch (e) {
+        console.error("ERREUR SUPPRESSION VITRINE:", e);
+        res.status(500).json({ error: 'Erreur lors du retrait du projet.' });
     }
 });
 

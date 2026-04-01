@@ -5,6 +5,7 @@
         <div style="display: flex; gap: 1rem; align-items: center; flex: 1;">
             <button @click="currentTab = 'validation'" :class="['btn', currentTab === 'validation' ? 'btn-primary' : 'btn-outline']" style="min-width: 220px; padding: 10px 16px; font-size: 14px; justify-content: center;">Validation des Demandes</button>
             <button @click="currentTab = 'gestion'" :class="['btn', currentTab === 'gestion' ? 'btn-primary' : 'btn-outline']" style="min-width: 220px; padding: 10px 16px; font-size: 14px; justify-content: center;">Gestion de la Plateforme</button>
+            <button @click="currentTab = 'vitrine'" :class="['btn', currentTab === 'vitrine' ? 'btn-primary' : 'btn-outline']" style="min-width: 220px; padding: 10px 16px; font-size: 14px; justify-content: center;">Gestion de la Vitrine</button>
             <button @click="logout" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444; margin-left: auto; padding: 10px 16px; font-size: 14px;">Se déconnecter</button>
         </div>
     </div>
@@ -298,6 +299,63 @@
         </table>
     </div>
 
+    <!-- ONGLET: GESTION DE LA VITRINE -->
+    <div v-show="currentTab === 'vitrine'">
+        <div class="header-small">
+            <h3>Projets Actuellement en Vitrine</h3>
+        </div>
+        <div v-if="vitrineProjects.length === 0" class="empty-state">Aucun projet dans la vitrine.</div>
+        <table v-else class="demandes-table">
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th>Titre</th>
+              <th>SAE / Auteur</th>
+              <th>Description</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="vp in vitrineProjects" :key="vp.id">
+              <td><img :src="getFileUrl(vp.image)" @error="(e) => e.target.src = 'https://placehold.co/600x400?text=Image+Introuvable'" style="width: 80px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border-light);" /></td>
+              <td><strong>{{ vp.titre }}</strong><br/><span style="font-size:11px;color:#64748b;">{{ vp.domaine_activite }}</span></td>
+              <td>{{ vp.sae_titre }}<br/>Par: {{ vp.etudiant }}</td>
+              <td style="max-width:250px; font-size:12px; white-space:normal;">{{ vp.description }}</td>
+              <td>
+                <button class="btn btn-danger btn-sm" @click="retirerDeVitrine(vp.id)">Retirer</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="header-small" style="margin-top: 50px;">
+            <h3>Ajouter à la Vitrine (Rendus Évalués / Notés)</h3>
+        </div>
+        <div v-if="rendusEligibles.length === 0" class="empty-state">Aucun rendu éligible disponible.</div>
+        <table v-else class="demandes-table">
+          <thead>
+            <tr>
+              <th>SAE</th>
+              <th>Étudiant / Fichier</th>
+              <th>Date de dépôt</th>
+              <th>Note</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="r in rendusEligibles" :key="r.id_rendu">
+              <td><strong>{{ r.sae_titre }}</strong><br/><span style="font-size:11px;color:#64748b;">{{ r.semestre }} - {{ r.niveau }}</span></td>
+              <td>{{ r.etudiant }}<br/><a :href="getFileUrl(r.chemin_fichier)" target="_blank" style="font-size:11px; color:var(--accent-blue);">Voir le rendu</a></td>
+              <td>{{ new Date(r.date_depot).toLocaleDateString() }}</td>
+              <td>{{ r.note !== null ? r.note + '/20' : 'Non noté' }}</td>
+              <td>
+                <button class="btn btn-primary btn-sm" @click="openVitrineModal(r)">Mettre en vitrine</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+    </div>
+
     <!-- MODAL EDITION UTILISATEUR -->
     <div class="modal-overlay" :class="{ active: isEditUserModalOpen }" @click.self="closeEditUserModal">
       <div class="modal-content" style="max-width: 500px;">
@@ -361,7 +419,7 @@
           <!-- Affichage vignette actuelle si exste -->
           <div class="form-group" v-if="editingSae.vignette_path">
               <label class="form-label">Vignette actuelle :</label>
-              <img :src="getFileUrl(editingSae.vignette_path)" style="max-width:150px; border-radius:4px; border:1px solid #ccc; margin-bottom: 8px;">
+              <img :src="getFileUrl(editingSae.vignette_path)" @error="(e) => e.target.src = 'https://placehold.co/600x400?text=Image+Introuvable'" style="max-width:150px; border-radius:4px; border:1px solid #ccc; margin-bottom: 8px;">
           </div>
 
           <div class="form-group">
@@ -452,6 +510,40 @@
       </div>
     </div>
 
+    <!-- MODAL AJOUT VITRINE -->
+    <div class="modal-overlay" :class="{ active: isVitrineModalOpen }" @click.self="closeVitrineModal">
+      <div class="modal-content" style="max-width: 600px;">
+          <h2 class="modal-title">Ajouter à la Vitrine Publique</h2>
+          <div class="form-group">
+              <label class="form-label">Titre public (affiché en très grand)</label>
+              <input type="text" v-model="newVitrineEntry.titre" class="form-control" placeholder="Titre percutant...">
+          </div>
+          <div class="form-group">
+              <label class="form-label">Description (facultative mais recommandée)</label>
+              <textarea v-model="newVitrineEntry.description" class="form-control" rows="3" placeholder="Ce projet consiste à..."></textarea>
+          </div>
+          <div class="form-group">
+              <label class="form-label">Auteur (affiché publiquement)</label>
+              <input type="text" v-model="newVitrineEntry.eleve_nom" class="form-control">
+          </div>
+          <div class="form-group">
+              <label class="form-label">Catégorie / Domaine</label>
+              <input type="text" v-model="newVitrineEntry.domaine_activite" class="form-control" placeholder="Ex: Développement Web, Design...">
+          </div>
+          <div class="form-group">
+              <label class="form-label">URL de l'image / Chemin upload</label>
+              <input type="text" v-model="newVitrineEntry.image_url" class="form-control" placeholder="Ex: https://... ou uploads/vignettes/...">
+          </div>
+          
+          <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px;">
+              <button class="btn btn-outline" @click="closeVitrineModal">Annuler</button>
+              <button class="btn btn-primary" @click="submitToVitrine" :disabled="isSubmittingVitrine">
+                  {{ isSubmittingVitrine ? 'Ajout...' : 'Mettre en vitrine' }}
+              </button>
+          </div>
+      </div>
+    </div>
+
     <!-- TOAST -->
     <div v-if="toastMsg" class="toast" :class="toastType">
         {{ toastMsg }}
@@ -494,6 +586,74 @@ const activeNotifs = ref([])
 const newNotification = ref({ user_id: 'all', message: '' })
 const isSendingNotif = ref(false)
 
+const vitrineProjects = ref([])
+const rendusEligibles = ref([])
+
+const isVitrineModalOpen = ref(false)
+const newVitrineEntry = ref({})
+const isSubmittingVitrine = ref(false)
+
+const fetchVitrineProjects = async () => {
+    try {
+        const { data } = await axios.get('/api/vitrine')
+        vitrineProjects.value = data
+    } catch(e) { console.error(e) }
+}
+
+const fetchRendusEligibles = async () => {
+    try {
+        const token = localStorage.getItem('jwt_token')
+        const { data } = await axios.get('/api/admin/rendus-eligibles', { headers: { Authorization: `Bearer ${token}` }})
+        rendusEligibles.value = data
+    } catch(e) { console.error(e) }
+}
+
+const openVitrineModal = (rendu) => {
+    newVitrineEntry.value = {
+        rendu_id: rendu.id_rendu,
+        titre: rendu.sae_titre + ' - ' + rendu.etudiant,
+        description: '',
+        eleve_nom: rendu.etudiant,
+        domaine_activite: 'Général',
+        image_url: 'https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=800'
+    }
+    isVitrineModalOpen.value = true
+}
+
+const closeVitrineModal = () => {
+    isVitrineModalOpen.value = false
+    newVitrineEntry.value = {}
+}
+
+const submitToVitrine = async () => {
+    if(!newVitrineEntry.value.titre || !newVitrineEntry.value.image_url) {
+        showToast("Titre et Image URL sont obligatoires.", "error")
+        return
+    }
+    isSubmittingVitrine.value = true
+    try {
+        const token = localStorage.getItem('jwt_token')
+        await axios.post('/api/admin/vitrine', newVitrineEntry.value, { headers: { Authorization: `Bearer ${token}` }})
+        showToast("Projet ajouté à la vitrine publique !", "success")
+        fetchVitrineProjects()
+        closeVitrineModal()
+    } catch(e) {
+        showToast(e.response?.data?.error || "Erreur lors de l'ajout.", "error")
+    } finally {
+        isSubmittingVitrine.value = false
+    }
+}
+
+const retirerDeVitrine = async (id) => {
+    if(!confirm("Retirer ce projet de la vitrine publique ?")) return;
+    try {
+        const token = localStorage.getItem('jwt_token')
+        await axios.delete(`/api/admin/vitrine/${id}`, { headers: { Authorization: `Bearer ${token}` }})
+        showToast("Projet retiré avec succès.", "success")
+        fetchVitrineProjects()
+    } catch(e) { showToast("Erreur lors du retrait.", "error") }
+}
+
 const publishAnnouncement = async () => {
     if (!newAnnouncement.value.titre || !newAnnouncement.value.message) {
         showToast("Le titre et le message sont requis.", "error");
@@ -525,9 +685,10 @@ const showToast = (msg, type = 'success') => {
 function getFileUrl(path) {
     if (!path) return '';
     if (path.startsWith('http')) return path;
-    if (path.startsWith('/uploads/')) return 'http://localhost:3000' + path;
-    if (path.startsWith('uploads/')) return 'http://localhost:3000/' + path;
-    return 'http://localhost:3000/uploads/' + path;
+    const baseUrl = import.meta.env.VITE_API_URL || '';
+    if (path.startsWith('/uploads/')) return baseUrl + path;
+    if (path.startsWith('uploads/')) return baseUrl + '/' + path;
+    return baseUrl + '/uploads/' + path;
 }
 
 const groupList = [
@@ -908,6 +1069,8 @@ onMounted(() => {
     fetchAllSaes()
     fetchAnnonces()
     fetchAdminNotifs()
+    fetchVitrineProjects()
+    fetchRendusEligibles()
 
     // MISSION 4: ZERO REFRESH POLLING
     pollingInterval = setInterval(() => {

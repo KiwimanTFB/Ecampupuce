@@ -777,9 +777,10 @@ const formatDate = (dateString) => {
 function getFileUrl(path) {
     if (!path) return '';
     if (path.startsWith('http')) return path;
-    if (path.startsWith('/uploads/')) return 'http://localhost:3000' + path;
-    if (path.startsWith('uploads/')) return 'http://localhost:3000/' + path;
-    return 'http://localhost:3000/uploads/' + path;
+    const baseUrl = import.meta.env.VITE_API_URL || '';
+    if (path.startsWith('/uploads/')) return baseUrl + path;
+    if (path.startsWith('uploads/')) return baseUrl + '/' + path;
+    return baseUrl + '/uploads/' + path;
 }
 
 const gradingStatus = ref('')

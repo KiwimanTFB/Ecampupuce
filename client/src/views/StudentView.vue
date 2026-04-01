@@ -21,7 +21,7 @@
                               <div class="sae-title">{{ sae.titre }}</div>
                               <span class="badge badge-danger">URGENT</span>
                           </div>
-                          <div class="sae-meta">À rendre le {{ formatDate(sae.date_debut) }} • {{ sae.groupe || 'Travail de groupe' }}</div>
+                          <div class="sae-meta">À rendre le {{ formatDate(sae.date_fin || sae.date_debut) }} • {{ sae.groupe || 'Travail de groupe' }}</div>
                           <div class="sae-desc" style="font-size: 13px; color: var(--text-primary); margin-bottom: 8px;">{{ sae.description }}</div>
                       </div>
 
@@ -32,7 +32,7 @@
                               <div class="sae-title">{{ sae.titre }}</div>
                               <span class="badge badge-info">EN COURS</span>
                           </div>
-                          <div class="sae-meta">À rendre le {{ formatDate(sae.date_debut) }} • {{ sae.groupe || 'Non spécifié' }}</div>
+                          <div class="sae-meta">À rendre le {{ formatDate(sae.date_fin || sae.date_debut) }} • {{ sae.groupe || 'Non spécifié' }}</div>
                           <div class="sae-desc" style="font-size: 13px; color: var(--text-primary); margin-bottom: 8px;">{{ sae.description }}</div>
                       </div>
                   </div>
@@ -93,7 +93,7 @@
                           </div>
                           
                           <div class="card-body">
-                              <img v-if="selectedSaeDetails.vignette_path" :src="getFileUrl(selectedSaeDetails.vignette_path)" style="width:100%; max-height: 250px; object-fit: cover; border-radius: 8px; margin-bottom: 16px;">
+                              <img v-if="selectedSaeDetails.vignette_path" :src="getFileUrl(selectedSaeDetails.vignette_path)" @error="(e) => e.target.src = 'https://placehold.co/600x400?text=Image+Introuvable'" style="width:100%; max-height: 250px; object-fit: cover; border-radius: 8px; margin-bottom: 16px;">
                               
                               <p style="white-space: pre-wrap; font-size: 14px; line-height: 1.6; color: #374151;">{{ selectedSaeDetails.description }}</p>
                               
@@ -260,9 +260,10 @@ const pageDesc = computed(() => pageInfo[currentView.value]?.desc || "")
 function getFileUrl(path) {
     if (!path) return '';
     if (path.startsWith('http')) return path;
-    if (path.startsWith('/uploads/')) return 'http://localhost:3000' + path;
-    if (path.startsWith('uploads/')) return 'http://localhost:3000/' + path;
-    return 'http://localhost:3000/uploads/' + path;
+    const baseUrl = import.meta.env.VITE_API_URL || '';
+    if (path.startsWith('/uploads/')) return baseUrl + path;
+    if (path.startsWith('uploads/')) return baseUrl + '/' + path;
+    return baseUrl + '/uploads/' + path;
 }
 
 function getFileName(path) {
@@ -286,8 +287,8 @@ const hasExistingRendu = computed(() => {
     return mesDocuments.value.some(doc => doc.id_sae === selectedSaeDetails.value.id_sae);
 })
 
-const urgentSaes = computed(() => saes.value.filter(s => isUrgent(s.date_debut)))
-const ongoingSaes = computed(() => saes.value.filter(s => !isUrgent(s.date_debut)))
+const urgentSaes = computed(() => saes.value.filter(s => isUrgent(s.date_fin || s.date_debut)))
+const ongoingSaes = computed(() => saes.value.filter(s => !isUrgent(s.date_fin || s.date_debut)))
 
 function isUrgent(due_date) {
     if (!due_date) return false
