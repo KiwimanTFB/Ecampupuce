@@ -75,7 +75,7 @@
             <h2 class="text-3xl md:text-4xl font-black tracking-tighter text-neutral-950 dark:text-white">Notre Équipe.</h2>
           </div>
           <p class="text-neutral-500 dark:text-stone-500 text-sm max-w-xs leading-relaxed">
-            Nos enseignants pédagogiques sont des professionnel·le·s en activité, des chercheur·euse·s et des enseignant·e·s-chercheur·euse·s, qui partagent leur expertise et leur passion du numérique à travers des cours théoriques, des ateliers pratiques et un accompagnement de proximité avec les élèves.
+            Nos enseignants pédagogiques sont des professionnel·le·s en activité, des chercheur·euse·s et des enseignant·e·s-chercheur·euse·s.
           </p>
         </div>
 
