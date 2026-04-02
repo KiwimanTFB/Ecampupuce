@@ -247,7 +247,6 @@ const parcoursList = [
   { code: 'DW', nom: 'Développement Web', desc: 'Front-end, APIs, Frameworks, VR' },
   { code: 'CN', nom: 'Création Numérique', desc: 'Motion design, 3D, identité visuelle, Campagnes de communication' },
 ];
- a
 const stats = [
   { value: '6', label: 'Semestres' },
   { value: '2', label: 'Parcours' },
