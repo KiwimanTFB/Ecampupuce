@@ -315,10 +315,10 @@ const TESTIMONIALS = [
     photo: 'https://portfolio.ralaikoa.com/samuel.png'
   },
   {
-    quote: "On ne forge pas seulement des compétences — on forge une exigence esthétique permanente.",
-    name: 'Thomas M.',
-    role: 'Art Director · Promo 2024',
-    photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=150&h=150&fit=crop'
+    quote: "J’ai appris beaucoup plus que ce que je pensais être capable de faire en termes de développement web. On y apprend à façonner des interfaces exactement comme on les imagine.",
+    name: 'Jahnik L.',
+    role: 'Étudiant · Promo 24-27',
+    photo: 'https://jahnik.labry.mmi-velizy.fr/portfolio/images/photo.svg'
   }
 ];
 
