@@ -24,17 +24,17 @@
         <!-- Content -->
         <div class="relative z-10 w-full mt-12 flex flex-col gap-10">
           <p class="text-blue-600 dark:text-blue-400 tracking-[0.3em] uppercase text-xs font-bold opacity-0 animate-fade-in">
-            IUT Paris-Saclay — Département MMI Vélizy
+            IUT Vélizy — Département MMI
           </p>
 
           <h1 class="text-5xl md:text-7xl lg:text-[6.5rem] font-black leading-[1.02] tracking-tighter opacity-0 animate-fade-in animation-delay-200 max-w-5xl text-neutral-950 dark:text-white">
-            Repousser les limites<br />
-            du <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-500">numérique.</span>
+            Envie de découvrir la <br />
+            formation <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-500">MMI?</span>
           </h1>
 
           <div class="flex flex-col md:flex-row items-start md:items-center gap-8 opacity-0 animate-fade-in animation-delay-500 max-w-3xl border-l-4 border-blue-600/20 dark:border-blue-500/30 pl-8">
             <p class="font-sans text-neutral-600 dark:text-neutral-400 text-sm md:text-base leading-relaxed max-w-sm">
-              Une formation hybride alliant design, développement web et communication numérique. Nous formons les talents qui façonnent le web de demain.
+              Bienvenue sur le site officiel du département « Métiers du Multimédia et de l’Internet » de l’IUT de Vélizy.
             </p>
             <div class="flex flex-col sm:flex-row gap-3 shrink-0">
               <router-link to="/projets" class="btn-primary" aria-label="Explorer nos projets">
@@ -60,7 +60,7 @@
 
           <div class="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-20 animate-on-scroll">
             <div>
-              <p class="text-blue-600 dark:text-blue-400 tracking-[0.3em] uppercase text-xs font-bold mb-4">Sélection</p>
+              <p class="text-blue-600 dark:text-blue-400 tracking-[0.3em] uppercase text-xs font-bold mb-4">Sélection de</p>
               <h2 class="text-4xl md:text-6xl font-black tracking-tighter text-neutral-950 dark:text-white leading-[1.05]">
                 Nos meilleurs<br /><span class="text-neutral-400 dark:text-stone-600">projets.</span>
               </h2>
@@ -122,7 +122,10 @@
                 Le BUT MMI<br /><span class="font-light italic text-neutral-500 dark:text-stone-500">en 3 ans.</span>
               </h2>
               <p class="text-neutral-600 dark:text-stone-400 leading-relaxed mb-10">
-                Le Bachelor Universitaire de Technologie Métiers du Multimédia et de l'Internet forme des professionnels polyvalents du numérique, capables d'évoluer entre conception créative et ingénierie web.
+                Le département forme en trois ans des professionnel·le·s de la conception et de la réalisation de projets multimédias.
+Il propose deux parcours :
+“Création numérique” et “Développement web et dispositifs interactifs.”
+À la fois créatif·ve·s et compétent·e·s techniquement, les diplômé·e·s de notre département sont polyvalent·e·s dans le domaine des médias, du web et des nouvelles technologies.
               </p>
 
               <!-- Parcours -->
@@ -238,19 +241,18 @@ const selectedProject = ref(null);
 //  Vitrine Dynamique
 // ══════════════════════════════════════════════════════════
 
-const techTags = ['Vue.js', 'Creative Coding', 'UI/UX Design', 'Motion Design', '3D & WebGL', 'Branding'];
+const techTags = ['Développement Web', 'Audiovisuel', 'Graphisme', '3D & Jeux', 'Communication'];
 
 const parcoursList = [
-  { code: 'DC', nom: 'Développement Communicant', desc: 'Front-end, APIs, stratégie digitale' },
-  { code: 'CN', nom: 'Création Numérique', desc: 'Motion, 3D, identité visuelle' },
-  { code: 'COM', nom: 'Communication', desc: 'Stratégie, événementiel, médias' }
+  { code: 'DW', nom: 'Développement Web', desc: 'Front-end, APIs, Frameworks, VR' },
+  { code: 'CN', nom: 'Création Numérique', desc: 'Motion design, 3D, identité visuelle, Campagnes de communication' },
 ];
-
+ a
 const stats = [
   { value: '6', label: 'Semestres' },
-  { value: '3', label: 'Parcours' },
-  { value: '100%', label: 'Numérique' },
-  { value: '~30', label: 'Étudiants/promo' }
+  { value: '2', label: 'Parcours' },
+  { value: '1', label: 'Année en alternance' },
+  { value: '~50', label: 'Étudiants/promo' }
 ];
 
 const ctaCards = [
@@ -263,13 +265,13 @@ const ctaCards = [
   {
     number: '02',
     title: 'Candidature spontanée',
-    desc: 'Transfert, étudiant étranger ou reconversion ? Candidatez directement.',
+    desc: 'Transfert, étudiant étranger ou reconversion ? Candidatez directement. Les profils atypiques nous intéressent !',
     route: '/inscription/candidature'
   },
   {
     number: '03',
     title: 'Journée d\'intégration',
-    desc: 'Admis ? Découvrez le programme de votre première journée dans la promo.',
+    desc: 'Vous voulez découvrir la formation de plus près ? Venez découvrir le campus, rencontrer les étudiants et décvourir le BUT depuis l'intérieur !',
     route: '/inscription/integration'
   }
 ];

@@ -133,7 +133,7 @@
 
           <!-- Portail Pro -->
           <router-link to="/login" class="btn-portal" aria-label="Accéder au portail">
-            Portail Pro
+            Se connecter
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px;height:14px;">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>
