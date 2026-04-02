@@ -242,18 +242,17 @@ const EXPERTISES = [
   {
     roman: 'I.',
     title: 'Le BUT « Métiers du multimédia et de l’Internet »',
-    desc: "Permet de se forger une solide culture du numérique et de développer une connaissance de ses différents métiers, avant de choisir une spécialisation. Cette polyvalence est très appréciée des entreprises."
+    desc: `Permet de se forger une solide culture du numérique et de développer une connaissance de ses différents métiers, avant de choisir une spécialisation. Cette polyvalence est très appréciée des entreprises.`
   },
   {
     roman: 'II.',
     title: 'Le BUT MMI mêle théorie et pratique :',
-    desc: "Un socle de connaissances nourri des avancées de la recherche tout au long du cursus, des projets exigeants à chaque semestre, des stages chaque année, et une troisième année proposée en apprentissage."
+    desc: `Un socle de connaissances nourri des avancées de la recherche tout au long du cursus, des projets exigeants à chaque semestre, des stages chaque année, et une troisième année proposée en apprentissage.`
   },
   {
     roman: 'III.',
     title: 'La formation repose sur un socle de 5 compétences: comprendre, concevoir, développer, exprimer et entreprendre.',
-    desc: "Ces compétences sont travaillées de manière individuelle et collaborative, que ce soit au moyen de cours et d’exercices ciblés ou à partir de projets transversaux.
-L’apprentissage par projet (et donc la capacité à planifier, organiser, coordonner des tâches diverses, et à rendre compte des résultats obtenus dans le respect des délais) est un aspect important de la formation."
+    desc: `Ces compétences sont travaillées de manière individuelle et collaborative, que ce soit au moyen de cours et d’exercices ciblés ou à partir de projets transversaux. L’apprentissage par projet (et donc la capacité à planifier, organiser, coordonner des tâches diverses, et à rendre compte des résultats obtenus dans le respect des délais) est un aspect important de la formation.`
   }
 ];
 
@@ -263,19 +262,19 @@ L’apprentissage par projet (et donc la capacité à planifier, organiser, coor
 const CRITERES = [
   {
     title: 'Notes scolaires',
-    desc: 'Bulletins de 1ʳᵉ et Terminale. Une attention toute particulière est portée aux matières analytiques et aux spécialités.'
+    desc: `Bulletins de 1ʳᵉ et Terminale. Une attention toute particulière est portée aux matières analytiques et aux spécialités.`
   },
   {
     title: 'Lettre de motivation (Projet motivé)',
-    desc: 'La cohérence de votre projet professionnel, votre niveau d\'expression et votre véritable intérêt pour la création numérique.'
+    desc: `La cohérence de votre projet professionnel, votre niveau d'expression et votre véritable intérêt pour la création numérique.`
   },
   {
     title: 'Portfolio / Projets personnels',
-    desc: 'Tout projet personnel : site web, compte de curation, chaine vidéo, design, photo, investissement associatif... est un réel atout.'
+    desc: `Tout projet personnel : site web, compte de curation, chaine vidéo, design, photo, investissement associatif... est un réel atout.`
   },
   {
     title: 'Appréciations & Savoir-être',
-    desc: 'Assiduité, comportement et avis du chef d\'établissement constituent un critère non négligeable pour un travail en équipe.'
+    desc: `Assiduité, comportement et avis du chef d'établissement constituent un critère non négligeable pour un travail en équipe.`
   }
 ];
 
