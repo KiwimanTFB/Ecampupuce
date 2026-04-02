@@ -251,8 +251,8 @@ const EXPERTISES = [
   },
   {
     roman: 'III.',
-    title: 'La formation repose sur un socle de 5 “compétences”: comprendre, concevoir, développer, exprimer et entreprendre.',
-    desc: "Ces “compétences” sont travaillées de manière individuelle et collaborative, que ce soit au moyen de cours et d’exercices ciblés ou à partir de projets transversaux.
+    title: 'La formation repose sur un socle de 5 compétences: comprendre, concevoir, développer, exprimer et entreprendre.',
+    desc: "Ces compétences sont travaillées de manière individuelle et collaborative, que ce soit au moyen de cours et d’exercices ciblés ou à partir de projets transversaux.
 L’apprentissage par projet (et donc la capacité à planifier, organiser, coordonner des tâches diverses, et à rendre compte des résultats obtenus dans le respect des délais) est un aspect important de la formation."
   }
 ];
