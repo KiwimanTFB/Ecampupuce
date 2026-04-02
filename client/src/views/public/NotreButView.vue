@@ -225,7 +225,7 @@ import { onMounted } from 'vue';
 //     → Si photo = null : avatar DiceBear auto-généré avec initiales
 // ══════════════════════════════════════════════════════════════
 const TEAM_DATA = [
-  { prenom: 'Soufian',   nom: 'Lefebvre', role: 'responsable des enseignements en informatique',   email: 'soufian.ben-amor@uvsq.fr',  photo: 'https://www.mmi-velizy.fr/wp-content/uploads/2023/01/Soufian.jpg' },
+  { prenom: 'Soufian',   nom: 'Ben Amor', role: 'responsable des enseignements en informatique',   email: 'soufian.ben-amor@uvsq.fr',  photo: 'https://www.mmi-velizy.fr/wp-content/uploads/2023/01/Soufian.jpg' },
   { prenom: 'Olivier',  nom: 'Le Cadet',  role: 'responsable des enseignements de mathématiques et de développement web. Directeur des études',          email: 'lecadet@iut-velizy.uvsq.fr',   photo: 'https://www.mmi-velizy.fr/wp-content/uploads/2023/01/Olivier.jpg' },
   { prenom: 'Jean-Marie',   nom: 'Clech',   role: 'Professionnel, Graphic Design, infographie',  email: 'jean-marie.clech@uvsq.fr',    photo: 'https://www.mmi-velizy.fr/wp-content/uploads/2023/01/Jean-Marie-277x300.jpg' },
   { prenom: 'Sylvie',  nom: 'Fabre',   role: 'Enseignante en communication, PPP et gestion de projet, responsable des stages et de la poursuite d’études. Cheffe de département MMI',     email: 'sylvie.fabre@uvsq.fr',    photo: 'https://www.mmi-velizy.fr/wp-content/uploads/2023/01/Sylvie-277x300.jpg' },
