@@ -430,4 +430,68 @@ watch(() => activeFilters.value, () => { setTimeout(applyObserver, 30); }, { dee
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 .modal-enter-active, .modal-leave-active { transition: all 0.3s cubic-bezier(0.16,1,0.3,1); }
 .modal-enter-from, .modal-leave-to { opacity: 0; transform: scale(0.98); }
+
+/* ── Filter row ── */
+.filter-row { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+.filter-row__label {
+  font-size: 11px; /* Plus grand */
+  text-transform: uppercase; 
+  letter-spacing: 0.15em; 
+  font-weight: 800; /* Plus gras */
+  color: #a3a3a3; 
+  width: 70px; 
+  flex-shrink: 0; 
+}
+.dark .filter-row__label { color: #78716c; }
+.filter-row__chips { display: flex; gap: 10px; flex-wrap: wrap; } /* Gap augmenté */
+
+/* ── Filter chips (Base plus grosse) ── */
+.filter-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 18px; /* Padding augmenté pour être "plus gros" */
+  font-size: 12px; /* Police agrandie */
+  font-weight: 800; /* Plus gras */
+  text-transform: uppercase; 
+  letter-spacing: 0.05em;
+  border-radius: 99px; 
+  border: 1.5px solid #e5e5e5; /* Bordure un peu plus épaisse */
+  color: #525252;
+  background: transparent; 
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dark .filter-chip { border-color: rgba(255,255,255,0.15); color: #a8a29e; }
+
+/* ── Code Couleur au Hover (Mode clair & sombre) ── */
+.filter-chip:hover { border-color: #737373; color: #171717; transform: translateY(-1px); }
+.dark .filter-chip:hover { border-color: rgba(255,255,255,0.4); color: #fff; }
+
+/* ── CODES COULEURS ACTIFS (Multi-select) ── */
+
+/* Niveau (Tons Roses/Rouges) */
+.filter-row:nth-of-type(1) .filter-chip--active {
+  border-color: #e11d48; color: #e11d48; background: #fff1f2;
+}
+.dark .filter-row:nth-of-type(1) .filter-chip--active {
+  border-color: #f43f5e; color: #fecdd3; background: rgba(225, 29, 72, 0.15);
+}
+
+/* Domaine (Tons Verts/Teal) */
+.filter-row:nth-of-type(2) .filter-chip--active {
+  border-color: #0d9488; color: #0d9488; background: #f0fdfa;
+}
+.dark .filter-row:nth-of-type(2) .filter-chip--active {
+  border-color: #14b8a6; color: #ccfbf1; background: rgba(13, 148, 136, 0.15);
+}
+
+/* Année (Tons Oranges/Ambres) */
+.filter-row:nth-of-type(3) .filter-chip--active {
+  border-color: #d97706; color: #d97706; background: #fffbeb;
+}
+.dark .filter-row:nth-of-type(3) .filter-chip--active {
+  border-color: #f59e0b; color: #fef3c7; background: rgba(217, 119, 6, 0.15);
+}
+
+/* La petite croix de fermeture */
+.filter-chip__x { font-size: 15px; font-weight: 900; line-height: 1; opacity: 0.8; }
 </style>
