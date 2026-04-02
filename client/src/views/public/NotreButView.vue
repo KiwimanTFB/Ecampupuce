@@ -6,20 +6,20 @@
       <section class="container mx-auto px-6 mb-28">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
           <div class="animate-fade-in">
-            <p class="text-neutral-500 dark:text-stone-500 tracking-[0.3em] uppercase text-xs mb-8 font-bold">Manifeste</p>
+            <p class="text-neutral-500 dark:text-stone-500 tracking-[0.3em] uppercase text-xs mb-8 font-bold">En savoir plus sur</p>
             <h1 class="text-5xl md:text-7xl lg:text-[5.5rem] font-black leading-none tracking-tighter text-neutral-950 dark:text-white">
-              Le Studio<br /><span class="font-light italic text-neutral-400 dark:text-stone-500">MMI.</span>
+              LE BUT<br /><span class="font-light italic text-neutral-400 dark:text-stone-500">À VÉLIZY.</span>
             </h1>
           </div>
           <div class="lg:pt-20 animate-fade-in animation-delay-200">
             <p class="text-neutral-600 dark:text-stone-400 text-lg leading-relaxed mb-8 max-w-md font-light">
-              Nous formons l'élite de la création numérique. Des profils hybrides capables de concevoir, développer et promouvoir des expériences web hors du commun.
+              C’est un diplôme en trois ans, qui forme des professionnel.les du multimédia.
             </p>
             <div class="h-px w-full bg-neutral-200 dark:bg-white/10 mb-8"></div>
             <div class="flex flex-wrap gap-10 text-xs uppercase tracking-[0.15em] text-neutral-500 dark:text-stone-500">
               <div class="flex flex-col gap-2">
                 <span class="text-neutral-900 dark:text-white font-bold">Programme</span>
-                <span>3 Ans Intensifs</span>
+                <span>3 Ans</span>
               </div>
               <div class="flex flex-col gap-2">
                 <span class="text-neutral-900 dark:text-white font-bold">Format</span>
@@ -36,19 +36,19 @@
 
       <!-- ── Image break ── -->
       <section class="w-full mb-28 relative group overflow-hidden animate-on-scroll" style="height:55vh;">
-        <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1600&auto=format&fit=crop"
+        <img src="https://imgs.search.brave.com/TtftU6zs9lmoVW44ITTILDaRjlwYjfrx-kLEf8_OWS8/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/bW1pLXZlbGl6eS5m/ci93cC1jb250ZW50/L3VwbG9hZHMvMjAy/My8wMS9CVVQtTU1J/LVZlbGl6eS0wOC0x/MDI0eDY4My5qcGc"
              class="w-full h-full object-cover filter grayscale-[20%] contrast-110 group-hover:scale-105 transition-transform duration-[2.5s] ease-out"
              alt="Studio MMI Vélizy" loading="lazy" />
         <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
         <div class="absolute bottom-8 left-6 right-6 flex justify-between items-end">
           <p class="text-white text-[10px] uppercase tracking-widest font-bold opacity-70">MMI Vélizy — IUT Paris-Saclay</p>
-          <p class="text-white text-[10px] uppercase tracking-widest font-bold opacity-70">Depuis 2003</p>
+          <p class="text-white text-[10px] uppercase tracking-widest font-bold opacity-70">10-12 avenue de l'Europe</p>
         </div>
       </section>
 
       <!-- ── Expertises — layout chiffres romains ── -->
       <section class="container mx-auto px-6 mb-36">
-        <h2 class="text-3xl font-black tracking-tighter mb-16 animate-on-scroll text-neutral-950 dark:text-white">L'Expertise.</h2>
+        <h2 class="text-3xl font-black tracking-tighter mb-16 animate-on-scroll text-neutral-950 dark:text-white">C'est quoi MMI?</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 border-t border-neutral-200 dark:border-white/10">
           <article
             v-for="(exp, i) in EXPERTISES" :key="exp.title"
@@ -241,18 +241,19 @@ const TEAM_DATA = [
 const EXPERTISES = [
   {
     roman: 'I.',
-    title: 'Design System & UI/UX',
-    desc: "Création d'interfaces utilisateur élégantes centrées sur l'accessibilité. Grilles, typographie et microanimations."
+    title: 'Le BUT « Métiers du multimédia et de l’Internet »',
+    desc: "Permet de se forger une solide culture du numérique et de développer une connaissance de ses différents métiers, avant de choisir une spécialisation. Cette polyvalence est très appréciée des entreprises."
   },
   {
     roman: 'II.',
-    title: 'Creative Coding',
-    desc: "Développement front-end avancé. Animation, WebGL et optimisation des performances pour un rendu pur et fluide."
+    title: 'Le BUT MMI mêle théorie et pratique :',
+    desc: "Un socle de connaissances nourri des avancées de la recherche tout au long du cursus, des projets exigeants à chaque semestre, des stages chaque année, et une troisième année proposée en apprentissage."
   },
   {
     roman: 'III.',
-    title: 'Direction Artistique',
-    desc: "Identité de marque, motion design et production de contenus visuels. Du concept à la mise en ligne."
+    title: 'La formation repose sur un socle de 5 “compétences”: comprendre, concevoir, développer, exprimer et entreprendre.',
+    desc: "Ces “compétences” sont travaillées de manière individuelle et collaborative, que ce soit au moyen de cours et d’exercices ciblés ou à partir de projets transversaux.
+L’apprentissage par projet (et donc la capacité à planifier, organiser, coordonner des tâches diverses, et à rendre compte des résultats obtenus dans le respect des délais) est un aspect important de la formation."
   }
 ];
 
