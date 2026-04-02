@@ -309,10 +309,10 @@ const AFTER_BUT = [
 // ══════════════════════════════════════════════════════════════
 const TESTIMONIALS = [
   {
-    quote: "L'hybridation des compétences m'a permis de pousser des concepts visuels que je peux moi-même coder et optimiser.",
-    name: 'Sophie L.',
-    role: 'Creative Developer · Promo 2023',
-    photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&h=150&fit=crop'
+    quote: "La qualité  de l' enseignement m'a vraiment permis d'avoir une meilleur vision graphique.",
+    name: 'Samuel R.',
+    role: 'Étudiant · Promo 24-27',
+    photo: 'https://portfolio.ralaikoa.com/samuel.png'
   },
   {
     quote: "On ne forge pas seulement des compétences — on forge une exigence esthétique permanente.",
