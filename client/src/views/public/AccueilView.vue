@@ -9,17 +9,7 @@
         <div class="absolute top-1/4 left-1/3 w-[600px] h-[600px] bg-blue-500/5 dark:bg-blue-600/10 rounded-full filter blur-[120px] animate-blob pointer-events-none"></div>
         <div class="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-purple-500/5 dark:bg-purple-600/8 rounded-full filter blur-[100px] animate-blob-slow pointer-events-none"></div>
 
-        <!-- Parallax images (desktop) -->
-        <div class="absolute inset-0 pointer-events-none hidden lg:block z-0">
-          <img src="https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=600"
-               class="absolute top-[15%] right-[8%] w-[220px] aspect-[3/4] object-cover opacity-25 dark:opacity-60 transition-opacity duration-500"
-               :style="{ transform: `translateY(${scrollY * -0.28}px) rotate(2deg)` }"
-               alt="" aria-hidden="true" />
-          <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=600"
-               class="absolute bottom-[12%] left-[3%] w-[280px] aspect-video object-cover opacity-15 dark:opacity-50"
-               :style="{ transform: `translateY(${scrollY * -0.12}px) rotate(-1deg)` }"
-               alt="" aria-hidden="true" />
-        </div>
+        
 
         <!-- Content -->
         <div class="relative z-10 w-full mt-12 flex flex-col gap-10">
