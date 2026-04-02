@@ -271,7 +271,7 @@ const ctaCards = [
   {
     number: '03',
     title: 'Journée d\'intégration',
-    desc: 'Vous voulez découvrir la formation de plus près ? Venez découvrir le campus, rencontrer les étudiants et décvourir le BUT depuis l'intérieur !',
+    desc: 'Vous voulez découvrir la formation de plus près ? Venez découvrir le campus, rencontrer les étudiants et décourir le BUT depuis l\'intérieur !',
     route: '/inscription/integration'
   }
 ];
