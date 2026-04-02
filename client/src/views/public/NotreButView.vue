@@ -71,11 +71,11 @@
 
         <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16 animate-on-scroll">
           <div>
-            <p class="text-blue-600 dark:text-blue-400 tracking-[0.3em] uppercase text-xs font-bold mb-4">Intervenants</p>
+            <p class="text-blue-600 dark:text-blue-400 tracking-[0.3em] uppercase text-xs font-bold mb-4">Enseignants</p>
             <h2 class="text-3xl md:text-4xl font-black tracking-tighter text-neutral-950 dark:text-white">Notre Équipe.</h2>
           </div>
           <p class="text-neutral-500 dark:text-stone-500 text-sm max-w-xs leading-relaxed">
-            Enseignants-chercheurs et professionnels du numérique qui transmettent leur expertise terrain.
+            Nos enseignants pédagogiques sont des professionnel·le·s en activité, des chercheur·euse·s et des enseignant·e·s-chercheur·euse·s, qui partagent leur expertise et leur passion du numérique à travers des cours théoriques, des ateliers pratiques et un accompagnement de proximité avec les élèves.
           </p>
         </div>
 
@@ -225,14 +225,17 @@ import { onMounted } from 'vue';
 //     → Si photo = null : avatar DiceBear auto-généré avec initiales
 // ══════════════════════════════════════════════════════════════
 const TEAM_DATA = [
-  { prenom: 'Marie',   nom: 'Lefebvre', role: 'Responsable de département',   email: 'm.lefebvre@iut-velizy.fr',  photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=400&h=400&fit=crop' },
-  { prenom: 'Thomas',  nom: 'Bernard',  role: 'Enseignant-chercheur',          email: 't.bernard@iut-velizy.fr',   photo: 'https://images.unsplash.com/photo-1502767089025-6572583495b9?q=80&w=400&h=400&fit=crop' },
-  { prenom: 'Julie',   nom: 'Moreau',   role: 'Enseignante',                   email: 'j.moreau@iut-velizy.fr',    photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&h=400&fit=crop' },
-  { prenom: 'Pierre',  nom: 'Dubois',   role: 'Intervenant professionnel',     email: 'p.dubois@iut-velizy.fr',    photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=400&h=400&fit=crop' },
-  { prenom: 'Sophie',  nom: 'Martin',   role: 'Enseignante',                   email: 's.martin@iut-velizy.fr',    photo: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?q=80&w=400&h=400&fit=crop' },
-  { prenom: 'Lucas',   nom: 'Petit',    role: 'Intervenant professionnel',     email: 'l.petit@iut-velizy.fr',     photo: null },
-  { prenom: 'Amélie',  nom: 'Gauthier', role: 'Enseignante',                   email: 'a.gauthier@iut-velizy.fr',  photo: null },
-  { prenom: 'Romain',  nom: 'Girard',   role: 'Enseignant-chercheur',          email: 'r.girard@iut-velizy.fr',    photo: null },
+  { prenom: 'Soufian',   nom: 'Lefebvre', role: 'responsable des enseignements en informatique',   email: 'soufian.ben-amor@uvsq.fr',  photo: 'https://www.mmi-velizy.fr/wp-content/uploads/2023/01/Soufian.jpg' },
+  { prenom: 'Olivier',  nom: 'Le Cadet',  role: 'responsable des enseignements de mathématiques et de développement web. Directeur des études',          email: 'lecadet@iut-velizy.uvsq.fr',   photo: 'https://www.mmi-velizy.fr/wp-content/uploads/2023/01/Olivier.jpg' },
+  { prenom: 'Jean-Marie',   nom: 'Clech',   role: 'Professionnel, Graphic Design, infographie',  email: 'jean-marie.clech@uvsq.fr',    photo: 'https://www.mmi-velizy.fr/wp-content/uploads/2023/01/Jean-Marie-277x300.jpg' },
+  { prenom: 'Sylvie',  nom: 'Fabre',   role: 'Enseignante en communication, PPP et gestion de projet, responsable des stages et de la poursuite d’études. Cheffe de département MMI',     email: 'sylvie.fabre@uvsq.fr',    photo: 'https://www.mmi-velizy.fr/wp-content/uploads/2023/01/Sylvie-277x300.jpg' },
+  { prenom: 'Cédric',  nom: 'Fournerie',   role: 'Enseignant Réseaux et télécoms', email: 'cedric.fournerie@uvsq.fr',    photo: 'https://www.mmi-velizy.fr/wp-content/uploads/2023/01/Cedric-277x300.jpg' },
+  { prenom: 'Xavier',   nom: 'Hautbois',    role: 'Maître de conférences en art (MCF), responsable des enseignements de musique, esthétique et interactivité',     email: 'xavier.hautbois@orange.fr',     photo: 'https://www.mmi-velizy.fr/wp-content/uploads/2023/01/Xavier-277x300.jpg' },
+  { prenom: 'Thérèse',  nom: 'Lepage', role: 'Professeure agrégée d’anglais (PRAG), responsable des enseignements d’anglais',                   email: 'therese.crosnier@uvsq.fr',  photo: 'https://www.mmi-velizy.fr/wp-content/uploads/2023/01/Therese-277x300.jpg' },
+  { prenom: 'Michel',  nom: 'Pinosa',   role: 'Professionnel, Arts plastiques, Graphic Design & Web Design',          email: 'mmi@michelpinosa.com',    photo: 'https://www.mmi-velizy.fr/wp-content/uploads/2023/01/Michel-277x300.jpg' },
+  { prenom: 'Fred',  nom: 'Pirat',   role: 'Professionnel et responsable des enseignements en audiovisuel',          email: 'frederic.pirat@uvsq.fr',    photo: 'https://www.mmi-velizy.fr/wp-content/uploads/2023/01/Fred-277x300.jpg' },
+  { prenom: 'Vincent',  nom: 'Wable',   role: 'Responsable audiovisuel et enseignant en audiovisuel',          email: 'pas de mail disponible',    photo: 'https://www.mmi-velizy.fr/wp-content/uploads/2023/01/Vincent-277x300.jpg' },
+
 ];
 
 // ══════════════════════════════════════════════════════════════
